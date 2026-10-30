@@ -130,6 +130,8 @@ public:
             model.GetIndexCount()
         );
 
+        XWorldObject::THandle wo = *_context->GetPool<CWorldObjectPool>()->Create();
+
         /*auto gameObject1Handle = *gameObjectPool->Create("MyObject1");
         XGameObject& gameObject1 = *gameObjectPool->Get(gameObject1Handle);
         gameObject1.SetRenderable(
