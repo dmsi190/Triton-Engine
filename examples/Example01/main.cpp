@@ -16,6 +16,7 @@
 #include "geometry_storage.hpp"
 #include "world_object_pool.hpp"
 #include "world_render_domain_pool.hpp"
+#include "world_render_group_instance_pool.hpp"
 
 using namespace triton;
 using namespace types;
@@ -132,7 +133,8 @@ public:
         );
 
         XWorldObject::THandle wo = *_context->GetPool<CWorldObjectPool>()->Create();
-        XRenderDomain::THandle rd = *_context->GetPool<CRenderDomainPool>()->Create();
+        XRenderDomain::THandle rd1 = *_context->GetPool<CRenderDomainPool>()->Create();
+        XRenderDomain::THandle rd2 = *_context->GetPool<CRenderDomainPool>()->Create();
 
         /*auto gameObject1Handle = *gameObjectPool->Create("MyObject1");
         XGameObject& gameObject1 = *gameObjectPool->Get(gameObject1Handle);
