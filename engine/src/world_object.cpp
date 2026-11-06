@@ -58,7 +58,6 @@ void triton::XWorldObject::SetRenderable(
 			_renderInstance = renderGroupInstance.AddInstance();
 
 			_renderDomain = renderDomain;
-			_renderGroupInstance = renderGroupInstanceLookup.value();
 		}
 		else
 		{
