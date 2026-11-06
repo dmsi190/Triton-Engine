@@ -400,7 +400,7 @@ void triton::XRenderPassGeometry::Draw()
         const XMaterial& sharedMaterial =
             *_context->GetPool<CMaterialPool>()->Get(renderGroupInstance.GetSharedMaterial());
 
-        const SGeometryView sharedGeometry =
+        const SGeometryView& sharedGeometry =
             renderGroupInstance.GetSharedGeometry();
 
         _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(

@@ -9,7 +9,7 @@ using namespace types;
 
 void triton::XWorldObject::SetRenderable(
 	types::boolean bIsRenderable,
-	const XRenderDomain::THandle& renderDomain,
+	const SHandle& renderDomain,
 	ERenderInstanceMotionType motionType,
 	const SGeometryView& geometry,
 	const XMaterial::THandle& material
@@ -86,7 +86,7 @@ void triton::XWorldObject::PlayAnimation(types::usize index)
 }
 
 std::optional<triton::XRenderGroupInstance::THandle> triton::XWorldObject::FindRenderGroupInstance(
-	const XRenderDomain::THandle& renderDomain,
+	const SHandle& renderDomain,
 	ERenderInstanceMotionType motionType,
 	const SGeometryView& geometry,
 	const XMaterial::THandle& material
@@ -115,7 +115,7 @@ std::optional<triton::XRenderGroupInstance::THandle> triton::XWorldObject::FindR
 
 types::boolean triton::XWorldObject::IsRenderGroupInstanceFound(
 	const XRenderGroupInstance& compareRenderGroupInstance,
-	const XRenderDomain::THandle& renderDomain,
+	const SHandle& renderDomain,
 	ERenderInstanceMotionType motionType,
 	const SGeometryView& geometry,
 	const XMaterial::THandle& material

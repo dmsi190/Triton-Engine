@@ -65,7 +65,14 @@ const triton::XRenderInstance::THandle& triton::XRenderGroupInstance::AddInstanc
 	const usize indexInGroup = _instanceCount;
 
 	XRenderInstance& instance = *renderInstancePool->GetFrame(_instances, indexInGroup);
-	instance = XRenderInstance(_context, instance.GetPoolIndex(), indexInGroup);
+
+	instance = XRenderInstance(
+		_context,
+		instance.GetPoolIndex(),
+		indexInGroup,
+		_group.motionType,
+		_group.sharedMaterial
+	);
 
 	++_instanceCount;
 

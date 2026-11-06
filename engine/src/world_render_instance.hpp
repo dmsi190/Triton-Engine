@@ -7,15 +7,17 @@
 #include "math.hpp"
 #include "skin.hpp"
 #include "skin_pool.hpp"
+#include "render_instance_motion_type.hpp"
 #include "types.hpp"
 
 namespace triton
 {
 	class XRenderInstance : public iObject
 	{
-		TRITON_CLASS_NAME(XRenderInstance)
+        TRITON_CLASS_NAME(XRenderInstance)
 
         types::s32                  _indexInGroup = -1;
+        ERenderInstanceMotionType   _motionType = ERenderInstanceMotionType::Unknown;
         XMaterial::THandle          _material;
         types::s32                  _skinnedBoneBufferOffset = -1;
         cTransform                  _transform;
@@ -26,8 +28,13 @@ namespace triton
         explicit XRenderInstance(
             cContext* context,
             types::s32 poolIndex,
-            types::s32 indexInGroup
-        ) : iObject(context, poolIndex), _indexInGroup(indexInGroup) {}
+            types::s32 indexInGroup,
+            ERenderInstanceMotionType motionType,
+            const XMaterial::THandle& material
+        ) : iObject(context, poolIndex), _indexInGroup(indexInGroup), _motionType(motionType)
+        {
+            SetMaterial(material);
+        }
 
         XRenderInstance& operator=(const XRenderInstance& other)
         {
@@ -40,7 +47,11 @@ namespace triton
 
         ~XRenderInstance() override = default;
 
-        inline void Transform() { _transform.Transform(); }
+        inline void Transform()
+        {
+            _transform.Transform();
+            WriteToStaging();
+        }
 
         inline types::s32 GetIndexInGroup() const { return _indexInGroup; }
 
@@ -56,12 +67,17 @@ namespace triton
 
         inline const cMatrix4& GetWorldMatrix() const { return _transform.GetWorld(); }
 
-        inline void SetMaterial(const XMaterial::THandle& material) { _material = material; }
+        inline void SetMaterial(const XMaterial::THandle& material)
+        {
+            _material = material;
+            WriteToStaging();
+        }
 
         inline void SetSkin(const XSkin::THandle& skin)
         {
             XSkin& sk = *_context->GetPool<CSkinPool>()->Get(skin);
             _skinnedBoneBufferOffset = sk.GetSkinnedBoneBufferOffset();
+            WriteToStaging();
         }
 
         inline void SetWorldPosition(const cVector3& worldPosition) { _transform.SetPosition(worldPosition); }
@@ -70,6 +86,8 @@ namespace triton
 
         inline void SetScale(const cVector3& scale) { _transform.SetScale(scale); }
         
+        void WriteToStaging();
+
         struct THandle : public SHandle {};
 
         struct TGPULayout

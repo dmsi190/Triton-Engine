@@ -66,6 +66,8 @@ namespace triton
 
         inline types::boolean IsRenderTargetClearRequired() const { return _bClearRenderTarget; }
 
+        inline const SHandle& GetRenderDomain() { return _renderDomain; }
+
         inline XShader::THandle GetShader() { return _shader; }
 
         struct THandle : public SHandle {};

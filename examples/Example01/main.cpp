@@ -40,9 +40,9 @@ public:
         CWorldObjectPool* worldObjectPool = _context->GetPool<CWorldObjectPool>();
         CModel3DPool* model3DPool = _context->GetPool<CModel3DPool>();
 
-        auto camh = *_context->GetPool<CCameraPool>()->Create();
-        XCamera& camo = *_context->GetPool<CCameraPool>()->Get(camh);
-        camo.SetWorldPosition(cVector3(0.0f, 0.0f, 30.0f));
+        auto cam_handle = *_context->GetPool<CCameraPool>()->Create();
+        XCamera& cam = *_context->GetPool<CCameraPool>()->Get(cam_handle);
+        cam.SetWorldPosition(cVector3(0.0f, 0.0f, 30.0f));
         
         //opaqueStaticRP.SetCamera(camh);
         
@@ -132,9 +132,15 @@ public:
             model.GetIndexCount()
         );
 
-        XWorldObject::THandle wo = *_context->GetPool<CWorldObjectPool>()->Create();
-        XRenderDomain::THandle rd1 = *_context->GetPool<CRenderDomainPool>()->Create();
-        XRenderDomain::THandle rd2 = *_context->GetPool<CRenderDomainPool>()->Create();
+        XRenderPassGeometry::THandle geom_render_pass_handle =
+            _context->GetSubsystem<CGraphics>()->GetOpaqueRigidRenderPass();
+        XRenderPassGeometry& geom_render_pass =
+            *_context->GetPool<CRenderPassGeometryPool>()->Get(geom_render_pass_handle);
+        const SHandle& render_domain = geom_render_pass.GetRenderDomain();
+
+        XWorldObject::THandle wo_handle = *_context->GetPool<CWorldObjectPool>()->Create();
+        XWorldObject& wo = *_context->GetPool<CWorldObjectPool>()->Get(wo_handle);
+        wo.SetRenderable(True, render_domain, ERenderInstanceMotionType::Static, modelGeom, model.GetMaterial());
 
         /*auto gameObject1Handle = *gameObjectPool->Create("MyObject1");
         XGameObject& gameObject1 = *gameObjectPool->Get(gameObject1Handle);

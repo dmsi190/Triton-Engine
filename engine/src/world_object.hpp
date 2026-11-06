@@ -15,7 +15,7 @@ namespace triton
 	{
 		TRITON_CLASS_NAME(XWorldObject)
 
-		XRenderDomain::THandle				_renderDomain;
+		SHandle								_renderDomain;
 		XRenderGroupInstance::THandle		_renderGroupInstance;
 		XRenderInstance::THandle			_renderInstance;
 		XSkeleton::THandle                  _skeleton;
@@ -29,7 +29,7 @@ namespace triton
 
 		void SetRenderable(
 			types::boolean bIsRenderable,
-			const XRenderDomain::THandle& renderDomain = XRenderDomain::THandle(),
+			const SHandle& renderDomain = SHandle(),
 			ERenderInstanceMotionType motionType = ERenderInstanceMotionType::Unknown,
 			const SGeometryView& geometry = SGeometryView(),
 			const XMaterial::THandle& material = XMaterial::THandle()
@@ -43,7 +43,7 @@ namespace triton
 
 	private:
 		std::optional<XRenderGroupInstance::THandle> FindRenderGroupInstance(
-			const XRenderDomain::THandle& renderDomain,
+			const SHandle& renderDomain,
 			ERenderInstanceMotionType motionType,
 			const SGeometryView& geometry,
 			const XMaterial::THandle& material
@@ -51,7 +51,7 @@ namespace triton
 
 		types::boolean IsRenderGroupInstanceFound(
 			const XRenderGroupInstance& compareRenderGroupInstance,
-			const XRenderDomain::THandle& renderDomain,
+			const SHandle& renderDomain,
 			ERenderInstanceMotionType motionType,
 			const SGeometryView& geometry,
 			const XMaterial::THandle& material
