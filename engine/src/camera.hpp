@@ -54,9 +54,6 @@ namespace triton
     public:
         struct THandle : public SHandle {};
 
-        struct TGPULayout
-        {
-            cMatrix4 _viewProjectionMatrix = cMatrix4(1.0f);
-        };
+        struct TGPULayout {};
     };
 }
