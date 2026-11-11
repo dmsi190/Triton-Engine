@@ -8,6 +8,10 @@ build
 build_vs
 logo/*
 thirdparty/*
+cmake/*
+editor/*
+engine/lib/*
+examples/Example01/bin/*
 GhostWare.zip
 names.txt
 TritonEngine.7z
