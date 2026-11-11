@@ -10,8 +10,9 @@ logo/*
 thirdparty/*
 cmake/*
 editor/*
-engine/lib/*
 examples/Example01/bin/*
+tools/tasset/bin/*
+tools/tasset/lib/*
 GhostWare.zip
 names.txt
 TritonEngine.7z
