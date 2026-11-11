@@ -15,6 +15,7 @@ namespace triton
 	{
 		TRITON_CLASS_NAME(XWorldObject)
 
+		ERenderInstanceMotionType			_motion_type = ERenderInstanceMotionType::Unknown;
 		SHandle								_renderDomain;
 		XRenderGroupInstance::THandle		_renderGroupInstance;
 		XRenderInstance::THandle			_renderInstance;
@@ -23,14 +24,19 @@ namespace triton
 		std::vector<XAnimation::THandle>    _animations = {};
 
 	public:
-		explicit XWorldObject(cContext* context, types::s32 poolIndex) : iObject(context, poolIndex) {}
+		explicit XWorldObject(
+			cContext* context,
+			types::s32 poolIndex,
+			ERenderInstanceMotionType motionType
+		);
 
 		~XWorldObject() override = default;
+
+		void SetWorldPosition(const cVector3& world_position);
 
 		void SetRenderable(
 			types::boolean bIsRenderable,
 			const SHandle& renderDomain = SHandle(),
-			ERenderInstanceMotionType motionType = ERenderInstanceMotionType::Unknown,
 			const SGeometryView& geometry = SGeometryView(),
 			const XMaterial::THandle& material = XMaterial::THandle()
 		);

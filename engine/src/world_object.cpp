@@ -3,14 +3,41 @@
 #include "world_object.hpp"
 #include "world_render_group_pool.hpp"
 #include "world_render_group_instance_pool.hpp"
+#include "render_instance_static_pool.hpp"
+#include "render_instance_dynamic_pool.hpp"
 #include "animation_pool.hpp"
 
 using namespace types;
 
+triton::XWorldObject::XWorldObject(
+	cContext* context,
+	types::s32 poolIndex,
+	ERenderInstanceMotionType motionType
+) : iObject(context, poolIndex), _motion_type(motionType) {}
+
+void triton::XWorldObject::SetWorldPosition(const cVector3& world_position)
+{
+	CRenderInstancePool* render_instance_pool = nullptr;
+
+	if (_motion_type == ERenderInstanceMotionType::Static)
+		render_instance_pool = _context->GetPool<CRenderInstanceStaticPool>();
+	else if (_motion_type == ERenderInstanceMotionType::Dynamic)
+		render_instance_pool = _context->GetPool<CRenderInstanceDynamicPool>();
+
+	auto render_instance_lookup = render_instance_pool->Get(_renderInstance);
+
+	if (!render_instance_lookup.has_value())
+		return;
+
+	XRenderInstance& render_instance = *render_instance_lookup;
+
+	render_instance.SetWorldPosition(world_position);
+	render_instance.Transform();
+}
+
 void triton::XWorldObject::SetRenderable(
 	types::boolean bIsRenderable,
 	const SHandle& renderDomain,
-	ERenderInstanceMotionType motionType,
 	const SGeometryView& geometry,
 	const XMaterial::THandle& material
 )
@@ -33,7 +60,7 @@ void triton::XWorldObject::SetRenderable(
 	{
 		auto renderGroupInstanceLookup = FindRenderGroupInstance(
 			renderDomain,
-			motionType,
+			_motion_type,
 			geometry,
 			material
 		);
@@ -44,7 +71,7 @@ void triton::XWorldObject::SetRenderable(
 
 			auto renderGroupLookup = renderGroupPool->Create(
 				renderDomain,
-				motionType,
+				_motion_type,
 				geometry,
 				material
 			);
