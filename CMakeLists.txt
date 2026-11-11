@@ -19,6 +19,12 @@ if(TRITON_STATIC_RUNTIME)
     endif()
 endif()
 
+if(MSVC)
+    add_compile_options(
+        "$<$<CONFIG:Release>:/O2>"
+    )
+endif()
+
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 #set(LIBTYPE STATIC CACHE STRING "" FORCE)
 set(ALSOFT_ENABLE_MODULES OFF CACHE BOOL "" FORCE)
