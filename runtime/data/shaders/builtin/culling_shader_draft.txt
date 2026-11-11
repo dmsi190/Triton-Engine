@@ -39,7 +39,7 @@ readonly buffer RenderGroupInstancesToCull {
 	uint indices[];
 } renderGroupInstancesToCull;
 
-buffer RenderGroupInstances {
+readonly buffer RenderGroupInstances {
 	RenderGroupInstance instances[];
 } renderGroupInstances;
 
@@ -47,20 +47,27 @@ readonly buffer StaticRenderInstances {
 	Instance instances[];
 } staticRenderInstances;
 
-writeonly buffer CulledStaticRenderInstances {
-	Instances instances[];
-} culledStaticRenderInstances;
+writeonly buffer VisibleStaticRenderInstances {
+	uint indices[];
+} visibleStaticRenderInstances;
 
 buffer IndirectDrawCount {
 	uint count;
 } indirectDrawCount;
 
-buffer IndirectDrawCommands {
+writeonly buffer IndirectDrawCommands {
 	IndirectDrawCommand cmds[];
 } indirectDrawCommands;
 
+shared uint groupInstanceCountShared;
+
 void main()
 {
+	if (threadID == uvec3(0))
+		groupInstanceCountShared = 0;
+		
+	barrier();
+	
 	uint renderGroupLookup = WorkgroupIDToLinearIndex(workgroupID);
 	uint instanceLookup = ThreadIDToLinearIndex(threadID);
 	
@@ -73,19 +80,20 @@ void main()
 	
 	if (!IsCulled(instance, camera))
 	{
-		uint visibleInstanceLookup = atomicLoad(renderGroupInstance.instanceCount);
-		atomicAdd(renderGroupInstance.instanceCount, 1);
+		uint visibleInstanceLookup = atomicAdd(groupInstanceCountShared, 1);
 		
-		culledStaticRenderInstances.instances[ renderGroupInstance.startInstanceOffset + visibleInstanceLookup ] = instance;
+		visibleStaticRenderInstances.indices[ renderGroupInstance.startInstanceOffset + visibleInstanceLookup ] =
+			renderGroupInstance.startInstanceOffset + instanceLookup;
 	}
 	
-	uint groupInstanceVisibleInstanceCount = atomicLoad(renderGroupInstance.instanceCount);
+	barrier();
+	
+	uint groupInstanceVisibleInstanceCount = groupInstanceCountShared;
 	
 	if (threadID == uvec3(0) &&
 		groupInstanceVisibleInstanceCount > 0)
 	{
-		uint indirectDrawCommandLookup = atomicLoad(indirectDrawCount.count);
-		atomicAdd(indirectDrawCount.count, 1);
+		uint indirectDrawCommandLookup = atomicAdd(indirectDrawCount.count, 1);
 		
 		IndirectDrawCommand indirectDrawCommand;
 		indirectDrawCommand.indexCount = renderGroupInstance.sharedGeometry.indexCount;

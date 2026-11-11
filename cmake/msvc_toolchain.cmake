@@ -1,9 +1,0 @@
-if(NOT WIN32)
-    message(FATAL_ERROR "Error: MSVC toolchain requires Windows OS")
-endif()
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_C_COMPILER cl)
-set(CMAKE_CXX_COMPILER cl)
-set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
