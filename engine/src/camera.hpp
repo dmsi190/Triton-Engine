@@ -15,6 +15,9 @@ namespace triton
     {
         TRITON_CLASS_NAME(XCamera)
 
+        types::f32 _fov = 0.0f;
+        types::f32 _zNear = 0.0f;
+        types::f32 _zFar = 0.0f;
         cVector3 _eulerAngles = cVector3(0.0f);
         cVector3 _worldPosition = cVector3(0.0f);
         cVector3 _worldDirection = cVector3(0.0f);
@@ -25,7 +28,13 @@ namespace triton
         cVector2 _cursorPosition = cVector2(0.0f);
 
     public:
-        explicit XCamera(cContext* context, types::s32 poolIndex) : iObject(context, poolIndex) {}
+        explicit XCamera(
+            cContext* context,
+            types::s32 poolIndex,
+            types::f32 fov,
+            types::f32 zNear,
+            types::f32 zFar
+        );
         ~XCamera() override = default;
 
         void Bind(XRenderPassGeometry* pass);
@@ -33,9 +42,6 @@ namespace triton
             const cVector2& mouseDelta,
             types::usize screenWidth,
             types::usize screenHeight,
-            types::f32 fov,
-            types::f32 zNear,
-            types::f32 zFar,
             types::f32 mouseSensitivity
         );
         void AddEuler(cMath::EEulerAngle angle, types::f32 value);

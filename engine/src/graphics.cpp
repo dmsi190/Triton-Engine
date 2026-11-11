@@ -396,7 +396,7 @@ triton::CGPUTextureResource triton::CGraphics::CreateRenderTargets()
 
 void triton::CGraphics::CreateCameraAndRenderDomain()
 {
-    _camera = *_context->GetPool<CCameraPool>()->Create();
+    _camera = *_context->GetPool<CCameraPool>()->Create(65.0f, 0.01f, 1000.0f);
 
     _renderDomain = *_context->GetPool<CRenderDomainPool>()->Create((XCamera::THandle)_camera);
 }

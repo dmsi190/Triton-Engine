@@ -40,7 +40,7 @@ public:
         CWorldObjectPool* worldObjectPool = _context->GetPool<CWorldObjectPool>();
         CModel3DPool* model3DPool = _context->GetPool<CModel3DPool>();
 
-        auto cam_handle = *_context->GetPool<CCameraPool>()->Create();
+        auto cam_handle = *_context->GetPool<CCameraPool>()->Create(65.0f, 0.01f, 1000.0f);
         XCamera& cam = *_context->GetPool<CCameraPool>()->Get(cam_handle);
         cam.SetWorldPosition(cVector3(0.0f, 0.0f, 30.0f));
         

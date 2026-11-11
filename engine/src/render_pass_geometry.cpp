@@ -348,9 +348,6 @@ void triton::XRenderPassGeometry::Draw()
         _context->GetBackend<IInputBackend>()->GetMouseDelta(),
         800,
         600,
-        65.0f,
-        0.01f,
-        10000.0f,
         0.25f
     );
 

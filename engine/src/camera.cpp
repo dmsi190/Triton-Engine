@@ -11,6 +11,14 @@
 
 using namespace types;
 
+triton::XCamera::XCamera(
+    cContext* context,
+    s32 poolIndex,
+    f32 fov,
+    f32 zNear,
+    f32 zFar
+) : iObject(context, poolIndex), _fov(fov), _zNear(zNear), _zFar(zFar) {}
+
 void triton::XCamera::Bind(XRenderPassGeometry* pass)
 {
     CThreadGuard::AssertRender();
@@ -25,7 +33,12 @@ void triton::XCamera::Bind(XRenderPassGeometry* pass)
     //gfxBackend->SetShaderUniform(shader.GetGPUResource(), "viewProjectionMatrix", _viewProjectionMatrix.Get());
 }
 
-void triton::XCamera::Update(const cVector2& mouseDelta, usize screenWidth, usize screenHeight, f32 fov, f32 zNear, f32 zFar, f32 mouseSensitivity)
+void triton::XCamera::Update(
+    const cVector2& mouseDelta,
+    types::usize screenWidth,
+    types::usize screenHeight,
+    types::f32 mouseSensitivity
+)
 {
     const cTime* time = _context->GetSubsystem<cTime>();
     const cMath* math = _context->GetSubsystem<cMath>();
@@ -41,7 +54,7 @@ void triton::XCamera::Update(const cVector2& mouseDelta, usize screenWidth, usiz
     _worldDirection = quatZ * quatY * quatX * cVector3(0.0f, 0.0f, -1.0f);
 
     _viewMatrix = cMatrix4(_worldPosition, _worldDirection, cVector3(0.0f, 1.0f, 0.0f));
-    _projectionMatrix = cMatrix4(fov, (f32)screenWidth / screenHeight, zNear, zFar);
+    _projectionMatrix = cMatrix4(_fov, (f32)screenWidth / screenHeight, _zNear, _zFar);
     _viewProjectionMatrix = _projectionMatrix * _viewMatrix;
     AddEuler(cMath::EEulerAngle::PITCH, -mouseDelta.GetY() * mouseSensitivity * deltaTime);
     AddEuler(cMath::EEulerAngle::YAW, -mouseDelta.GetX() * mouseSensitivity * deltaTime);
