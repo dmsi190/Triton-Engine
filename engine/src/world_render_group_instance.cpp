@@ -66,7 +66,9 @@ const triton::XRenderInstance::THandle& triton::XRenderGroupInstance::AddInstanc
 
 	XRenderInstance& instance = *renderInstancePool->GetFrame(_instances, indexInGroup);
 
-	instance = XRenderInstance(
+	instance.~XRenderInstance();
+
+	new (&instance) XRenderInstance(
 		_context,
 		instance.GetPoolIndex(),
 		indexInGroup,

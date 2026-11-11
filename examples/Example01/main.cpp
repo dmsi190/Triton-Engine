@@ -117,19 +117,18 @@ public:
         //);
         //auto m3dd = *_context->GetSubsystem<XModel3DSubsystem>()->GetPool()->Get(m3d);
 
-        auto modelHandle = *_context->GetPool<CModel3DPool>()->Create(
+        auto model1_handle = *_context->GetPool<CModel3DPool>()->Create(
             EVertexBufferFormat::Rigid_48,
             EModel3DFileType::Raw,
             "C:/My/My_Projects_Programming/TritonEngine/runtime/data/models/lighthouse/lighthouse.fbx"
         );
-        XModel3D& model = *_context->GetPool<CModel3DPool>()->Get(modelHandle);
-
-        SGeometryView modelGeom = *gs->Create(
-            model.GetVertexFormat(),
-            (u8*)model.GetRigidVertices(),
-            model.GetVertexCount(),
-            (u8*)model.GetIndices(),
-            model.GetIndexCount()
+        XModel3D& model1_model = *_context->GetPool<CModel3DPool>()->Get(model1_handle);
+        SGeometryView model1_geom = *gs->Create(
+            model1_model.GetVertexFormat(),
+            (u8*)model1_model.GetRigidVertices(),
+            model1_model.GetVertexCount(),
+            (u8*)model1_model.GetIndices(),
+            model1_model.GetIndexCount()
         );
 
         XRenderPassGeometry::THandle geom_render_pass_handle =
@@ -138,9 +137,19 @@ public:
             *_context->GetPool<CRenderPassGeometryPool>()->Get(geom_render_pass_handle);
         const SHandle& render_domain = geom_render_pass.GetRenderDomain();
 
-        XWorldObject::THandle wo_handle = *_context->GetPool<CWorldObjectPool>()->Create();
-        XWorldObject& wo = *_context->GetPool<CWorldObjectPool>()->Get(wo_handle);
-        wo.SetRenderable(True, render_domain, ERenderInstanceMotionType::Static, modelGeom, model.GetMaterial());
+        XWorldObject::THandle model1_object_handle = *_context->GetPool<CWorldObjectPool>()->Create(
+            ERenderInstanceMotionType::Static
+        );
+        XWorldObject& model1_object = *_context->GetPool<CWorldObjectPool>()->Get(model1_object_handle);
+        model1_object.SetRenderable(True, render_domain, model1_geom, model1_model.GetMaterial());
+        model1_object.SetWorldPosition(cVector3(0.0f, 10.0f, 0.0f));
+
+        XWorldObject::THandle model2_object_handle = *_context->GetPool<CWorldObjectPool>()->Create(
+            ERenderInstanceMotionType::Static
+        );
+        XWorldObject& model2_object = *_context->GetPool<CWorldObjectPool>()->Get(model2_object_handle);
+        model2_object.SetRenderable(True, render_domain, model1_geom, model1_model.GetMaterial());
+        model2_object.SetWorldPosition(cVector3(0.0f, -10.0f, 0.0f));
 
         /*auto gameObject1Handle = *gameObjectPool->Create("MyObject1");
         XGameObject& gameObject1 = *gameObjectPool->Get(gameObject1Handle);
