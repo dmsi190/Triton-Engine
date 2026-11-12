@@ -130,7 +130,7 @@ namespace triton
             cContext* context,
             const std::string& modelFolderPath,
             const std::vector<SModel3DMaterialData>& materials,
-            std::vector<XMaterial::THandle>& modelMaterials,
+            std::vector<SHandle>& modelMaterials,
             const aiScene* scene
         );
 
@@ -169,7 +169,7 @@ namespace triton
 
         void CreateSkeleton(
             cContext* context,
-            XSkeleton::THandle& modelSkeleton,
+            SHandle& modelSkeleton,
             const std::vector<SSkeletonBone>& bones,
             const aiMatrix4x4& accumulatedRootTransform
         );
@@ -178,11 +178,10 @@ namespace triton
             cContext* context,
             const aiScene* scene,
             const std::unordered_map<std::string, types::usize>& boneIndices,
-            XSkeleton::THandle modelSkeleton,
-            std::vector<XAnimation::THandle>& modelAnimations
+            std::vector<SHandle>& modelAnimations
         );
         
-        std::optional<XTexture::THandle> CreateTexture(
+        std::optional<SHandle> CreateTexture(
             cContext* context,
             ETextureFormat dataFormat,
             const std::string& modelFolderPath,
@@ -191,14 +190,14 @@ namespace triton
             const aiTexture* texture
         );
         
-        std::optional<XTexture::THandle> CreateTextureFromModelData(
+        std::optional<SHandle> CreateTextureFromModelData(
             cContext* context,
             ETextureFormat dataFormat,
             const std::string& textureFilePath,
             const aiTexture* texture
         );
         
-        std::optional<XTexture::THandle> CreateTextureFromFile(
+        std::optional<SHandle> CreateTextureFromFile(
             cContext* context,
             ETextureFormat dataFormat,
             const std::string& modelFolderPath,
@@ -212,9 +211,9 @@ namespace triton
             const types::u32* indexData,
             types::usize vertexCount,
             types::usize indexCount,
-            const std::vector<XMaterial::THandle>& modelMaterials,
-            XSkeleton::THandle modelSkeleton,
-            const std::vector<XAnimation::THandle>& modelAnimations
+            const std::vector<SHandle>& modelMaterials,
+            const SHandle& modelSkeleton,
+            const std::vector<SHandle>& modelAnimations
         );
 
         cMatrix4 ConvertMatrix(const aiMatrix4x4& mat);

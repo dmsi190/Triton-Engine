@@ -6,7 +6,7 @@
 #include <optional>
 #include "camera.hpp"
 #include "object.hpp"
-#include "world_render_group_instance.hpp"
+#include "world_render_group.hpp"
 #include "handle.hpp"
 
 namespace triton
@@ -15,8 +15,8 @@ namespace triton
 	{
 		TRITON_CLASS_NAME(XRenderDomain)
 
-		XCamera::THandle _camera;
-		std::vector<SHandle> _renderGroupInstances;
+		SHandle					_camera;
+		std::vector<SHandle>	_renderGroups;
 
 	public:
 		explicit XRenderDomain(cContext* context, types::s32 poolIndex) : iObject(context, poolIndex) {}
@@ -24,7 +24,7 @@ namespace triton
 		explicit XRenderDomain(
 			cContext* context,
 			types::s32 poolIndex,
-			const XCamera::THandle& camera
+			const SHandle& camera
 		) : iObject(context, poolIndex), _camera(camera) {}
 
 		~XRenderDomain() override = default;
@@ -32,18 +32,17 @@ namespace triton
 		std::optional<SHandle> CreateRenderGroup(
 			ERenderInstanceMotionType motionType,
 			const SGeometryView& geometry,
-			const SHandle& material
+			const SHandle& material,
+			types::usize max_instance_count
 		);
 
 		void RemoveRenderGroup(const SHandle& renderGroup);
 
-		void QueryRenderGroupInstances();
+		void QueryRenderGroups();
 
-		inline const std::vector<SHandle>& GetRenderGroupInstances() const { return _renderGroupInstances; }
+		inline const std::vector<SHandle>& GetRenderGroups() const { return _renderGroups; }
 
-		inline const XCamera::THandle& GetCamera() const { return _camera; }
-
-		struct THandle : public SHandle {};
+		inline const SHandle& GetCamera() const { return _camera; }
 
 		struct TGPULayout {};
 	};

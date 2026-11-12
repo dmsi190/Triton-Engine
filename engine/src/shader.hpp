@@ -31,8 +31,6 @@ namespace triton
 
 		inline const CGPUShaderResource& GetGPUResource() const { return _gpuShader; }
 
-		struct THandle : public SHandle {};
-
 		struct TGPULayout {};
 	};
 }

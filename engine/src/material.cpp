@@ -11,19 +11,19 @@ using namespace types;
 triton::XMaterial::XMaterial(
     cContext* context,
     types::s32 poolIndex,
-    const std::optional<XTexture::THandle>& diffuseTexture,
-    const std::optional<XTexture::THandle>& normalTexture,
-    const std::optional<XTexture::THandle>& roughnessTexture,
-    const std::optional<XTexture::THandle>& metallicTexture,
+    const std::optional<SHandle>& diffuseTexture,
+    const std::optional<SHandle>& normalTexture,
+    const std::optional<SHandle>& roughnessTexture,
+    const std::optional<SHandle>& metallicTexture,
     const cVector4& diffuseColor,
     const cVector4& specularColor,
     types::f32 shininess
 ) :
     iObject(context, poolIndex),
-    _diffuseTexture(diffuseTexture.has_value() ? diffuseTexture.value() : XTexture::THandle()),
-    _normalTexture(normalTexture.has_value() ? normalTexture.value() : XTexture::THandle()),
-    _roughnessTexture(roughnessTexture.has_value() ? roughnessTexture.value() : XTexture::THandle()),
-    _metallicTexture(metallicTexture.has_value() ? metallicTexture.value() : XTexture::THandle()),
+    _diffuseTexture(diffuseTexture.has_value() ? diffuseTexture.value() : SHandle()),
+    _normalTexture(normalTexture.has_value() ? normalTexture.value() : SHandle()),
+    _roughnessTexture(roughnessTexture.has_value() ? roughnessTexture.value() : SHandle()),
+    _metallicTexture(metallicTexture.has_value() ? metallicTexture.value() : SHandle()),
     _diffuseColor(diffuseColor),
     _specularColor(specularColor),
     _shininess(shininess)

@@ -25,9 +25,9 @@ namespace triton
         const types::u32* indexData = nullptr;
         types::usize vertexCount = 0;
         types::usize indexCount = 0;
-        std::vector<XMaterial::THandle> materials = {};
-        XSkeleton::THandle skeleton = {};
-        std::vector<XAnimation::THandle> animations = {};
+        std::vector<SHandle> materials = {};
+        SHandle skeleton = {};
+        std::vector<SHandle> animations = {};
     };
 
     class IModel3DBackend : public iBackend

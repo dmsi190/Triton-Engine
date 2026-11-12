@@ -39,7 +39,6 @@
 #include "texture_pool.hpp"
 #include "world_render_domain_pool.hpp"
 #include "world_render_group_pool.hpp"
-#include "world_render_group_instance_pool.hpp"
 #include "world_object_pool.hpp"
 #include "window.hpp"
 #include "image_decoder_multi.hpp"
@@ -153,8 +152,6 @@ void triton::CEngine::Initialize()
 	_context->RegisterPool(new CRenderDomainPool(_context, K_TRUE));
 
 	_context->RegisterPool(new CRenderGroupPool(_context, K_TRUE));
-
-	_context->RegisterPool(new CRenderGroupInstancePool(_context, K_TRUE));
 
 	_context->RegisterPool(new CWorldObjectPool(_context, K_TRUE));
 
@@ -270,7 +267,6 @@ void triton::CEngine::MainThreadFunction()
 			_context->GetPool<CSkinnedBonesPool>()->Update();
 			_context->GetPool<CRenderDomainPool>()->Update();
 			_context->GetPool<CRenderGroupPool>()->Update();
-			_context->GetPool<CRenderGroupInstancePool>()->Update();
 
 			_context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->Clear();
 			_context->GetSubsystem<CGraphics>()->ExecutePasses();

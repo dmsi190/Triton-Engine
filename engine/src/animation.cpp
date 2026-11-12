@@ -15,7 +15,7 @@ triton::XAnimation::XAnimation(
 ) : iObject(context, poolIndex), _name(name), _duration(duration), _ticksPerSecond(ticksPerSecond), _keys(keys) {}
 
 std::optional<triton::SAnimationFrame> triton::XAnimation::EvaluateFrame(
-    const XSkeleton::THandle& skeleton,
+    const SHandle& skeleton,
     types::f32 time
 )
 {

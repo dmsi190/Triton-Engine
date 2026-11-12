@@ -36,8 +36,6 @@ namespace triton
 
 		inline const cMatrix4& GetAccumulatedRootTransform() const { return _accumulatedRootTransform; }
 
-		struct THandle : public SHandle {};
-
 		struct TGPULayout {};
 	};
 }

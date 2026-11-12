@@ -18,7 +18,7 @@
 #include "gpu_buffer.hpp"
 #include "world_render_domain.hpp"
 #include "world_render_domain_pool.hpp"
-#include "world_render_group_instance_pool.hpp"
+#include "world_render_group_pool.hpp"
 #include "graphics.hpp"
 
 using namespace types;
@@ -27,13 +27,13 @@ triton::XRenderPassGeometry::XRenderPassGeometry(
     cContext* context,
     s32 poolIndex,
     const SHandle& renderDomain,
-    const XRenderTarget::THandle& renderTargetHandle,
+    const SHandle& renderTargetHandle,
     boolean bClearRenderTarget,
     const cVector4& clearColor,
     f32 clearDepth,
     const std::vector<EResourceUsage>& srcAttachmentsUsage,
     const std::vector<EResourceUsage>& dstAttachmentsUsage,
-    const XShader::THandle& shaderHandle,
+    const SHandle& shaderHandle,
     EPrimitiveTopology primitiveTopology,
     const SViewport& viewport,
     const std::vector<CGPUBufferResource>& inputBuffers,
@@ -338,7 +338,7 @@ void triton::XRenderPassGeometry::Draw()
     }*/
 
     auto cameraResult = _context->GetPool<CCameraPool>()->Get(
-        (XCamera::THandle)_context->GetSubsystem<CGraphics>()->GetCamera()
+        _context->GetSubsystem<CGraphics>()->GetCamera()
     );
     if (!cameraResult.has_value())
         return;
@@ -351,8 +351,8 @@ void triton::XRenderPassGeometry::Draw()
         0.25f
     );
 
-    XGPUBuffer::THandle vertexBufferHandle = _context->GetSubsystem<CGeometryStorage>()->GetRigidVertexBuffer();
-    XGPUBuffer::THandle indexBufferHandle = _context->GetSubsystem<CGeometryStorage>()->GetRigidIndexBuffer();
+    SHandle vertexBufferHandle = _context->GetSubsystem<CGeometryStorage>()->GetRigidVertexBuffer();
+    SHandle indexBufferHandle = _context->GetSubsystem<CGeometryStorage>()->GetRigidIndexBuffer();
     XGPUBuffer& vertexBuffer = *_context->GetPool<CGPUBufferPool>()->Get(vertexBufferHandle);
     XGPUBuffer& indexBuffer = *_context->GetPool<CGPUBufferPool>()->Get(indexBufferHandle);
     const CGPUBufferResource& gpuVertexBuffer = vertexBuffer.GetGPUResource();
@@ -379,39 +379,39 @@ void triton::XRenderPassGeometry::Draw()
         (cpuword)&_gpuBindingGroupBuffersArrays[mainThreadWriteIndex]
     ));
 
-    auto renderDomainLookup = _context->GetPool<CRenderDomainPool>()->Get((XRenderDomain::THandle)_renderDomain);
+    auto renderDomainLookup = _context->GetPool<CRenderDomainPool>()->Get(_renderDomain);
 
     if (!renderDomainLookup.has_value())
         return;
 
     XRenderDomain& renderDomain = *renderDomainLookup;
-    const std::vector<SHandle>& renderGroupInstances = renderDomain.GetRenderGroupInstances();
+    const std::vector<SHandle>& renderGroups = renderDomain.GetRenderGroups();
 
-    for (usize i = 0; i < renderGroupInstances.size(); i++)
+    for (usize i = 0; i < renderGroups.size(); i++)
     {
-        XRenderGroupInstance& renderGroupInstance =
+        XRenderGroup& renderGroup =
             *_context->
-            GetPool<CRenderGroupInstancePool>()->
-            Get((XRenderGroupInstance::THandle)renderGroupInstances.at(i));
+            GetPool<CRenderGroupPool>()->
+            Get(renderGroups.at(i));
 
         const XMaterial& sharedMaterial =
-            *_context->GetPool<CMaterialPool>()->Get(renderGroupInstance.GetSharedMaterial());
+            *_context->GetPool<CMaterialPool>()->Get(renderGroup.GetSharedMaterial());
 
         const SGeometryView& sharedGeometry =
-            renderGroupInstance.GetSharedGeometry();
+            renderGroup.GetSharedGeometry();
 
         _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
             ERenderCommand::ExecuteRenderPass,
             (cpuword)1,
             (cpuword)&sharedMaterial.GetBindingGroup(),
             (cpuword)&_gpuPipeline,
-            (cpuword)renderGroupInstance.GetMotionType(),
+            (cpuword)renderGroup.GetMotionType(),
             (cpuword)sharedGeometry._vertexCount,
             (cpuword)sharedGeometry._indexCount,
-            (cpuword)renderGroupInstance.GetInstanceCount(),
+            (cpuword)renderGroup.GetInstanceCount(),
             (cpuword)sharedGeometry._indexElementOffset,
             (cpuword)sharedGeometry._vertexElementOffset,
-            (cpuword)renderGroupInstance.GetInstanceBufferOffset()
+            (cpuword)renderGroup.GetInstanceBufferOffset()
         ));
     }
 

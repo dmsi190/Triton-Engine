@@ -32,8 +32,6 @@ namespace triton
 
 		inline const CGPUBufferResource& GetGPUResource() const { return _gpuBuffer; }
 
-		struct THandle : public SHandle {};
-
 		struct TGPULayout {};
 	};
 }

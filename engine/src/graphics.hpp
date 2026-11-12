@@ -24,27 +24,27 @@ namespace triton
 	{
         TRITON_CLASS_NAME(CGraphics)
 
-        XInputLayout::THandle               _inputLayoutStatic;
-        XInputLayout::THandle               _inputLayoutSkinned;
-        XInputLayout::THandle               _inputLayoutProcessing;
-        XShader::THandle                    _opaqueRigidPhongShader;
-        XShader::THandle                    _opaqueSkinnedPhongShader;
-        XShader::THandle                    _opaqueRigidPBRShader;
-        XShader::THandle                    _opaqueSkinnedPBRShader;
-        XShader::THandle                    _transparentShader;
-        XShader::THandle                    _textShader;
-        XShader::THandle                    _compositeTransparentShader;
-        XShader::THandle                    _compositeFinalShader;
-        XRenderTarget::THandle              _opaqueRenderTarget;
-        XRenderTarget::THandle              _transparentRenderTarget;
+        SHandle                             _inputLayoutStatic;
+        SHandle                             _inputLayoutSkinned;
+        SHandle                             _inputLayoutProcessing;
+        SHandle                             _opaqueRigidPhongShader;
+        SHandle                             _opaqueSkinnedPhongShader;
+        SHandle                             _opaqueRigidPBRShader;
+        SHandle                             _opaqueSkinnedPBRShader;
+        SHandle                             _transparentShader;
+        SHandle                             _textShader;
+        SHandle                             _compositeTransparentShader;
+        SHandle                             _compositeFinalShader;
+        SHandle                             _opaqueRenderTarget;
+        SHandle                             _transparentRenderTarget;
         SHandle                             _camera;
         SHandle                             _renderDomain;
-        XRenderPassGeometry::THandle        _opaqueRigid;
-        XRenderPassGeometry::THandle        _opaqueSkinned;
-        XRenderPassGeometry::THandle        _transparent;
-        //XRenderPass::THandle _text;
-        XRenderPassProcessing::THandle      _compositeTransparent;
-        XRenderPassProcessing::THandle      _compositeFinal;
+        SHandle                             _opaqueRigid;
+        SHandle                             _opaqueSkinned;
+        SHandle                             _transparent;
+        //SHandle _text;
+        SHandle                             _compositeTransparent;
+        SHandle                             _compositeFinal;
 
 	public:
         explicit CGraphics(cContext* context);
@@ -60,17 +60,17 @@ namespace triton
 
         inline const SHandle& GetCamera() const { return _camera; }
 
-        const XRenderPassGeometry::THandle& GetOpaqueRigidRenderPass() const { return _opaqueRigid; }
+        const SHandle& GetOpaqueRigidRenderPass() const { return _opaqueRigid; }
 
-        const XRenderPassGeometry::THandle& GetOpaqueSkinnedRenderPass() const { return _opaqueSkinned; }
+        const SHandle& GetOpaqueSkinnedRenderPass() const { return _opaqueSkinned; }
 
-        inline const XShader::THandle& GetOpaqueRigidPBRShader() const { return _opaqueRigidPBRShader; }
+        inline const SHandle& GetOpaqueRigidPBRShader() const { return _opaqueRigidPBRShader; }
 
-        inline const XShader::THandle& GetOpaqueSkinnedPBRShader() const { return _opaqueSkinnedPBRShader; }
+        inline const SHandle& GetOpaqueSkinnedPBRShader() const { return _opaqueSkinnedPBRShader; }
 
-        inline const XShader::THandle& GetOpaqueRigidPhongShader() const { return _opaqueRigidPhongShader; }
+        inline const SHandle& GetOpaqueRigidPhongShader() const { return _opaqueRigidPhongShader; }
 
-        inline const XShader::THandle& GetOpaqueSkinnedPhongShader() const { return _opaqueSkinnedPhongShader; }
+        inline const SHandle& GetOpaqueSkinnedPhongShader() const { return _opaqueSkinnedPhongShader; }
 
     private:
         void CreateInputLayouts();

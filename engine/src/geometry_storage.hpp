@@ -20,10 +20,10 @@ namespace triton
     {
         TRITON_CLASS_NAME(CGeometryStorage)
 
-        XGPUBuffer::THandle _staticVertexBuffer;
-        XGPUBuffer::THandle _skinnedVertexBuffer;
-        XGPUBuffer::THandle _staticIndexBuffer;
-        XGPUBuffer::THandle _skinnedIndexBuffer;
+        SHandle _staticVertexBuffer;
+        SHandle _skinnedVertexBuffer;
+        SHandle _staticIndexBuffer;
+        SHandle _skinnedIndexBuffer;
         XDataBuffer* _staticVertexBufferCPU = nullptr;
         XDataBuffer* _skinnedVertexBufferCPU = nullptr;
         XDataBuffer* _staticIndexBufferCPU = nullptr;
@@ -45,22 +45,22 @@ namespace triton
             types::usize inputIndexCount
         );
 
-        inline const XGPUBuffer::THandle& GetRigidVertexBuffer() const
+        inline const SHandle& GetRigidVertexBuffer() const
         {
             return _staticVertexBuffer;
         }
 
-        inline const XGPUBuffer::THandle& GetSkinnedVertexBuffer() const
+        inline const SHandle& GetSkinnedVertexBuffer() const
         {
             return _skinnedVertexBuffer;
         }
 
-        inline const XGPUBuffer::THandle& GetRigidIndexBuffer() const
+        inline const SHandle& GetRigidIndexBuffer() const
         {
             return _staticIndexBuffer;
         }
 
-        inline const XGPUBuffer::THandle& GetSkinnedIndexBuffer() const
+        inline const SHandle& GetSkinnedIndexBuffer() const
         {
             return _skinnedIndexBuffer;
         }

@@ -23,7 +23,7 @@ void triton::XCamera::Bind(XRenderPassGeometry* pass)
 {
     CThreadGuard::AssertRender();
 
-    XShader::THandle shaderHandle = pass->GetShader();
+    SHandle shaderHandle = pass->GetShader();
     XShader& shader = *_context->GetPool<CShaderPool>()->Get(shaderHandle);
 
     // TODO: [Vulkan backend] This must be done using render command queue on main thread

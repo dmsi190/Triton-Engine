@@ -10,14 +10,14 @@ using namespace types;
 triton::XSkin::XSkin(
 	cContext* context,
 	types::s32 poolIndex,
-	const XSkeleton::THandle& skeleton
+	const SHandle& skeleton
 ) : iObject(context, poolIndex)
 {
     XSkeleton& sd = *_context->GetPool<CSkeletonPool>()->Get(skeleton);
 
     CSkinnedBonesPool* skinnedBonesPool = _context->GetPool<CSkinnedBonesPool>();
 
-    std::vector<CSkinnedBone::THandle> skinnedBones = {};
+    std::vector<SHandle> skinnedBones = {};
     for (usize i = 0; i < sd.GetBones().size(); i++)
     {
         auto handle = skinnedBonesPool->Create();

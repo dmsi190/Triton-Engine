@@ -21,11 +21,10 @@
 
 namespace triton
 {
-    template <typename THandle>
     struct SObjectFrame
     {
         types::usize count = 0;
-        THandle begin;
+        SHandle begin;
     };
 
     template <typename TObject>
@@ -63,34 +62,34 @@ namespace triton
         void Reserve(types::usize reserveCount);
 
         template <typename... Args>
-        std::optional<typename TObject::THandle> Create(Args&&... args);
+        std::optional<SHandle> Create(Args&&... args);
 
         template <typename... Args>
-        std::optional<SObjectFrame<typename TObject::THandle>> CreateFrame(types::usize count, Args&&... args);
+        std::optional<SObjectFrame> CreateFrame(types::usize count, Args&&... args);
 
-        void Destroy(const typename TObject::THandle& handle);
+        void Destroy(const SHandle& handle);
 
-        void DestroyFrame(const SObjectFrame<typename TObject::THandle>& frame);
+        void DestroyFrame(const SObjectFrame& frame);
 
-        std::optional<std::reference_wrapper<TObject>> Get(const typename TObject::THandle& handle);
+        std::optional<std::reference_wrapper<TObject>> Get(const SHandle& handle);
 
         std::optional<std::reference_wrapper<TObject>> GetFrame(
-            const SObjectFrame<typename TObject::THandle>& frame,
+            const SObjectFrame& frame,
             types::usize localIndex
         );
 
         void WriteToStaging(types::usize bufferIndex, const TObject& object);
 
-        types::usize GetPackedIndex(const typename TObject::THandle& handle);
+        types::usize GetPackedIndex(const SHandle& handle);
 
         types::usize GetPackedIndex(types::s32 freeIndex);
 
-        std::optional<typename TObject::THandle> GetHandle(
-            const typename TObject::THandle& baseHandle,
+        std::optional<SHandle> GetHandle(
+            const SHandle& baseHandle,
             const types::usize offset
         );
 
-        typename TObject::THandle GetHandle(types::usize index);
+        SHandle GetHandle(types::usize index);
 
         void Upload();
 
@@ -226,7 +225,7 @@ namespace triton
 
     template <typename TObject>
     template <typename... Args>
-    std::optional<typename TObject::THandle> CObjectPool<TObject>::Create(Args&&... args)
+    std::optional<SHandle> CObjectPool<TObject>::Create(Args&&... args)
     {
         types::usize objectIndex = 0;
         if (_freeSlots.empty())
@@ -245,7 +244,7 @@ namespace triton
 
         new (&_objects[objectIndex]) TObject(_context, objectIndex, std::forward<Args>(args)...);
 
-        typename TObject::THandle handle;
+        SHandle handle;
         handle.index = objectIndex;
         handle.generation = _slots[objectIndex].generation;
 
@@ -254,7 +253,7 @@ namespace triton
 
     template <typename TObject>
     template <typename... Args>
-    std::optional<SObjectFrame<typename TObject::THandle>> CObjectPool<TObject>::CreateFrame(types::usize count, Args&&... args)
+    std::optional<SObjectFrame> CObjectPool<TObject>::CreateFrame(types::usize count, Args&&... args)
     {
         for (types::usize i = 0; i < _reservedCount; i++)
         {
@@ -299,11 +298,11 @@ namespace triton
                 if (requiredCount > _lastObjectCursor)
                     _lastObjectCursor = requiredCount;
 
-                typename TObject::THandle begin;
+                SHandle begin;
                 begin.index = i;
                 begin.generation = _slots[i].generation;
 
-                SObjectFrame<typename TObject::THandle> frame;
+                SObjectFrame frame;
                 frame.count = count;
                 frame.begin = begin;
 
@@ -315,7 +314,7 @@ namespace triton
     }
 
     template <typename TObject>
-    void CObjectPool<TObject>::Destroy(const typename TObject::THandle& handle)
+    void CObjectPool<TObject>::Destroy(const SHandle& handle)
     {
         if (handle.generation != _slots[handle.index].generation ||
             _slots[handle.index].alive == types::K_FALSE)
@@ -327,7 +326,7 @@ namespace triton
     }
 
     template <typename TObject>
-    void CObjectPool<TObject>::DestroyFrame(const SObjectFrame<typename TObject::THandle>& frame)
+    void CObjectPool<TObject>::DestroyFrame(const SObjectFrame& frame)
     {
         for (types::usize i = 0; i < frame.count; i++)
         {
@@ -338,7 +337,7 @@ namespace triton
     }
 
     template <typename TObject>
-    std::optional<std::reference_wrapper<TObject>> CObjectPool<TObject>::Get(const typename TObject::THandle& handle)
+    std::optional<std::reference_wrapper<TObject>> CObjectPool<TObject>::Get(const SHandle& handle)
     {
         if (handle.generation != _slots[handle.index].generation ||
             _slots[handle.index].alive == types::K_FALSE)
@@ -349,7 +348,7 @@ namespace triton
 
     template <typename TObject>
     std::optional<std::reference_wrapper<TObject>> CObjectPool<TObject>::GetFrame(
-        const SObjectFrame<typename TObject::THandle>& frame,
+        const SObjectFrame& frame,
         types::usize localIndex
     )
     {
@@ -369,7 +368,7 @@ namespace triton
     }
 
     template <typename TObject>
-    types::usize CObjectPool<TObject>::GetPackedIndex(const typename TObject::THandle& handle)
+    types::usize CObjectPool<TObject>::GetPackedIndex(const SHandle& handle)
     {
         if (handle.generation != _slots[handle.index].generation ||
             _slots[handle.index].alive == types::K_FALSE)
@@ -395,8 +394,8 @@ namespace triton
     }
 
     template <typename TObject>
-    std::optional<typename TObject::THandle> CObjectPool<TObject>::GetHandle(
-        const typename TObject::THandle& baseHandle,
+    std::optional<SHandle> CObjectPool<TObject>::GetHandle(
+        const SHandle& baseHandle,
         const types::usize offset
     )
     {
@@ -404,7 +403,7 @@ namespace triton
             _slots[baseHandle.index].alive == types::K_FALSE)
             return std::nullopt;
 
-        typename TObject::THandle offsetHandle;
+        SHandle offsetHandle;
         offsetHandle.index = baseHandle.index + offset;
         offsetHandle.generation = _slots[offsetHandle.index].generation;
 
@@ -412,9 +411,9 @@ namespace triton
     }
 
     template <typename TObject>
-    typename TObject::THandle CObjectPool<TObject>::GetHandle(types::usize index)
+    SHandle CObjectPool<TObject>::GetHandle(types::usize index)
     {
-        typename TObject::THandle handle;
+        SHandle handle;
         handle.index = index;
         handle.generation = _slots[handle.index].generation;
 

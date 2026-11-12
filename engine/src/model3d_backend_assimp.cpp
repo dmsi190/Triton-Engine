@@ -83,13 +83,13 @@ std::optional<triton::SModel3DData> triton::XModel3DBackendAssimp::ParseImported
     u32* indexData = nullptr;
     cVector3* bitangents = nullptr;
     std::vector<SModel3DMaterialData> materials = {};
-    std::vector<XMaterial::THandle> modelMaterials = {};
+    std::vector<SHandle> modelMaterials = {};
     std::unordered_map<std::string, types::usize> boneIndices = {};
     std::vector<SSkeletonBone> bones = {};
     std::vector<std::vector<SBoneWeight>> vertexWeights;
-    XSkeleton::THandle modelSkeleton = {};
+    SHandle modelSkeleton = {};
     usize boneOffset = 0;
-    std::vector<XAnimation::THandle> modelAnimations = {};
+    std::vector<SHandle> modelAnimations = {};
     aiNode* boneRootNode = nullptr;
     aiMatrix4x4 parentRootTransform = aiMatrix4x4();
     aiMatrix4x4 accumulatedRootTransform = aiMatrix4x4();
@@ -158,7 +158,6 @@ std::optional<triton::SModel3DData> triton::XModel3DBackendAssimp::ParseImported
             context,
             scene,
             boneIndices,
-            modelSkeleton,
             modelAnimations
         );
     }
@@ -452,7 +451,7 @@ void triton::XModel3DBackendAssimp::CreateMaterials(
     cContext* context,
     const std::string& modelFolderPath,
     const std::vector<SModel3DMaterialData>& materials,
-    std::vector<XMaterial::THandle>& modelMaterials,
+    std::vector<SHandle>& modelMaterials,
     const aiScene* scene
 )
 {
@@ -493,10 +492,10 @@ void triton::XModel3DBackendAssimp::CreateMaterials(
 
         modelMaterials.push_back(
             *context->GetPool<CMaterialPool>()->Create(
-                diffOpt.has_value() ? *diffOpt : XTexture::THandle(),
-                normOpt.has_value() ? *normOpt : XTexture::THandle(),
-                rghnOpt.has_value() ? *rghnOpt : XTexture::THandle(),
-                metlOpt.has_value() ? *metlOpt : XTexture::THandle(),
+                diffOpt.has_value() ? *diffOpt : SHandle(),
+                normOpt.has_value() ? *normOpt : SHandle(),
+                rghnOpt.has_value() ? *rghnOpt : SHandle(),
+                metlOpt.has_value() ? *metlOpt : SHandle(),
                 cVector4(1.0f),
                 cVector4(1.0f),
                 0.0f
@@ -671,7 +670,7 @@ void triton::XModel3DBackendAssimp::CreateBoneHierarchy(
 
 void triton::XModel3DBackendAssimp::CreateSkeleton(
     cContext* context,
-    XSkeleton::THandle& modelSkeleton,
+    SHandle& modelSkeleton,
     const std::vector<SSkeletonBone>& bones,
     const aiMatrix4x4& accumulatedRootTransform
 )
@@ -686,8 +685,7 @@ void triton::XModel3DBackendAssimp::CreateAnimations(
     cContext* context,
     const aiScene* scene,
     const std::unordered_map<std::string, usize>& boneIndices,
-    XSkeleton::THandle modelSkeleton,
-    std::vector<XAnimation::THandle>& modelAnimations
+    std::vector<SHandle>& modelAnimations
 )
 {
     for (usize animIdx = 0; animIdx < scene->mNumAnimations; ++animIdx)
@@ -758,7 +756,7 @@ void triton::XModel3DBackendAssimp::CreateAnimations(
     }
 }
 
-std::optional<triton::XTexture::THandle> triton::XModel3DBackendAssimp::CreateTexture(
+std::optional<triton::SHandle> triton::XModel3DBackendAssimp::CreateTexture(
     cContext* context,
     ETextureFormat dataFormat,
     const std::string& modelFolderPath,
@@ -773,7 +771,7 @@ std::optional<triton::XTexture::THandle> triton::XModel3DBackendAssimp::CreateTe
         return CreateTextureFromFile(context, dataFormat, modelFolderPath, textureFilePath);
 }
 
-std::optional<triton::XTexture::THandle> triton::XModel3DBackendAssimp::CreateTextureFromModelData(
+std::optional<triton::SHandle> triton::XModel3DBackendAssimp::CreateTextureFromModelData(
     cContext* context,
     ETextureFormat dataFormat,
     const std::string& textureFilePath,
@@ -837,7 +835,7 @@ std::optional<triton::XTexture::THandle> triton::XModel3DBackendAssimp::CreateTe
     }
 }
 
-std::optional<triton::XTexture::THandle> triton::XModel3DBackendAssimp::CreateTextureFromFile(
+std::optional<triton::SHandle> triton::XModel3DBackendAssimp::CreateTextureFromFile(
     cContext* context,
     ETextureFormat dataFormat,
     const std::string& modelFolderPath,
@@ -882,9 +880,9 @@ triton::SModel3DData triton::XModel3DBackendAssimp::PrepareResult(
     const u32* indexData,
     usize vertexCount,
     usize indexCount,
-    const std::vector<XMaterial::THandle>& modelMaterials,
-    XSkeleton::THandle modelSkeleton,
-    const std::vector<XAnimation::THandle>& modelAnimations
+    const std::vector<SHandle>& modelMaterials,
+    const SHandle& modelSkeleton,
+    const std::vector<SHandle>& modelAnimations
 )
 {
     SModel3DData m3dd;

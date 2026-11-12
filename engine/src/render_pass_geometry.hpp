@@ -27,7 +27,7 @@ namespace triton
 
         SHandle                                         _renderDomain;
         std::optional<SClearState>                      _clearState = std::nullopt;
-        XInputLayout::THandle                           _inputLayout;
+        SHandle                                         _inputLayout;
         std::vector<CGPUBufferResource>                 _inputBuffers = {};
         std::vector<SShaderTextureBinding>              _inputTextures = {};
         SDepthState                                     _depthState;
@@ -35,8 +35,8 @@ namespace triton
         EPrimitiveTopology                              _primitiveTopology = EPrimitiveTopology::Unknown;
         SViewport                                       _viewport = {};
         types::boolean                                  _bClearRenderTarget = types::False;
-        XRenderTarget::THandle                          _renderTarget;
-        XShader::THandle                                _shader;
+        SHandle                                         _renderTarget;
+        SHandle                                         _shader;
         CGPUPipelineResource                            _gpuPipeline = CGPUPipelineResource::Invalid();
         SNativeCommandDrawInfo                          _nativeCommandDrawInfoArrays[2];
         SRenderPassGPUPushConstantsLayout               _pushConstantArrays[2];
@@ -48,13 +48,13 @@ namespace triton
             cContext* context,
             types::s32 poolIndex,
             const SHandle& renderDomain,
-            const XRenderTarget::THandle& renderTargetHandle,
+            const SHandle& renderTargetHandle,
             types::boolean bClearRenderTarget,
             const cVector4& clearColor,
             types::f32 clearDepth,
             const std::vector<EResourceUsage>& srcAttachmentsUsage,
             const std::vector<EResourceUsage>& dstAttachmentsUsage,
-            const XShader::THandle& shaderHandle,
+            const SHandle& shaderHandle,
             EPrimitiveTopology primitiveTopology,
             const SViewport& viewport,
             const std::vector<CGPUBufferResource>& inputBuffers,
@@ -68,9 +68,7 @@ namespace triton
 
         inline const SHandle& GetRenderDomain() { return _renderDomain; }
 
-        inline XShader::THandle GetShader() { return _shader; }
-
-        struct THandle : public SHandle {};
+        inline const SHandle& GetShader() { return _shader; }
 
         struct TGPULayout {};
 

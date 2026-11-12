@@ -17,10 +17,10 @@ namespace triton
 
         CGPUBindingGroupLayoutResource  _gpuBindingGroupLayout = CGPUBindingGroupLayoutResource::Invalid();
         CGPUBindingGroupResource        _gpuBindingGroup = CGPUBindingGroupResource::Invalid();
-        XTexture::THandle               _diffuseTexture;
-        XTexture::THandle               _normalTexture;
-        XTexture::THandle               _roughnessTexture;
-        XTexture::THandle               _metallicTexture;
+        SHandle                         _diffuseTexture;
+        SHandle                         _normalTexture;
+        SHandle                         _roughnessTexture;
+        SHandle                         _metallicTexture;
         cVector4                        _diffuseColor = cVector4(1.0f);
         cVector4                        _specularColor = cVector4(1.0f);
         types::f32                      _shininess = 0.0f;
@@ -31,10 +31,10 @@ namespace triton
         explicit XMaterial(
             cContext* context,
             types::s32 poolIndex,
-            const std::optional<XTexture::THandle>& diffuseTexture,
-            const std::optional<XTexture::THandle>& normalTexture,
-            const std::optional<XTexture::THandle>& roughnessTexture,
-            const std::optional<XTexture::THandle>& metallicTexture,
+            const std::optional<SHandle>& diffuseTexture,
+            const std::optional<SHandle>& normalTexture,
+            const std::optional<SHandle>& roughnessTexture,
+            const std::optional<SHandle>& metallicTexture,
             const cVector4& diffuseColor,
             const cVector4& specularColor,
             types::f32 shininess
@@ -46,13 +46,13 @@ namespace triton
 
         inline const CGPUBindingGroupResource& GetBindingGroup() const { return _gpuBindingGroup; }
 
-        inline const XTexture::THandle& GetDiffuseTexture() const { return _diffuseTexture; }
+        inline const SHandle& GetDiffuseTexture() const { return _diffuseTexture; }
 
-        inline const XTexture::THandle& GetNormalTexture() const { return _normalTexture; }
+        inline const SHandle& GetNormalTexture() const { return _normalTexture; }
 
-        inline const XTexture::THandle& GetRoughnessTexture() const { return _roughnessTexture; }
+        inline const SHandle& GetRoughnessTexture() const { return _roughnessTexture; }
 
-        inline const XTexture::THandle& GetMetallicTexture() const { return _metallicTexture; }
+        inline const SHandle& GetMetallicTexture() const { return _metallicTexture; }
 
         inline const cVector4& GetDiffuseColor() const { return _diffuseColor; }
 
@@ -61,8 +61,6 @@ namespace triton
         inline types::f32 GetShininess() const { return _shininess; }
 
         void SetShininess(types::f32 shininess);
-
-        struct THandle : public SHandle {};
 
         struct TGPULayout
         {

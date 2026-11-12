@@ -18,27 +18,27 @@ namespace triton
     {
         TRITON_CLASS_NAME(XRenderPassProcessing)
 
-        XInputLayout::THandle                       _inputLayout;
+        SHandle                                     _inputLayout;
         std::vector<CGPUBufferResource>             _inputBuffers = {};
         std::vector<SShaderTextureBinding>          _inputTextures = {};
         SDepthState                                 _depthState = SDepthState(0, 0);
         SBlendState                                 _blendState = {};
         SViewport                                   _viewport = {};
-        XRenderTarget::THandle                      _renderTarget;
-        XShader::THandle                            _shader;
+        SHandle                                     _renderTarget;
+        SHandle                                     _shader;
 
     public:
         explicit XRenderPassProcessing(
             cContext* context,
             types::s32 poolIndex,
-            const XInputLayout::THandle& inputLayout,
+            const SHandle& inputLayout,
             const std::vector<CGPUBufferResource>& inputBuffers,
             const std::vector<SShaderTextureBinding>& inputTextures,
             const SViewport& viewport,
             const SBlendState& blendState,
             const SDepthState& depthState,
-            const XRenderTarget::THandle& renderTarget,
-            const XShader::THandle& shader
+            const SHandle& renderTarget,
+            const SHandle& shader
         );
         ~XRenderPassProcessing() override = default;
 
@@ -48,9 +48,7 @@ namespace triton
 
         inline const std::vector<SShaderTextureBinding>& GetInputTextures() const { return _inputTextures; }
 
-        inline const XShader::THandle& GetShader() const { return _shader; }
-
-        struct THandle : public SHandle {};
+        inline const SHandle& GetShader() const { return _shader; }
 
         struct TGPULayout {};
     };

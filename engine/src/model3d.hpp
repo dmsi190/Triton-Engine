@@ -57,12 +57,10 @@ namespace triton
 
         inline types::usize GetIndexCount() const { return _data.indexCount; }
 
-        inline XMaterial::THandle GetMaterial() const
+        inline SHandle GetMaterial() const
         {
-            return _data.materials.size() > 0 ? _data.materials.at(0) : XMaterial::THandle();
+            return _data.materials.size() > 0 ? _data.materials.at(0) : SHandle();
         }
-
-        struct THandle : public SHandle {};
 
         struct TGPULayout {};
 	};

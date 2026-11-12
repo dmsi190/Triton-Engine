@@ -59,7 +59,7 @@ triton::XModel3D::XModel3D(
 				const std::filesystem::path& assetTexturePath,
 				const asset::STextureData& assetTextureData,
 				ETextureFormat textureFormat,
-				XTexture::THandle& outHandle
+				SHandle& outHandle
 				) {
 					std::filesystem::path texturePath = assetTexturePath;
 					if (!assetTexturePath.is_absolute())
@@ -86,10 +86,10 @@ triton::XModel3D::XModel3D(
 						);
 				};
 
-			XTexture::THandle diffuseTexture;
-			XTexture::THandle normalTexture;
-			XTexture::THandle roughnessTexture;
-			XTexture::THandle metallicTexture;
+			SHandle diffuseTexture;
+			SHandle normalTexture;
+			SHandle roughnessTexture;
+			SHandle metallicTexture;
 
 			ProcessTexture(
 				assetFolderPath,
@@ -120,7 +120,7 @@ triton::XModel3D::XModel3D(
 				metallicTexture
 			);
 
-			XMaterial::THandle material = *_context->GetPool<CMaterialPool>()->Create(
+			SHandle material = *_context->GetPool<CMaterialPool>()->Create(
 				diffuseTexture,
 				normalTexture,
 				roughnessTexture,
@@ -179,7 +179,7 @@ triton::XModel3D::XModel3D(
 				}
 			}
 
-			XAnimation::THandle animHandle = *_context->GetPool<CAnimationPool>()->Create(
+			SHandle animHandle = *_context->GetPool<CAnimationPool>()->Create(
 				_asset->animationData[i].name,
 				_asset->animationData[i].duration,
 				_asset->animationData[i].ticksPerSecond,

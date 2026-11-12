@@ -141,18 +141,18 @@ void triton::CGraphics::SetShadingModel(EShadingModel shadingModel)
 void triton::CGraphics::CreateInputLayouts()
 {
     CGeometryStorage* gs = _context->GetSubsystem<CGeometryStorage>();
-    const std::vector<XGPUBuffer::THandle> staticInputs = {
+    const std::vector<SHandle> staticInputs = {
         gs->GetRigidVertexBuffer(),
         gs->GetRigidIndexBuffer()
     };
-    const std::vector<XGPUBuffer::THandle> skinnedInputs = {
+    const std::vector<SHandle> skinnedInputs = {
         gs->GetSkinnedVertexBuffer(),
         gs->GetSkinnedIndexBuffer()
     };
     CInputLayoutPool* iaPool = _context->GetPool<CInputLayoutPool>();
     _inputLayoutStatic = *iaPool->Create(staticInputs, EVertexBufferFormat::Rigid_48);
     _inputLayoutSkinned = *iaPool->Create(skinnedInputs, EVertexBufferFormat::Skinned_80);
-    _inputLayoutProcessing = *iaPool->Create(std::vector<XGPUBuffer::THandle>(), EVertexBufferFormat::Unknown);
+    _inputLayoutProcessing = *iaPool->Create(std::vector<SHandle>(), EVertexBufferFormat::Unknown);
 }
 
 void triton::CGraphics::CreateShaders()
@@ -361,7 +361,7 @@ triton::CGPUTextureResource triton::CGraphics::CreateRenderTargets()
     PTexturePool* texturePool = _context->GetPool<PTexturePool>();
     CRenderTargetPool* renderTargetPool = _context->GetPool<CRenderTargetPool>();
 
-    XTexture::THandle colorHandle = *texturePool->Create(
+    SHandle colorHandle = *texturePool->Create(
         True,
         ETextureFormat::RGBA8,
         (dword)ETextureUsageBit::Sampled | (dword)ETextureUsageBit::ColorAttachment,
@@ -371,7 +371,7 @@ triton::CGPUTextureResource triton::CGraphics::CreateRenderTargets()
         0
     );
 
-    XTexture::THandle depthHandle = *texturePool->Create(
+    SHandle depthHandle = *texturePool->Create(
         True,
         ETextureFormat::DepthStencil,
         (dword)(dword)ETextureUsageBit::DepthStencilAttachment,
@@ -381,8 +381,8 @@ triton::CGPUTextureResource triton::CGraphics::CreateRenderTargets()
         0
     );
 
-    const std::vector<XTexture::THandle> colorAttachments = { colorHandle };
-    XTexture::THandle depthAttachment = depthHandle;
+    const std::vector<SHandle> colorAttachments = { colorHandle };
+    SHandle depthAttachment = depthHandle;
 
     _opaqueRenderTarget = *renderTargetPool->Create(
         colorAttachments,
@@ -398,7 +398,7 @@ void triton::CGraphics::CreateCameraAndRenderDomain()
 {
     _camera = *_context->GetPool<CCameraPool>()->Create(65.0f, 0.01f, 1000.0f);
 
-    _renderDomain = *_context->GetPool<CRenderDomainPool>()->Create((XCamera::THandle)_camera);
+    _renderDomain = *_context->GetPool<CRenderDomainPool>()->Create(_camera);
 }
 
 void triton::CGraphics::CreateRenderPasses()
@@ -617,9 +617,9 @@ void triton::CGraphics::DestroyRenderTargets()
 
 void triton::CGraphics::DestroyCameraAndRenderDomain()
 {
-    _context->GetPool<CRenderDomainPool>()->Destroy((XRenderDomain::THandle)_renderDomain);
+    _context->GetPool<CRenderDomainPool>()->Destroy(_renderDomain);
 
-    _context->GetPool<CCameraPool>()->Destroy((XCamera::THandle)_camera);
+    _context->GetPool<CCameraPool>()->Destroy(_camera);
 }
 
 void triton::CGraphics::DestroyRenderPasses()

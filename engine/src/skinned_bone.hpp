@@ -23,8 +23,6 @@ namespace triton
 
 		inline void SetModelMatrix(const cMatrix4& modelMatrix) { _modelMatrix = modelMatrix; }
 
-		struct THandle : public SHandle {};
-
 		struct TGPULayout
 		{
 			cMatrix4 modelMatrix = cMatrix4();

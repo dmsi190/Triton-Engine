@@ -15,22 +15,20 @@ namespace triton
 	{
 		TRITON_OBJECT(XSkin)
 
-		XSkeleton::THandle						_skeleton;
+		SHandle									_skeleton;
 		types::usize							_globSkinnedBoneBufferOffset = 0;
-		std::vector<CSkinnedBone::THandle>		_skinnedBones;
+		std::vector<SHandle>					_skinnedBones;
 	
 	public:
 		explicit XSkin(cContext* context, types::s32 poolIndex) : iObject(context, poolIndex) {}
 
-		explicit XSkin(cContext* context, types::s32 poolIndex, const XSkeleton::THandle& skeleton);
+		explicit XSkin(cContext* context, types::s32 poolIndex, const SHandle& skeleton);
 
 		~XSkin() override;
 
 		void Skin(const SAnimationFrame& frame);
 
 		inline types::usize GetSkinnedBoneBufferOffset() const { return _globSkinnedBoneBufferOffset; }
-
-		struct THandle : public SHandle {};
 
 		struct TGPULayout {};
 

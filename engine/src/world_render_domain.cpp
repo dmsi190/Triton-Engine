@@ -2,7 +2,6 @@
 
 #include "world_render_domain.hpp"
 #include "world_render_domain_pool.hpp"
-#include "world_render_group_instance_pool.hpp"
 #include "world_render_group_pool.hpp"
 
 using namespace types;
@@ -10,40 +9,44 @@ using namespace types;
 std::optional<triton::SHandle> triton::XRenderDomain::CreateRenderGroup(
 	ERenderInstanceMotionType motionType,
 	const SGeometryView& geometry,
-	const SHandle& material
+	const SHandle& material,
+	usize max_instance_count
 )
 {
 	CRenderGroupPool* renderGroupPool = _context->GetPool<CRenderGroupPool>();
 
 	SHandle renderGroup = *renderGroupPool->Create(
-		(const SHandle&)_context->GetPool<CRenderDomainPool>()->GetHandle(_poolIndex),
 		motionType,
+		(const SHandle&)_context->GetPool<CRenderDomainPool>()->GetHandle(_poolIndex),
 		geometry,
-		(const XMaterial::THandle&)material
+		(const SHandle&)material,
+		max_instance_count
 	);
+
+	_renderGroups.push_back(renderGroup);
 
 	return renderGroup;
 }
 
 void triton::XRenderDomain::RemoveRenderGroup(const SHandle& renderGroup)
 {
-	_context->GetPool<CRenderGroupPool>()->Destroy((XRenderGroup::THandle)renderGroup);
+	_context->GetPool<CRenderGroupPool>()->Destroy(renderGroup);
 }
 
-void triton::XRenderDomain::QueryRenderGroupInstances()
+void triton::XRenderDomain::QueryRenderGroups()
 {
-	_renderGroupInstances.clear();
+	_renderGroups.clear();
 
-	CRenderGroupInstancePool* renderGroupInstancePool = _context->GetPool<CRenderGroupInstancePool>();
+	CRenderGroupPool* renderGroupPool = _context->GetPool<CRenderGroupPool>();
 
-	XRenderDomain::THandle thisHandle = _context->GetPool<CRenderDomainPool>()->GetHandle(this->_poolIndex);
-	SBufferView<XRenderGroupInstance> renderGroupInstancesBufferView = renderGroupInstancePool->GetData();
+	SHandle thisHandle = _context->GetPool<CRenderDomainPool>()->GetHandle(this->_poolIndex);
+	SBufferView<XRenderGroup> renderGroupInstancesBufferView = renderGroupPool->GetData();
 
 	for (usize i = 0; i < renderGroupInstancesBufferView.elementCount; ++i)
 	{
-		XRenderGroupInstance& renderGroupInstance = renderGroupInstancesBufferView.elements[i];
+		XRenderGroup& renderGroup = renderGroupInstancesBufferView.elements[i];
 
-		if (renderGroupInstance.GetRenderDomain() == thisHandle)
-			_renderGroupInstances.push_back(renderGroupInstancePool->GetHandle(i));
+		if (renderGroup.GetRenderDomain() == thisHandle)
+			_renderGroups.push_back(renderGroupPool->GetHandle(i));
 	}
 }

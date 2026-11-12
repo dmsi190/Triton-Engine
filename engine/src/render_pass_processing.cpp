@@ -10,14 +10,14 @@ using namespace types;
 triton::XRenderPassProcessing::XRenderPassProcessing(
     cContext* context,
     s32 poolIndex,
-    const XInputLayout::THandle& inputLayout,
+    const SHandle& inputLayout,
     const std::vector<CGPUBufferResource>& inputBuffers,
     const std::vector<SShaderTextureBinding>& inputTextures,
     const SViewport& viewport,
     const SBlendState& blendState,
     const SDepthState& depthState,
-    const XRenderTarget::THandle& renderTarget,
-    const XShader::THandle& shader
+    const SHandle& renderTarget,
+    const SHandle& shader
 ) :
     IRenderPass(context, poolIndex, ERenderPassDispatch::Processing),
     _inputLayout(inputLayout),

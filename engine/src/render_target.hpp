@@ -18,25 +18,25 @@ namespace triton
 	{
 		TRITON_OBJECT(XRenderTarget)
 
-		std::vector<XTexture::THandle> _colorAttachments;
-		XTexture::THandle _depthAttachment;
+		std::vector<SHandle> _colorAttachments;
+		SHandle _depthAttachment;
 		CGPURenderTargetResource _gpuRenderTarget = CGPURenderTargetResource::Invalid();
 
 	public:
 		explicit XRenderTarget(
 			cContext* context,
 			types::s32 poolIndex,
-			const std::vector<XTexture::THandle>& colorAttachments,
-			const XTexture::THandle& depthAttachment
+			const std::vector<SHandle>& colorAttachments,
+			const SHandle& depthAttachment
 		);
 
 		~XRenderTarget() override;
 
 		inline const CGPURenderTargetResource& GetGPUResource() const { return _gpuRenderTarget; }
 
-		inline const std::vector<XTexture::THandle>& GetColorAttachments() const { return _colorAttachments; }
+		inline const std::vector<SHandle>& GetColorAttachments() const { return _colorAttachments; }
 
-		inline const XTexture::THandle& GetDepthAttachment() const { return _depthAttachment; }
+		inline const SHandle& GetDepthAttachment() const { return _depthAttachment; }
 
 		inline const cVector3 GetColorAttachmentSize(types::usize attachmentIndex)
 		{
@@ -44,8 +44,6 @@ namespace triton
 
 			return attachment.GetSize();
 		}
-
-		struct THandle : public SHandle {};
 
 		struct TGPULayout {};
 	};

@@ -22,14 +22,12 @@ namespace triton
 		explicit XInputLayout(
 			cContext* context,
 			types::s32 poolIndex,
-			const std::vector<XGPUBuffer::THandle>& buffersToBind,
+			const std::vector<SHandle>& buffersToBind,
 			EVertexBufferFormat vertexFormat
 		);
 		~XInputLayout() override;
 
 		inline const CGPUInputLayoutResource& GetGPUResource() const { return _gpuInputLayout; }
-
-		struct THandle : public SHandle {};
 
 		struct TGPULayout {};
 	};

@@ -73,8 +73,6 @@ namespace triton
 
 		static types::usize TextureFormatToChannelCount(ETextureFormat textureFormat);
 
-		struct THandle : public SHandle {};
-
 		struct TGPULayout {};
 		
 	private:

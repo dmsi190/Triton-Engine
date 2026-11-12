@@ -38,11 +38,9 @@ namespace triton
         ~XAnimation() override = default;
 
         std::optional<triton::SAnimationFrame> EvaluateFrame(
-            const XSkeleton::THandle& skeleton,
+            const SHandle& skeleton,
             types::f32 time
         );
-
-        struct THandle : public SHandle {};
 
         struct TGPULayout {};
     };

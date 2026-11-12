@@ -12,8 +12,8 @@ using namespace types;
 triton::XRenderTarget::XRenderTarget(
 	cContext* context,
     s32 poolIndex,
-    const std::vector<XTexture::THandle>& colorAttachments,
-    const XTexture::THandle& depthAttachment
+    const std::vector<SHandle>& colorAttachments,
+    const SHandle& depthAttachment
 ) : iObject(context, poolIndex), _colorAttachments(colorAttachments), _depthAttachment(depthAttachment)
 {
     CThreadGuard::AssertMain();

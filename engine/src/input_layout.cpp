@@ -11,7 +11,7 @@ using namespace types;
 triton::XInputLayout::XInputLayout(
 	cContext* context,
 	s32 poolIndex,
-	const std::vector<XGPUBuffer::THandle>& buffersToBind,
+	const std::vector<SHandle>& buffersToBind,
 	EVertexBufferFormat vertexFormat
 ) : iObject(context, poolIndex)
 {

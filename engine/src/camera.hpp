@@ -57,9 +57,6 @@ namespace triton
 
         inline void SetWorldPosition(const cVector3& worldPosition) { _worldPosition = worldPosition; }
 
-    public:
-        struct THandle : public SHandle {};
-
         struct TGPULayout {};
     };
 }
