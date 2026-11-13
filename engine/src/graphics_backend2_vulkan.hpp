@@ -9,6 +9,11 @@
 #include "graphics_backend2_vulkan_structs.hpp"
 #include "texture_formats.hpp"
 #include "render_native_command_struct.hpp"
+#include "render_command_buffer_enum.hpp"
+#include "render_pipeline_stage_bit_enum.hpp"
+#include "render_access_bit_enum.hpp"
+#include "render_image_aspect_bit_enum.hpp"
+#include "render_image_layout_enum.hpp"
 
 namespace triton
 {
@@ -28,6 +33,9 @@ namespace triton
 		SQueue											_presentQueue = SQueue(0, 0, {});
 		SQueue											_graphicsTransferPresentQueue = SQueue(0, 0, {});
 		SLogicalDevice									_logicalDevice;
+		CGPUBufferResource								_staging_buffer = CGPUBufferResource(
+			0, 0, 0, EGPUBufferType::Unknown, 0, 0
+		);
 		SSwapchain										_swapchain;
 		std::vector<CGPURenderTargetResource>			_swapchainRenderTargets;
 		std::vector<CGPURenderPassResource>				_swapchainRenderPasses;
@@ -40,7 +48,9 @@ namespace triton
 		std::vector<SFence>								_swapchainFences;
 		CGPUTextureResource								_swapchainPresentTexture = CGPUTextureResource::Invalid();
 		VkDescriptorPool								_descriptorPool = VK_NULL_HANDLE;
-		std::vector<VkCommandBuffer>					_commandBuffers;
+		std::vector<VkCommandBuffer>					_frameCommandBuffers;
+		std::vector<VkCommandBuffer>					_stagingCommandBuffers;
+		std::vector<SFence>								_stagingFences;
 		types::usize									_framesInFlight = 0;
 		types::usize									_currentFrame = 0;
 		std::vector<SNativeRenderCommand>				_deferredCommands;
@@ -55,6 +65,7 @@ namespace triton
 			types::boolean bEnableDebugging,
 			const std::vector<const char*> extensions,
 			EGraphicsDeviceType deviceType,
+			types::usize staging_buffer_byte_size,
 			const cVector2& swapchainSize,
 			types::usize framesInFlight
 		) override final;
@@ -150,7 +161,7 @@ namespace triton
 
 		void DestroyShader(CGPUShaderResource& shader) override final;
 
-		void ResetCommandBuffer() override final;
+		void ResetCommandBuffer(ECommandBuffer command_buffer, ECommandBufferReset reset_option) override final;
 
 		void AddCommandToBuffer(
 			ENativeRenderCommand command,
@@ -161,6 +172,51 @@ namespace triton
 		void BeginFrame() override final;
 
 		void EndFrame() override final;
+
+		void ExecuteImageBarrier(
+			ECommandBuffer command_buffer,
+			const CGPUTextureResource& texture,
+			EPipelineStageBit src_stage_mask,
+			EPipelineStageBit dst_stage_mask,
+			EAccessBit src_access_mask,
+			EAccessBit dst_access_mask,
+			EImageAspectBit aspect_mask,
+			EImageLayout src_layout,
+			EImageLayout dst_layout
+		);
+
+		void ExecuteBufferBarrier(
+			ECommandBuffer command_buffer,
+			const CGPUBufferResource& buffer,
+			EPipelineStageBit src_stage_mask,
+			EPipelineStageBit dst_stage_mask,
+			EAccessBit src_access_mask,
+			EAccessBit dst_access_mask
+		);
+
+		void CopyBufferToImage(
+			ECommandBuffer command_buffer,
+			const CGPUBufferResource& buffer,
+			const CGPUTextureResource& texture,
+			EImageAspectBit aspect_mask,
+			const cVector3& offset,
+			const cVector3& size
+		);
+
+		void CopyBufferToBuffer(
+			ECommandBuffer command_buffer,
+			const CGPUBufferResource& src_buffer,
+			const CGPUBufferResource& dst_buffer,
+			usize src_offset,
+			usize dst_offset,
+			usize size
+		);
+
+		void SubmitCommands(ECommandBuffer command_buffer);
+
+		void WaitForFence(ECommandBuffer command_buffer);
+
+		void ResetFence(ECommandBuffer command_buffer);
 		
 	private:
 		void CreateInstance(types::boolean bEnableDebugging, const std::vector<const char*> extensions);
@@ -199,6 +255,10 @@ namespace triton
 
 		void DestroySwapchain();
 
+		void CreateStagingBuffer(types::usize byte_size);
+
+		void DestroyStagingBuffer();
+
 		void CreateDescriptorPool();
 
 		void DestroyDescriptorPool();
@@ -229,6 +289,17 @@ namespace triton
 		void CreateSwapchainSemaphoresAndFences();
 
 		void DestroySwapchainSemaphoresAndFences();
+
+		void CreateStagingFence();
+
+		void DestroyStagingFence();
+
+		void WriteTextureUsingStagingBuffer(
+			const CGPUTextureResource& texture,
+			const cVector3& offset,
+			const u8* data,
+			usize byteSize
+		);
 
 		types::usize FindProperMemoryTypeIndex(
 			VkPhysicalDeviceMemoryProperties memoryProperties,

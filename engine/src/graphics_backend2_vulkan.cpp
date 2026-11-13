@@ -86,6 +86,7 @@ void triton::BGraphicsBackend2Vulkan::Initialize(
 	boolean bEnableDebugging,
 	const std::vector<const char*> extensions,
 	EGraphicsDeviceType deviceType,
+	usize staging_buffer_byte_size,
 	const cVector2& swapchainSize,
 	usize framesInFlight
 )
@@ -97,6 +98,7 @@ void triton::BGraphicsBackend2Vulkan::Initialize(
 	PickPhysicalDevice(deviceType);
 	CreateLogicalDevice();
 	CreateCommandPoolsAndCommandBuffers();
+	CreateStagingBuffer(staging_buffer_byte_size);
 	CreateSwapchain(swapchainSize, framesInFlight);
 	CreateDescriptorPool();
 }
@@ -105,6 +107,7 @@ void triton::BGraphicsBackend2Vulkan::Shutdown()
 {
 	DestroyDescriptorPool();
 	DestroySwapchain();
+	DestroyStagingBuffer();
 	DestroyCommandPoolsAndCommandBuffers();
 	DestroyLogicalDevice();
 	DestroySurface();
@@ -288,18 +291,6 @@ triton::CGPUTextureResource triton::BGraphicsBackend2Vulkan::CreateTexture(
 			Print("[Vulkan]: Error: failed to create sampler");
 	}
 
-	const usize imageByteSize =
-		size.GetX() *
-		size.GetY() *
-		size.GetZ() *
-		TextureFormatToChannelCount(format);
-
-	CGPUBufferResource* stagingBuffer =
-		CObjectAllocator::Create<CGPUBufferResource>(
-			64,
-			CreateBuffer(EGPUBufferType::Staging, imageByteSize)
-		);
-
 	CGPUTextureResource resultTextureInstance = CGPUTextureResource(
 		(qword)image,
 		(qword)imageView,
@@ -309,8 +300,7 @@ triton::CGPUTextureResource triton::BGraphicsBackend2Vulkan::CreateTexture(
 		usageMask,
 		dimension,
 		size,
-		0,
-		stagingBuffer
+		0
 	);
 
 	*resultTexture = resultTextureInstance;
@@ -345,56 +335,46 @@ void triton::BGraphicsBackend2Vulkan::WriteTexture(
 )
 {
 	if (texture.IsValid() == False ||
-		!texture.GetStagingBuffer() ||
 		!data ||
-		!byteSize)
+		!byteSize ||
+		offset.GetX() >= texture.GetWidth() ||
+		offset.GetY() >= texture.GetHeight() ||
+		offset.GetZ() >= texture.GetDepth())
 		return;
 
-	const usize scalarOffset =
-		(
-			offset.GetZ() * texture.GetWidth() * texture.GetHeight() +
-			offset.GetY() * texture.GetWidth() +
-			offset.GetX()
-			) *
-		TextureFormatToChannelCount(texture.GetFormat());
-
-	const CGPUBufferResource& stagingBuffer = *texture.GetStagingBuffer();
-
-	if (scalarOffset + byteSize > stagingBuffer.GetByteSize())
-		return;
-
-	VkDeviceMemory memory = (VkDeviceMemory)texture.GetDeviceMemory();
-	VkDeviceMemory stagingMemory = (VkDeviceMemory)stagingBuffer.GetDeviceMemory();
-
-	void* mappedData = nullptr;
-
-	VkResult result = vkMapMemory(
-		_logicalDevice.device,
-		(VkDeviceMemory)stagingMemory,
-		scalarOffset,
-		byteSize,
-		0,
-		&mappedData
-	);
-
-	if (result != VK_SUCCESS)
-		Print("[Vulkan]: Error: failed to map staging buffer memory");
-
-	memcpy(
-		mappedData,
-		&data[0],
-		byteSize
-	);
-
-	vkUnmapMemory(_logicalDevice.device, stagingMemory);
-
-	VkImageAspectFlags aspectMask = 0;
+	EImageAspectBit image_aspect_mask = EImageAspectBit::Unknown;
 
 	if (texture.GetUsageMask() & (dword)ETextureUsageBit::Sampled ||
 		texture.GetUsageMask() & (dword)ETextureUsageBit::ColorAttachment)
-		aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		image_aspect_mask = EImageAspectBit::Color;
 	if (texture.GetUsageMask() & (dword)ETextureUsageBit::DepthStencilAttachment)
-		aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+		image_aspect_mask = EImageAspectBit::Depth;
+
+	{
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
+
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
+
+		ExecuteImageBarrier(
+			ECommandBuffer::Staging,
+			texture,
+			(EPipelineStageBit)((dword)EPipelineStageBit::Pixel | (dword)EPipelineStageBit::Compute),
+			EPipelineStageBit::Transfer,
+			EAccessBit::ShaderRead,
+			EAccessBit::TransferWrite,
+			image_aspect_mask,
+			EImageLayout::ShaderRead,
+			EImageLayout::TransferDst
+		);
+
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
+
+		ResetFence(ECommandBuffer::Staging);
+
+		SubmitCommands(ECommandBuffer::Staging);
+
+		WaitForFence(ECommandBuffer::Staging);
+	}
 
 	SNativeRenderCommand commandBarrierBeforeCopy;
 	commandBarrierBeforeCopy.cmd = ENativeRenderCommand::PipelineImageBarrier;
@@ -416,7 +396,7 @@ void triton::BGraphicsBackend2Vulkan::WriteTexture(
 
 	SNativeRenderCommand commandCopy;
 	commandCopy.cmd = ENativeRenderCommand::CopyBufferToImage;
-	commandCopy.args[0] = (qword)&stagingBuffer;
+	commandCopy.args[0] = (qword)&_staging_buffer;
 	commandCopy.args[1] = (qword)&texture;
 	commandCopy.args[2] = (qword)&textureSize;
 	commandCopy.args[3] = aspectMask;
@@ -444,15 +424,6 @@ void triton::BGraphicsBackend2Vulkan::DestroyTexture(CGPUTextureResource& textur
 {
 	if (texture.IsValid())
 	{
-		if (texture.GetStagingBuffer())
-		{
-			DestroyBuffer((CGPUBufferResource&)*texture.GetStagingBuffer());
-
-			CObjectAllocator::Destroy<CGPUBufferResource>(
-				(CGPUBufferResource*)texture.GetStagingBuffer()
-			);
-		}
-
 		if (texture.GetSampler())
 			vkDestroySampler(
 				_logicalDevice.device,
@@ -534,22 +505,13 @@ triton::CGPUBufferResource triton::BGraphicsBackend2Vulkan::CreateBuffer(
 	if (result != VK_SUCCESS)
 		Print("[Vulkan]: Error: failed to bind memory to buffer");
 
-	CGPUBufferResource* stagingBuffer = nullptr;
-
-	if (type != EGPUBufferType::Staging)
-		stagingBuffer = CObjectAllocator::Create<CGPUBufferResource>(
-			64,
-			CreateBuffer(EGPUBufferType::Staging, byteSize)
-		);
-
 	return CGPUBufferResource(
 		(qword)buffer,
 		0,
 		(qword)memory,
 		type,
 		byteSize,
-		0,
-		stagingBuffer
+		0
 	);
 }
 
@@ -561,17 +523,14 @@ void triton::BGraphicsBackend2Vulkan::WriteBuffer(
 )
 {
 	if (buffer.IsValid() == False ||
-		!buffer.GetStagingBuffer() ||
 		byteSize == 0)
 		return;
 
 	if (offset + byteSize > buffer.GetByteSize())
 		return;
 
-	const CGPUBufferResource& stagingBuffer = *buffer.GetStagingBuffer();
-
 	VkDeviceMemory memory = (VkDeviceMemory)buffer.GetDeviceMemory();
-	VkDeviceMemory stagingMemory = (VkDeviceMemory)stagingBuffer.GetDeviceMemory();
+	VkDeviceMemory stagingMemory = (VkDeviceMemory)_staging_buffer.GetDeviceMemory();
 
 	void* mappedData = nullptr;
 
@@ -615,7 +574,7 @@ void triton::BGraphicsBackend2Vulkan::WriteBuffer(
 
 	SNativeRenderCommand commandCopy;
 	commandCopy.cmd = ENativeRenderCommand::CopyBuffer;
-	commandCopy.args[0] = (qword)&stagingBuffer;
+	commandCopy.args[0] = (qword)&_staging_buffer;
 	commandCopy.args[1] = (qword)&buffer;
 	commandCopy.args[2] = 0;
 	commandCopy.args[3] = 0;
@@ -646,15 +605,6 @@ void triton::BGraphicsBackend2Vulkan::DestroyBuffer(CGPUBufferResource& buffer)
 {
 	if (buffer.IsValid() == True)
 	{
-		if (buffer.GetStagingBuffer())
-		{
-			DestroyBuffer((CGPUBufferResource&)*buffer.GetStagingBuffer());
-
-			CObjectAllocator::Destroy<CGPUBufferResource>(
-				(CGPUBufferResource*)buffer.GetStagingBuffer()
-			);
-		}
-
 		vkDestroyBuffer(
 			_logicalDevice.device,
 			(VkBuffer)buffer.GetInstance(),
@@ -1538,12 +1488,39 @@ void triton::BGraphicsBackend2Vulkan::DestroyShader(CGPUShaderResource& shader)
 	}
 }
 
-void triton::BGraphicsBackend2Vulkan::ResetCommandBuffer()
+void triton::BGraphicsBackend2Vulkan::ResetCommandBuffer(
+	ECommandBuffer command_buffer,
+	ECommandBufferReset reset_option
+)
 {
-	vkResetCommandBuffer(
-		_commandBuffers[_currentFrame],
-		0
-	);
+	VkCommandBuffer cmd_buff = VK_NULL_HANDLE;
+
+	if (command_buffer == ECommandBuffer::Frame)
+		cmd_buff = _frameCommandBuffers[_currentFrame];
+	else if (command_buffer == ECommandBuffer::Staging)
+		cmd_buff = _stagingCommandBuffers[_currentFrame];
+
+	if (reset_option == ECommandBufferReset::Clear)
+	{
+		vkResetCommandBuffer(
+			cmd_buff,
+			0
+		);
+	}
+	else if (reset_option == ECommandBufferReset::Begin)
+	{
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		vkBeginCommandBuffer(
+			cmd_buff,
+			&beginInfo
+		);
+	}
+	else if (reset_option == ECommandBufferReset::End)
+	{
+		vkEndCommandBuffer(cmd_buff);
+	}
 }
 
 void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
@@ -1592,7 +1569,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 		}
 
 		vkCmdBeginRenderPass(
-			_commandBuffers[_currentFrame],
+			_frameCommandBuffers[_currentFrame],
 			&renderPassBeginInfo,
 			VK_SUBPASS_CONTENTS_INLINE
 		);
@@ -1600,7 +1577,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 	else if (command == ENativeRenderCommand::BindPipeline)
 	{
 		vkCmdBindPipeline(
-			_commandBuffers[_currentFrame],
+			_frameCommandBuffers[_currentFrame],
 			PipelineBindPointToNative(((CGPUPipelineResource*)commandArgA)->GetBindingPoint()),
 			(VkPipeline)((CGPUPipelineResource*)commandArgA)->GetInstance()
 		);
@@ -1611,7 +1588,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 		CGPUPipelineResource& pipeline = *(CGPUPipelineResource*)commandArgB;
 
 		vkCmdPushConstants(
-			_commandBuffers[_currentFrame],
+			_frameCommandBuffers[_currentFrame],
 			(VkPipelineLayout)pipeline.GetLayout(),
 			VK_SHADER_STAGE_VERTEX_BIT,
 			offsetof(SRenderPassGPUPushConstantsLayout, instanceMotionType),
@@ -1620,7 +1597,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 		);
 
 		vkCmdDrawIndexed(
-			_commandBuffers[_currentFrame],
+			_frameCommandBuffers[_currentFrame],
 			drawInfo.indexCount,
 			drawInfo.instanceCount,
 			drawInfo.firstIndex,
@@ -1630,7 +1607,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 	}
 	else if (command == ENativeRenderCommand::EndRenderPass)
 	{
-		vkCmdEndRenderPass(_commandBuffers[_currentFrame]);
+		vkCmdEndRenderPass(_frameCommandBuffers[_currentFrame]);
 	}
 	else if (command == ENativeRenderCommand::SetScissor)
 	{
@@ -1640,7 +1617,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 		nativeScissor.extent.width = viewport.rect.GetZ();
 		nativeScissor.extent.height = viewport.rect.GetW();
 
-		vkCmdSetScissor(_commandBuffers[_currentFrame], 0, 1, &nativeScissor);
+		vkCmdSetScissor(_frameCommandBuffers[_currentFrame], 0, 1, &nativeScissor);
 	}
 	else if (command == ENativeRenderCommand::SetViewport)
 	{
@@ -1648,7 +1625,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 
 		VkViewport nativeViewport = ViewportToNative(viewport);
 
-		vkCmdSetViewport(_commandBuffers[_currentFrame], 0, 1, &nativeViewport);
+		vkCmdSetViewport(_frameCommandBuffers[_currentFrame], 0, 1, &nativeViewport);
 	}
 	else if (command == ENativeRenderCommand::BindVertexBuffer)
 	{
@@ -1658,7 +1635,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 		VkDeviceSize offset = 0;
 
 		vkCmdBindVertexBuffers(
-			_commandBuffers[_currentFrame],
+			_frameCommandBuffers[_currentFrame],
 			0,
 			1,
 			&nativeVertexBuffer,
@@ -1672,7 +1649,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 		VkBuffer nativeIndexBuffer = (VkBuffer)indexBuffer.GetInstance();
 
 		vkCmdBindIndexBuffer(
-			_commandBuffers[_currentFrame],
+			_frameCommandBuffers[_currentFrame],
 			nativeIndexBuffer,
 			0,
 			VK_INDEX_TYPE_UINT32
@@ -1684,7 +1661,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 		CGPUPipelineResource& pipeline = *(CGPUPipelineResource*)commandArgB;
 
 		vkCmdPushConstants(
-			_commandBuffers[_currentFrame],
+			_frameCommandBuffers[_currentFrame],
 			(VkPipelineLayout)pipeline.GetLayout(),
 			VK_SHADER_STAGE_VERTEX_BIT,
 			0,
@@ -1709,7 +1686,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 		const usize firstSetIndex = bindingGroups[0].GetIndex();
 
 		vkCmdBindDescriptorSets(
-			_commandBuffers[_currentFrame],
+			_frameCommandBuffers[_currentFrame],
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
 			(VkPipelineLayout)pipeline.GetLayout(),
 			firstSetIndex,
@@ -1717,114 +1694,6 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 			nativeDescriptorSets.data(),
 			0,
 			nullptr
-		);
-	}
-	else if (command == ENativeRenderCommand::PipelineBufferBarrier)
-	{
-		const SNativeRenderCommand& command = *(SNativeRenderCommand*)commandArgA;
-
-		VkBufferMemoryBarrier barrier = {};
-		barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-		barrier.buffer = (VkBuffer)((const CGPUBufferResource*)command.args[3])->GetInstance();
-		barrier.offset = 0;
-		barrier.size = ((const CGPUBufferResource*)command.args[3])->GetByteSize();
-		barrier.srcAccessMask = command.args[4];
-		barrier.dstAccessMask = command.args[5];
-		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-
-		vkCmdPipelineBarrier(
-			_commandBuffers[_currentFrame],
-			command.args[0],
-			command.args[1],
-			command.args[2],
-			0,
-			nullptr,
-			1,
-			&barrier,
-			0,
-			nullptr
-		);
-	}
-	else if (command == ENativeRenderCommand::PipelineImageBarrier)
-	{
-		const SNativeRenderCommand& command = *(SNativeRenderCommand*)commandArgA;
-
-		VkImageSubresourceRange imageSubresource = {};
-		imageSubresource.aspectMask = command.args[6];
-		imageSubresource.baseArrayLayer = 0;
-		imageSubresource.baseMipLevel = 0;
-		imageSubresource.layerCount = 1;
-		imageSubresource.levelCount = 1;
-
-		VkImageMemoryBarrier barrier = {};
-		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.image = (VkImage)((const CGPUTextureResource*)command.args[3])->GetInstance();
-		barrier.subresourceRange = imageSubresource;
-		barrier.srcAccessMask = command.args[4];
-		barrier.dstAccessMask = command.args[5];
-		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.oldLayout = (VkImageLayout)command.args[7];
-		barrier.newLayout = (VkImageLayout)command.args[8];
-
-		vkCmdPipelineBarrier(
-			_commandBuffers[_currentFrame],
-			command.args[0],
-			command.args[1],
-			command.args[2],
-			0,
-			nullptr,
-			0,
-			nullptr,
-			1,
-			&barrier
-		);
-	}
-	else if (command == ENativeRenderCommand::CopyBuffer)
-	{
-		const SNativeRenderCommand& command = *(SNativeRenderCommand*)commandArgA;
-
-		VkBufferCopy region = {};
-		region.srcOffset = command.args[2];
-		region.dstOffset = command.args[3];
-		region.size = command.args[4];
-
-		vkCmdCopyBuffer(
-			_commandBuffers[_currentFrame],
-			(VkBuffer)((const CGPUBufferResource*)command.args[0])->GetInstance(),
-			(VkBuffer)((const CGPUBufferResource*)command.args[1])->GetInstance(),
-			1,
-			&region
-		);
-	}
-	else if (command == ENativeRenderCommand::CopyBufferToImage)
-	{
-		const SNativeRenderCommand& command = *(SNativeRenderCommand*)commandArgA;
-
-		const cVector3& imageSize = *((const cVector3*)command.args[2]);
-
-		VkImageSubresourceLayers imageSubresourceLayers = {};
-		imageSubresourceLayers.aspectMask = command.args[3];
-		imageSubresourceLayers.baseArrayLayer = 0;
-		imageSubresourceLayers.layerCount = 1;
-		imageSubresourceLayers.mipLevel = 0;
-
-		VkBufferImageCopy region = {};
-		region.bufferOffset = 0;
-		region.bufferRowLength = imageSize.GetX();
-		region.bufferImageHeight = imageSize.GetY();
-		region.imageOffset = { 0, 0, 0 };
-		region.imageExtent = { (uint32_t)imageSize.GetX(), (uint32_t)imageSize.GetY(), 1};
-		region.imageSubresource = imageSubresourceLayers;
-
-		vkCmdCopyBufferToImage(
-			_commandBuffers[_currentFrame],
-			(VkBuffer)((const CGPUBufferResource*)command.args[0])->GetInstance(),
-			(VkImage)((const CGPUTextureResource*)command.args[1])->GetInstance(),
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			1,
-			&region
 		);
 	}
 }
@@ -1839,18 +1708,9 @@ void triton::BGraphicsBackend2Vulkan::BeginFrame()
 		UINT64_MAX
 	);
 
-	ResetCommandBuffer();
+	ResetCommandBuffer(ECommandBuffer::Frame, ECommandBufferReset::Clear);
 
-	VkCommandBufferBeginInfo beginInfo = {};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-	VkResult result = vkBeginCommandBuffer(
-		_commandBuffers[_currentFrame],
-		&beginInfo
-	);
-
-	if (result != VK_SUCCESS)
-		Print("[Vulkan]: Error: failed to begin command buffer");
+	ResetCommandBuffer(ECommandBuffer::Frame, ECommandBufferReset::Begin);
 
 	for (auto& command : _deferredCommands)
 		AddCommandToBuffer(
@@ -1904,13 +1764,13 @@ void triton::BGraphicsBackend2Vulkan::EndFrame()
 	renderPassBeginInfo.pClearValues = &clearValue;
 
 	vkCmdBeginRenderPass(
-		_commandBuffers[_currentFrame],
+		_frameCommandBuffers[_currentFrame],
 		&renderPassBeginInfo,
 		VK_SUBPASS_CONTENTS_INLINE
 	);
 
 	vkCmdBindPipeline(
-		_commandBuffers[_currentFrame],
+		_frameCommandBuffers[_currentFrame],
 		VK_PIPELINE_BIND_POINT_GRAPHICS,
 		(VkPipeline)_swapchainPipelines[imageIndex].GetInstance()
 	);
@@ -1919,7 +1779,7 @@ void triton::BGraphicsBackend2Vulkan::EndFrame()
 		(VkDescriptorSet)_swapchainBindingGroups[imageIndex].GetInstance();
 
 	vkCmdBindDescriptorSets(
-		_commandBuffers[_currentFrame],
+		_frameCommandBuffers[_currentFrame],
 		VK_PIPELINE_BIND_POINT_GRAPHICS,
 		(VkPipelineLayout)_swapchainPipelines[imageIndex].GetLayout(),
 		0,
@@ -1930,7 +1790,7 @@ void triton::BGraphicsBackend2Vulkan::EndFrame()
 	);
 
 	vkCmdDraw(
-		_commandBuffers[_currentFrame],
+		_frameCommandBuffers[_currentFrame],
 		4,
 		1,
 		0,
@@ -1938,12 +1798,10 @@ void triton::BGraphicsBackend2Vulkan::EndFrame()
 	);
 
 	vkCmdEndRenderPass(
-		_commandBuffers[_currentFrame]
+		_frameCommandBuffers[_currentFrame]
 	);
 
-	vkEndCommandBuffer(
-		_commandBuffers[_currentFrame]
-	);
+	ResetCommandBuffer(ECommandBuffer::Frame, ECommandBufferReset::End);
 
 	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
@@ -1953,7 +1811,7 @@ void triton::BGraphicsBackend2Vulkan::EndFrame()
 	submitInfo.pWaitSemaphores = &_swapchainImageAvailableSemaphores[_currentFrame].semaphore;
 	submitInfo.pWaitDstStageMask = &waitStage;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &_commandBuffers[_currentFrame];
+	submitInfo.pCommandBuffers = &_frameCommandBuffers[_currentFrame];
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &_swapchainRenderFinishedSemaphores[imageIndex].semaphore;
 
@@ -1984,6 +1842,344 @@ void triton::BGraphicsBackend2Vulkan::EndFrame()
 		Print("[Vulkan]: Error: failed to present frame");
 
 	_currentFrame = (_currentFrame + 1) % _framesInFlight;
+}
+
+void triton::BGraphicsBackend2Vulkan::ExecuteImageBarrier(
+	ECommandBuffer command_buffer,
+	const CGPUTextureResource& texture,
+	EPipelineStageBit src_stage_mask,
+	EPipelineStageBit dst_stage_mask,
+	EAccessBit src_access_mask,
+	EAccessBit dst_access_mask,
+	EImageAspectBit aspect_mask,
+	EImageLayout src_layout,
+	EImageLayout dst_layout
+)
+{
+	VkPipelineStageFlags native_src_stage_mask = 0;
+	
+	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Vertex)
+		native_src_stage_mask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Pixel)
+		native_src_stage_mask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Compute)
+		native_src_stage_mask |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Transfer)
+		native_src_stage_mask |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+	VkPipelineStageFlags native_dst_stage_mask = 0;
+
+	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Vertex)
+		native_dst_stage_mask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Pixel)
+		native_dst_stage_mask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Compute)
+		native_dst_stage_mask |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Transfer)
+		native_dst_stage_mask |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+	VkAccessFlags native_src_access_mask = 0;
+
+	if ((dword)src_access_mask & (dword)EAccessBit::ShaderRead)
+		native_src_access_mask |= VK_ACCESS_SHADER_READ_BIT;
+	if ((dword)src_access_mask & (dword)EAccessBit::TransferWrite)
+		native_src_access_mask |= VK_ACCESS_TRANSFER_WRITE_BIT;
+
+	VkAccessFlags native_dst_access_mask = 0;
+
+	if ((dword)dst_access_mask & (dword)EAccessBit::ShaderRead)
+		native_dst_access_mask |= VK_ACCESS_SHADER_READ_BIT;
+	if ((dword)dst_access_mask & (dword)EAccessBit::TransferWrite)
+		native_dst_access_mask |= VK_ACCESS_TRANSFER_WRITE_BIT;
+
+	VkAccessFlags native_aspect_mask = 0;
+
+	if ((dword)aspect_mask & (dword)EImageAspectBit::Color)
+		native_aspect_mask |= VK_IMAGE_ASPECT_COLOR_BIT;
+	if ((dword)aspect_mask & (dword)EImageAspectBit::Depth)
+		native_aspect_mask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+
+	VkImageLayout native_src_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+	if (src_layout == EImageLayout::ShaderRead)
+		native_src_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	else if (src_layout == EImageLayout::TransferDst)
+		native_src_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+	VkImageLayout native_dst_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+	if (dst_layout == EImageLayout::ShaderRead)
+		native_dst_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	else if (dst_layout == EImageLayout::TransferDst)
+		native_dst_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+	VkImageSubresourceRange imageSubresource = {};
+	imageSubresource.aspectMask = native_aspect_mask;
+	imageSubresource.baseArrayLayer = 0;
+	imageSubresource.baseMipLevel = 0;
+	imageSubresource.layerCount = 1;
+	imageSubresource.levelCount = 1;
+
+	VkImageMemoryBarrier barrier = {};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.image = (VkImage)texture.GetInstance();
+	barrier.subresourceRange = imageSubresource;
+	barrier.srcAccessMask = native_src_access_mask;
+	barrier.dstAccessMask = native_dst_access_mask;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.oldLayout = native_src_layout;
+	barrier.newLayout = native_dst_layout;
+
+	VkCommandBuffer cmd_buff = VK_NULL_HANDLE;
+
+	if (command_buffer == ECommandBuffer::Frame)
+		cmd_buff = _frameCommandBuffers[_currentFrame];
+	else if (command_buffer == ECommandBuffer::Staging)
+		cmd_buff = _stagingCommandBuffers[_currentFrame];
+
+	vkCmdPipelineBarrier(
+		cmd_buff,
+		native_src_stage_mask,
+		native_dst_stage_mask,
+		0,
+		0,
+		nullptr,
+		0,
+		nullptr,
+		1,
+		&barrier
+	);
+}
+
+void triton::BGraphicsBackend2Vulkan::ExecuteBufferBarrier(
+	ECommandBuffer command_buffer,
+	const CGPUBufferResource& buffer,
+	EPipelineStageBit src_stage_mask,
+	EPipelineStageBit dst_stage_mask,
+	EAccessBit src_access_mask,
+	EAccessBit dst_access_mask
+)
+{
+	VkPipelineStageFlags native_src_stage_mask = 0;
+
+	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Vertex)
+		native_src_stage_mask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Pixel)
+		native_src_stage_mask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Compute)
+		native_src_stage_mask |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Transfer)
+		native_src_stage_mask |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+	VkPipelineStageFlags native_dst_stage_mask = 0;
+
+	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Vertex)
+		native_dst_stage_mask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Pixel)
+		native_dst_stage_mask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Compute)
+		native_dst_stage_mask |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Transfer)
+		native_dst_stage_mask |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+	VkAccessFlags native_src_access_mask = 0;
+
+	if ((dword)src_access_mask & (dword)EAccessBit::ShaderRead)
+		native_src_access_mask |= VK_ACCESS_SHADER_READ_BIT;
+	if ((dword)src_access_mask & (dword)EAccessBit::TransferWrite)
+		native_src_access_mask |= VK_ACCESS_TRANSFER_WRITE_BIT;
+
+	VkAccessFlags native_dst_access_mask = 0;
+
+	if ((dword)dst_access_mask & (dword)EAccessBit::ShaderRead)
+		native_dst_access_mask |= VK_ACCESS_SHADER_READ_BIT;
+	if ((dword)dst_access_mask & (dword)EAccessBit::TransferWrite)
+		native_dst_access_mask |= VK_ACCESS_TRANSFER_WRITE_BIT;
+
+	VkBufferMemoryBarrier barrier = {};
+	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+	barrier.buffer = (VkBuffer)buffer.GetInstance();
+	barrier.offset = 0;
+	barrier.size = buffer.GetByteSize();
+	barrier.srcAccessMask = native_src_access_mask;
+	barrier.dstAccessMask = native_dst_access_mask;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+	VkCommandBuffer cmd_buff = VK_NULL_HANDLE;
+
+	if (command_buffer == ECommandBuffer::Frame)
+		cmd_buff = _frameCommandBuffers[_currentFrame];
+	else if (command_buffer == ECommandBuffer::Staging)
+		cmd_buff = _stagingCommandBuffers[_currentFrame];
+
+	vkCmdPipelineBarrier(
+		cmd_buff,
+		native_src_stage_mask,
+		native_dst_stage_mask,
+		0,
+		0,
+		nullptr,
+		1,
+		&barrier,
+		0,
+		nullptr
+	);
+}
+
+void triton::BGraphicsBackend2Vulkan::CopyBufferToImage(
+	ECommandBuffer command_buffer,
+	const CGPUBufferResource& buffer,
+	const CGPUTextureResource& texture,
+	EImageAspectBit aspect_mask,
+	const cVector3& offset,
+	const cVector3& size
+)
+{
+	VkAccessFlags native_aspect_mask = 0;
+
+	if ((dword)aspect_mask & (dword)EImageAspectBit::Color)
+		native_aspect_mask |= VK_IMAGE_ASPECT_COLOR_BIT;
+	if ((dword)aspect_mask & (dword)EImageAspectBit::Depth)
+		native_aspect_mask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+
+	VkImageSubresourceLayers imageSubresourceLayers = {};
+	imageSubresourceLayers.aspectMask = native_aspect_mask;
+	imageSubresourceLayers.baseArrayLayer = 0;
+	imageSubresourceLayers.layerCount = 1;
+	imageSubresourceLayers.mipLevel = 0;
+
+	VkBufferImageCopy region = {};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+	region.imageOffset = {
+		(int32_t)offset.GetX(), (int32_t)offset.GetY(), (int32_t)offset.GetZ()
+	};
+	region.imageExtent = {
+		(uint32_t)size.GetX(), (uint32_t)size.GetY(), (uint32_t)size.GetZ()
+	};
+	region.imageSubresource = imageSubresourceLayers;
+
+	VkCommandBuffer cmd_buff = VK_NULL_HANDLE;
+
+	if (command_buffer == ECommandBuffer::Frame)
+		cmd_buff = _frameCommandBuffers[_currentFrame];
+	else if (command_buffer == ECommandBuffer::Staging)
+		cmd_buff = _stagingCommandBuffers[_currentFrame];
+
+	vkCmdCopyBufferToImage(
+		cmd_buff,
+		(VkBuffer)buffer.GetInstance(),
+		(VkImage)texture.GetInstance(),
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1,
+		&region
+	);
+}
+
+void triton::BGraphicsBackend2Vulkan::CopyBufferToBuffer(
+	ECommandBuffer command_buffer,
+	const CGPUBufferResource& src_buffer,
+	const CGPUBufferResource& dst_buffer,
+	usize src_offset,
+	usize dst_offset,
+	usize size
+)
+{
+	VkBufferCopy region = {};
+	region.srcOffset = src_offset;
+	region.dstOffset = dst_offset;
+	region.size = size;
+
+	VkCommandBuffer cmd_buff = VK_NULL_HANDLE;
+
+	if (command_buffer == ECommandBuffer::Frame)
+		cmd_buff = _frameCommandBuffers[_currentFrame];
+	else if (command_buffer == ECommandBuffer::Staging)
+		cmd_buff = _stagingCommandBuffers[_currentFrame];
+
+	vkCmdCopyBuffer(
+		cmd_buff,
+		(VkBuffer)src_buffer.GetInstance(),
+		(VkBuffer)src_buffer.GetInstance(),
+		1,
+		&region
+	);
+}
+
+void triton::BGraphicsBackend2Vulkan::SubmitCommands(ECommandBuffer command_buffer)
+{
+	VkCommandBuffer cmd_buff = VK_NULL_HANDLE;
+	VkFence fence = VK_NULL_HANDLE;
+
+	if (command_buffer == ECommandBuffer::Frame)
+	{
+		cmd_buff = _frameCommandBuffers[_currentFrame];
+		fence = _swapchainFences[_currentFrame].fence;
+	}
+	else if (command_buffer == ECommandBuffer::Staging)
+	{
+		cmd_buff = _stagingCommandBuffers[_currentFrame];
+		fence = _stagingFences[_currentFrame].fence;
+	}
+
+	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.waitSemaphoreCount = 0;
+	submitInfo.pWaitSemaphores = nullptr;
+	submitInfo.pWaitDstStageMask = nullptr;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &cmd_buff;
+	submitInfo.signalSemaphoreCount = 0;
+	submitInfo.pSignalSemaphores = nullptr;
+
+	VkResult result = vkQueueSubmit(
+		_graphicsTransferPresentQueue.queue,
+		1,
+		&submitInfo,
+		fence
+	);
+
+	if (result != VK_SUCCESS)
+		Print("[Vulkan]: Error: failed to submit commands to the queue");
+}
+
+void triton::BGraphicsBackend2Vulkan::WaitForFence(ECommandBuffer command_buffer)
+{
+	VkFence fence = VK_NULL_HANDLE;
+
+	if (command_buffer == ECommandBuffer::Frame)
+		fence = _swapchainFences[_currentFrame].fence;
+	else if (command_buffer == ECommandBuffer::Staging)
+		fence = _stagingFences[_currentFrame].fence;
+
+	vkWaitForFences(
+		_logicalDevice.device,
+		1,
+		&fence,
+		VK_TRUE,
+		UINT64_MAX
+	);
+}
+
+void triton::BGraphicsBackend2Vulkan::ResetFence(ECommandBuffer command_buffer)
+{
+	VkFence fence = VK_NULL_HANDLE;
+
+	if (command_buffer == ECommandBuffer::Frame)
+		fence = _swapchainFences[_currentFrame].fence;
+	else if (command_buffer == ECommandBuffer::Staging)
+		fence = _stagingFences[_currentFrame].fence;
+
+	vkResetFences(
+		_logicalDevice.device,
+		1,
+		&fence
+	);
 }
 
 void triton::BGraphicsBackend2Vulkan::CreateInstance(
@@ -2601,13 +2797,33 @@ void triton::BGraphicsBackend2Vulkan::CreateCommandPoolsAndCommandBuffers()
 	frameCommandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	frameCommandBufferAllocInfo.commandBufferCount = _framesInFlight;
 
-	_commandBuffers.resize(_framesInFlight);
+	_frameCommandBuffers.resize(_framesInFlight);
 
-	vkAllocateCommandBuffers(
+	result = vkAllocateCommandBuffers(
 		_logicalDevice.device,
 		&frameCommandBufferAllocInfo,
-		_commandBuffers.data()
+		_frameCommandBuffers.data()
 	);
+
+	if (result != VK_SUCCESS)
+		Print("[Vulkan]: Error: failed to create frame command buffers");
+
+	VkCommandBufferAllocateInfo stagingCommandBufferAllocInfo = {};
+	stagingCommandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	stagingCommandBufferAllocInfo.commandPool = _graphicsTransferPresentQueue.commandPool;
+	stagingCommandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	stagingCommandBufferAllocInfo.commandBufferCount = _framesInFlight;
+
+	_stagingCommandBuffers.resize(_framesInFlight);
+
+	result = vkAllocateCommandBuffers(
+		_logicalDevice.device,
+		&stagingCommandBufferAllocInfo,
+		_stagingCommandBuffers.data()
+	);
+
+	if (result != VK_SUCCESS)
+		Print("[Vulkan]: Error: failed to create staging command buffers");
 }
 
 void triton::BGraphicsBackend2Vulkan::DestroyCommandPoolsAndCommandBuffers()
@@ -2615,8 +2831,15 @@ void triton::BGraphicsBackend2Vulkan::DestroyCommandPoolsAndCommandBuffers()
 	vkFreeCommandBuffers(
 		_logicalDevice.device,
 		_graphicsTransferPresentQueue.commandPool,
-		1,
-		&_graphicsTransferPresentQueue.commandBuffer
+		_stagingCommandBuffers.size(),
+		_stagingCommandBuffers.data()
+	);
+
+	vkFreeCommandBuffers(
+		_logicalDevice.device,
+		_graphicsTransferPresentQueue.commandPool,
+		_frameCommandBuffers.size(),
+		_frameCommandBuffers.data()
 	);
 
 	vkFreeCommandBuffers(
@@ -2845,6 +3068,16 @@ void triton::BGraphicsBackend2Vulkan::DestroySwapchain()
 	DestroyBindingGroupLayout(_swapchainBindingGroupLayout);
 }
 
+void triton::BGraphicsBackend2Vulkan::CreateStagingBuffer(usize byte_size)
+{
+	_staging_buffer = CreateBuffer(EGPUBufferType::Staging, byte_size);
+}
+
+void triton::BGraphicsBackend2Vulkan::DestroyStagingBuffer()
+{
+	DestroyBuffer(_staging_buffer);
+}
+
 void triton::BGraphicsBackend2Vulkan::CreateDescriptorPool()
 {
 	const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
@@ -3026,8 +3259,7 @@ void triton::BGraphicsBackend2Vulkan::CreateSwapchainRenderTargets()
 			(dword)ETextureUsageBit::ColorAttachment,
 			ETextureDimension::Texture2D,
 			cVector3(_swapchain.size.GetX(), _swapchain.size.GetY(), 0.0f),
-			0,
-			nullptr
+			0
 		);
 
 		const std::vector<CGPUTextureResource> colorAttachmentVec = { colorAttachment };
@@ -3179,6 +3411,84 @@ void triton::BGraphicsBackend2Vulkan::DestroySwapchainSemaphoresAndFences()
 			semaphore.semaphore,
 			nullptr
 		);
+}
+
+void triton::BGraphicsBackend2Vulkan::CreateStagingFence()
+{
+	VkFenceCreateInfo fenceCreateInfo = {};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	_stagingFences.resize(_framesInFlight);
+
+	VkResult result;
+
+	for (usize i = 0; i < _framesInFlight; i++)
+	{
+		result = vkCreateFence(
+			_logicalDevice.device,
+			&fenceCreateInfo,
+			nullptr,
+			&_stagingFences[i].fence
+		);
+
+		if (result != VK_SUCCESS)
+			Print("[Vulkan]: Error: failed to create staging fence");
+	}
+}
+
+void triton::BGraphicsBackend2Vulkan::DestroyStagingFence()
+{
+	for (auto& fence : _stagingFences)
+		vkDestroyFence(
+			_logicalDevice.device,
+			fence.fence,
+			nullptr
+		);
+}
+
+void triton::BGraphicsBackend2Vulkan::WriteTextureUsingStagingBuffer(
+	const CGPUTextureResource& texture,
+	const cVector3& offset,
+	const u8* data,
+	usize byteSize
+)
+{
+	const usize scalarOffset =
+		(
+			offset.GetZ() * texture.GetWidth() * texture.GetHeight() +
+			offset.GetY() * texture.GetWidth() +
+			offset.GetX()
+		) *
+		TextureFormatToChannelCount(texture.GetFormat());
+
+	if (scalarOffset + byteSize > _staging_buffer.GetByteSize())
+		return;
+
+	VkDeviceMemory memory = (VkDeviceMemory)texture.GetDeviceMemory();
+	VkDeviceMemory stagingMemory = (VkDeviceMemory)_staging_buffer.GetDeviceMemory();
+
+	void* mappedData = nullptr;
+
+	VkResult result = vkMapMemory(
+		_logicalDevice.device,
+		(VkDeviceMemory)stagingMemory,
+		scalarOffset,
+		byteSize,
+		0,
+		&mappedData
+	);
+
+	if (result != VK_SUCCESS)
+		Print("[Vulkan]: Error: failed to map staging buffer memory");
+
+	memcpy(
+		mappedData,
+		&data[0],
+		byteSize
+	);
+
+	vkUnmapMemory(_logicalDevice.device, stagingMemory);
 }
 
 usize triton::BGraphicsBackend2Vulkan::FindProperMemoryTypeIndex(

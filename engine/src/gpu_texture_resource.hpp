@@ -19,7 +19,6 @@ namespace triton
         types::dword _usageMask = 0;
         ETextureDimension _dimension = ETextureDimension::Unknown;
         types::s32 _slot = -1;
-        const CGPUBufferResource* _stagingBuffer = nullptr;
 
     public:
         explicit CGPUTextureResource(
@@ -31,8 +30,7 @@ namespace triton
             types::dword usageMask,
             ETextureDimension dimension,
             const cVector3& size,
-            types::s32 slot,
-            const CGPUBufferResource* stagingBuffer
+            types::s32 slot
         ) : CGPUResource(instance, viewInstance),
             _sampler(sampler),
             _deviceMemory(deviceMemory),
@@ -40,8 +38,7 @@ namespace triton
             _usageMask(usageMask),
             _dimension(dimension),
             _size(size),
-            _slot(slot),
-            _stagingBuffer(stagingBuffer) {}
+            _slot(slot) {}
         ~CGPUTextureResource() override = default;
 
         static CGPUTextureResource Invalid()
@@ -55,8 +52,7 @@ namespace triton
                 0,
                 ETextureDimension::Unknown,
                 cVector3(0.0f),
-                0,
-                nullptr
+                0
             );
         }
 
@@ -79,7 +75,5 @@ namespace triton
         inline ETextureDimension GetDimension() const { return _dimension; }
 
         inline types::s32 GetSlot() const { return _slot; }
-
-        inline const CGPUBufferResource* GetStagingBuffer() const { return _stagingBuffer; }
     };
 }

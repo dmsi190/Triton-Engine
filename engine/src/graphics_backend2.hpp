@@ -27,6 +27,7 @@
 #include "render_resource_usage_enum.hpp"
 #include "render_pass_push_constants_struct.hpp"
 #include "render_binding_group_binding_struct.hpp"
+#include "render_command_buffer_reset_enum.hpp"
 #include "rasterizer_state.hpp"
 #include "vertex_buffer_format.hpp"
 
@@ -48,6 +49,7 @@ namespace triton
 			types::boolean bEnableDebugging,
 			const std::vector<const char*> extensions,
 			EGraphicsDeviceType deviceType,
+			types::usize staging_buffer_byte_size,
 			const cVector2& swapchainSize,
 			types::usize framesInFlight
 		) = 0;
@@ -143,7 +145,7 @@ namespace triton
 
 		virtual void DestroyShader(CGPUShaderResource& shader) = 0;
 
-		virtual void ResetCommandBuffer() = 0;
+		virtual void ResetCommandBuffer(ECommandBuffer command_buffer, ECommandBufferReset reset_option) = 0;
 
 		virtual void AddCommandToBuffer(
 			ENativeRenderCommand command,
