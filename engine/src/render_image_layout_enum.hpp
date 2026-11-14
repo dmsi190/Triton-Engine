@@ -8,7 +8,7 @@ namespace triton
 {
 	enum class EImageLayout : types::dword
 	{
-		Unknown,
+		Undefined,
 		ShaderRead,
 		TransferDst
 	};

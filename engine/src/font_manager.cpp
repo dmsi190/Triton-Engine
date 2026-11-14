@@ -197,13 +197,13 @@ void triton::cFontFace::FillAtlasWithGlyphs(usize& atlasWidth, usize& atlasHeigh
 
     const cVector3* writeOffset = atlasSize;
 
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    /*_context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::WRITE_TEXTURE,
         (cpuword)&_atlas,
         (cpuword)writeOffset,
         (cpuword)pixelsU8,
         (cpuword)dataByteSize
-    ));
+    ));*/
 
     _context->GetSubsystem<CEngine>()->
         GetSynchronization()->

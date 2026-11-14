@@ -9,7 +9,6 @@
 #include "graphics_backend2_vulkan_structs.hpp"
 #include "texture_formats.hpp"
 #include "render_native_command_struct.hpp"
-#include "render_command_buffer_enum.hpp"
 #include "render_pipeline_stage_bit_enum.hpp"
 #include "render_access_bit_enum.hpp"
 #include "render_image_aspect_bit_enum.hpp"
@@ -53,7 +52,6 @@ namespace triton
 		std::vector<SFence>								_stagingFences;
 		types::usize									_framesInFlight = 0;
 		types::usize									_currentFrame = 0;
-		std::vector<SNativeRenderCommand>				_deferredCommands;
 
 	public:
 		explicit BGraphicsBackend2Vulkan(cContext* context) : IGraphicsBackend2(context) {}
@@ -87,9 +85,7 @@ namespace triton
 
 		void WriteTexture(
 			const CGPUTextureResource& texture,
-			const cVector3& offset,
-			const types::u8* data,
-			types::usize byteSize
+			const types::u8* data
 		) override final;
 
 		void DestroyTexture(CGPUTextureResource& texture) override final;
@@ -103,7 +99,7 @@ namespace triton
 			const CGPUBufferResource& buffer,
 			types::usize offset,
 			const types::u8* data,
-			types::usize byteSize
+			types::usize data_byte_size
 		) override final;
 
 		void DestroyBuffer(CGPUBufferResource& buffer) override final;
@@ -207,9 +203,9 @@ namespace triton
 			ECommandBuffer command_buffer,
 			const CGPUBufferResource& src_buffer,
 			const CGPUBufferResource& dst_buffer,
-			usize src_offset,
-			usize dst_offset,
-			usize size
+			types::usize src_offset,
+			types::usize dst_offset,
+			types::usize size
 		);
 
 		void SubmitCommands(ECommandBuffer command_buffer);
@@ -294,13 +290,6 @@ namespace triton
 
 		void DestroyStagingFence();
 
-		void WriteTextureUsingStagingBuffer(
-			const CGPUTextureResource& texture,
-			const cVector3& offset,
-			const u8* data,
-			usize byteSize
-		);
-
 		types::usize FindProperMemoryTypeIndex(
 			VkPhysicalDeviceMemoryProperties memoryProperties,
 			VkMemoryRequirements requirements,
@@ -326,6 +315,16 @@ namespace triton
 		VkPrimitiveTopology PrimitiveTopologyToNative(EPrimitiveTopology primitiveTopology);
 
 		VkBufferUsageFlags BufferTypeToNative(EGPUBufferType bufferType);
+
+		EImageAspectBit TextureFormatToAspect(ETextureFormat format);
+
+		VkPipelineStageFlags PipelineStageToNative(EPipelineStageBit stage_mask);
+
+		VkAccessFlags AccessToNative(EAccessBit access_mask);
+
+		VkImageAspectFlags ImageAspectToNative(EImageAspectBit aspect_mask);
+
+		VkImageLayout ImageLayoutToNative(EImageLayout layout);
 
 		std::string ShaderSourceInclude(const std::string& shaderSource, const std::string& includeStr);
 	};

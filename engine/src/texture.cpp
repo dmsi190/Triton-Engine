@@ -155,9 +155,7 @@ void triton::XTexture::CreateOnGpu(
 	_context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
 		ERenderCommand::WRITE_TEXTURE,
 		(cpuword)&_gpuTexture,
-		(cpuword)writeOffset,
-		(cpuword)data,
-		(cpuword)dataByteSize
+		(cpuword)data
 	));
 
 	_context->GetSubsystem<CEngine>()->

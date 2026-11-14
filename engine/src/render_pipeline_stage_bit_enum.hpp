@@ -9,9 +9,11 @@ namespace triton
 	enum class EPipelineStageBit : types::dword
 	{
 		Unknown,
-		Vertex = 1,
-		Pixel = 2,
-		Compute = 4,
-		Transfer = 8
+		TopOfPipe = 1,
+		VertexInput = 2,
+		Vertex = 4,
+		Pixel = 8,
+		Compute = 16,
+		Transfer = 32
 	};
 }

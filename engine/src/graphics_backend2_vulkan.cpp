@@ -99,6 +99,7 @@ void triton::BGraphicsBackend2Vulkan::Initialize(
 	CreateLogicalDevice();
 	CreateCommandPoolsAndCommandBuffers();
 	CreateStagingBuffer(staging_buffer_byte_size);
+	CreateStagingFence();
 	CreateSwapchain(swapchainSize, framesInFlight);
 	CreateDescriptorPool();
 }
@@ -107,6 +108,7 @@ void triton::BGraphicsBackend2Vulkan::Shutdown()
 {
 	DestroyDescriptorPool();
 	DestroySwapchain();
+	DestroyStagingFence();
 	DestroyStagingBuffer();
 	DestroyCommandPoolsAndCommandBuffers();
 	DestroyLogicalDevice();
@@ -305,23 +307,28 @@ triton::CGPUTextureResource triton::BGraphicsBackend2Vulkan::CreateTexture(
 
 	*resultTexture = resultTextureInstance;
 
-	if (format != ETextureFormat::DepthStencil)
-	{
-		SNativeRenderCommand commandBarrierInitialTransition;
-		commandBarrierInitialTransition.cmd = ENativeRenderCommand::PipelineImageBarrier;
-		commandBarrierInitialTransition.args[0] = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		commandBarrierInitialTransition.args[1] =
-			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-		commandBarrierInitialTransition.args[2] = 0;
-		commandBarrierInitialTransition.args[3] = (qword)resultTexture;
-		commandBarrierInitialTransition.args[4] = VK_ACCESS_NONE;
-		commandBarrierInitialTransition.args[5] = VK_ACCESS_SHADER_READ_BIT;
-		commandBarrierInitialTransition.args[6] = aspectMask;
-		commandBarrierInitialTransition.args[7] = VK_IMAGE_LAYOUT_UNDEFINED;
-		commandBarrierInitialTransition.args[8] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	EImageAspectBit aspect_mask = TextureFormatToAspect(resultTextureInstance.GetFormat());
 
-		_deferredCommands.push_back(commandBarrierInitialTransition);
+	{
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
+
+		ExecuteImageBarrier(
+			ECommandBuffer::Staging,
+			resultTextureInstance,
+			EPipelineStageBit::TopOfPipe,
+			(EPipelineStageBit)((dword)EPipelineStageBit::Pixel | (dword)EPipelineStageBit::Compute),
+			EAccessBit::None,
+			EAccessBit::ShaderRead,
+			aspect_mask,
+			EImageLayout::Undefined,
+			EImageLayout::ShaderRead
+		);
+
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
+		ResetFence(ECommandBuffer::Staging);
+		SubmitCommands(ECommandBuffer::Staging);
+		WaitForFence(ECommandBuffer::Staging);
 	}
 
 	return resultTextureInstance;
@@ -329,30 +336,16 @@ triton::CGPUTextureResource triton::BGraphicsBackend2Vulkan::CreateTexture(
 
 void triton::BGraphicsBackend2Vulkan::WriteTexture(
 	const CGPUTextureResource& texture,
-	const cVector3& offset,
-	const u8* data,
-	usize byteSize
+	const u8* data
 )
 {
-	if (texture.IsValid() == False ||
-		!data ||
-		!byteSize ||
-		offset.GetX() >= texture.GetWidth() ||
-		offset.GetY() >= texture.GetHeight() ||
-		offset.GetZ() >= texture.GetDepth())
+	if (texture.IsValid() == False || !data)
 		return;
 
-	EImageAspectBit image_aspect_mask = EImageAspectBit::Unknown;
-
-	if (texture.GetUsageMask() & (dword)ETextureUsageBit::Sampled ||
-		texture.GetUsageMask() & (dword)ETextureUsageBit::ColorAttachment)
-		image_aspect_mask = EImageAspectBit::Color;
-	if (texture.GetUsageMask() & (dword)ETextureUsageBit::DepthStencilAttachment)
-		image_aspect_mask = EImageAspectBit::Depth;
+	EImageAspectBit aspect_mask = TextureFormatToAspect(texture.GetFormat());
 
 	{
 		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
-
 		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
 
 		ExecuteImageBarrier(
@@ -362,62 +355,123 @@ void triton::BGraphicsBackend2Vulkan::WriteTexture(
 			EPipelineStageBit::Transfer,
 			EAccessBit::ShaderRead,
 			EAccessBit::TransferWrite,
-			image_aspect_mask,
+			aspect_mask,
 			EImageLayout::ShaderRead,
 			EImageLayout::TransferDst
 		);
 
 		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
-
 		ResetFence(ECommandBuffer::Staging);
-
 		SubmitCommands(ECommandBuffer::Staging);
-
 		WaitForFence(ECommandBuffer::Staging);
 	}
 
-	SNativeRenderCommand commandBarrierBeforeCopy;
-	commandBarrierBeforeCopy.cmd = ENativeRenderCommand::PipelineImageBarrier;
-	commandBarrierBeforeCopy.args[0] =
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	commandBarrierBeforeCopy.args[1] = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	commandBarrierBeforeCopy.args[2] = 0;
-	commandBarrierBeforeCopy.args[3] = (qword)&texture;
-	commandBarrierBeforeCopy.args[4] = VK_ACCESS_SHADER_READ_BIT;
-	commandBarrierBeforeCopy.args[5] = VK_ACCESS_TRANSFER_WRITE_BIT;
-	commandBarrierBeforeCopy.args[6] = aspectMask;
-	commandBarrierBeforeCopy.args[7] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	commandBarrierBeforeCopy.args[8] = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	{
+		const ETextureFormat texture_format = texture.GetFormat();
+		
+		usize pixel_byte_size = 0;
 
-	_deferredCommands.push_back(commandBarrierBeforeCopy);
+		if (texture_format == ETextureFormat::R8)
+			pixel_byte_size = 1;
+		else if (texture_format == ETextureFormat::RGBA8 ||
+			texture_format == ETextureFormat::RGBA8_SRGB ||
+			texture_format == ETextureFormat::RGBA8_SRGB_Mips ||
+			texture_format == ETextureFormat::BGRA8_SRGB)
+			pixel_byte_size = 4;
 
-	const cVector3& textureSize = texture.GetSize();
+		if (!pixel_byte_size)
+		{
+			Print("Error: pixel byte size = 0");
+			return;
+		}
 
-	SNativeRenderCommand commandCopy;
-	commandCopy.cmd = ENativeRenderCommand::CopyBufferToImage;
-	commandCopy.args[0] = (qword)&_staging_buffer;
-	commandCopy.args[1] = (qword)&texture;
-	commandCopy.args[2] = (qword)&textureSize;
-	commandCopy.args[3] = aspectMask;
+		const usize staging_buffer_byte_size = _staging_buffer.GetByteSize();
 
-	_deferredCommands.push_back(commandCopy);
+		const usize row_byte_size = texture.GetWidth() * pixel_byte_size;
+		const usize rows_per_staging = staging_buffer_byte_size / row_byte_size;
 
-	SNativeRenderCommand commandBarrierAfterCopy;
-	commandBarrierAfterCopy.cmd = ENativeRenderCommand::PipelineImageBarrier;
-	commandBarrierAfterCopy.args[0] = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	commandBarrierAfterCopy.args[1] =
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	commandBarrierAfterCopy.args[2] = 0;
-	commandBarrierAfterCopy.args[3] = (qword)&texture;
-	commandBarrierAfterCopy.args[4] = VK_ACCESS_TRANSFER_WRITE_BIT;
-	commandBarrierAfterCopy.args[5] = VK_ACCESS_SHADER_READ_BIT;
-	commandBarrierAfterCopy.args[6] = aspectMask;
-	commandBarrierAfterCopy.args[7] = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	commandBarrierAfterCopy.args[8] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		if (!rows_per_staging)
+		{
+			Print("Error: insufficient staging buffer byte size");
+			return;
+		}
 
-	_deferredCommands.push_back(commandBarrierAfterCopy);
+		const usize row_width = texture.GetWidth();
+		const usize row_count = texture.GetHeight();
+		
+		usize cur_row = 0;
+
+		while (cur_row < row_count)
+		{
+			VkDeviceMemory staging_memory = (VkDeviceMemory)_staging_buffer.GetDeviceMemory();
+
+			void* staging_data = nullptr;
+
+			vkMapMemory(
+				_logicalDevice.device,
+				staging_memory,
+				0,
+				staging_buffer_byte_size,
+				0,
+				&staging_data
+			);
+
+			const usize data_byte_offset = cur_row * row_byte_size;
+
+			usize rows_to_write = rows_per_staging;
+
+			if (cur_row + rows_to_write > row_count)
+				rows_to_write = row_count - cur_row;
+
+			memcpy(staging_data, &data[data_byte_offset], rows_to_write * row_byte_size);
+
+			vkUnmapMemory(_logicalDevice.device, staging_memory);
+
+			const cVector3 image_offset = cVector3(0, cur_row, 0);
+			const cVector3 rect_size = cVector3(row_width, rows_to_write, 1);
+
+			ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
+			ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
+
+			CopyBufferToImage(
+				ECommandBuffer::Staging,
+				_staging_buffer,
+				texture,
+				aspect_mask,
+				image_offset,
+				rect_size
+			);
+
+			ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
+			ResetFence(ECommandBuffer::Staging);
+			SubmitCommands(ECommandBuffer::Staging);
+			WaitForFence(ECommandBuffer::Staging);
+			
+			cur_row += rows_to_write;
+		}
+	}
+
+	{
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
+
+		ExecuteImageBarrier(
+			ECommandBuffer::Staging,
+			texture,
+			EPipelineStageBit::Transfer,
+			(EPipelineStageBit)((dword)EPipelineStageBit::Pixel | (dword)EPipelineStageBit::Compute),
+			EAccessBit::TransferWrite,
+			EAccessBit::ShaderRead,
+			aspect_mask,
+			EImageLayout::TransferDst,
+			EImageLayout::ShaderRead
+		);
+
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
+		ResetFence(ECommandBuffer::Staging);
+		SubmitCommands(ECommandBuffer::Staging);
+		WaitForFence(ECommandBuffer::Staging);
+	}
 }
 
 void triton::BGraphicsBackend2Vulkan::DestroyTexture(CGPUTextureResource& texture)
@@ -519,86 +573,121 @@ void triton::BGraphicsBackend2Vulkan::WriteBuffer(
 	const CGPUBufferResource& buffer,
 	usize offset,
 	const u8* data,
-	usize byteSize
+	usize data_byte_size
 )
 {
 	if (buffer.IsValid() == False ||
-		byteSize == 0)
+		!data_byte_size ||
+		offset + data_byte_size > buffer.GetByteSize())
 		return;
 
-	if (offset + byteSize > buffer.GetByteSize())
-		return;
+	{
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
 
-	VkDeviceMemory memory = (VkDeviceMemory)buffer.GetDeviceMemory();
-	VkDeviceMemory stagingMemory = (VkDeviceMemory)_staging_buffer.GetDeviceMemory();
+		ExecuteBufferBarrier(
+			ECommandBuffer::Staging,
+			buffer,
+			(EPipelineStageBit)(
+				(dword)EPipelineStageBit::VertexInput |
+				(dword)EPipelineStageBit::Vertex |
+				(dword)EPipelineStageBit::Pixel |
+				(dword)EPipelineStageBit::Compute
+			),
+			EPipelineStageBit::Transfer,
+			(EAccessBit)(
+				(dword)EAccessBit::IndexRead |
+				(dword)EAccessBit::ShaderRead |
+				(dword)EAccessBit::ShaderWrite
+			),
+			EAccessBit::TransferWrite
+		);
 
-	void* mappedData = nullptr;
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
+		ResetFence(ECommandBuffer::Staging);
+		SubmitCommands(ECommandBuffer::Staging);
+		WaitForFence(ECommandBuffer::Staging);
+	}
 
-	VkResult result = vkMapMemory(
-		_logicalDevice.device,
-		(VkDeviceMemory)stagingMemory,
-		offset,
-		byteSize,
-		0,
-		&mappedData
-	);
+	{
+		const usize staging_buffer_byte_size = _staging_buffer.GetByteSize();
 
-	if (result != VK_SUCCESS)
-		Print("[Vulkan]: Error: failed to map staging buffer memory");
+		const usize last_pos = offset + data_byte_size;
 
-	memcpy(
-		mappedData,
-		&data[0],
-		byteSize
-	);
+		usize cur_pos = offset;
 
-	vkUnmapMemory(_logicalDevice.device, stagingMemory);
+		while (cur_pos < last_pos)
+		{
+			VkDeviceMemory staging_memory = (VkDeviceMemory)_staging_buffer.GetDeviceMemory();
 
-	SNativeRenderCommand commandBarrierBeforeCopy;
-	commandBarrierBeforeCopy.cmd = ENativeRenderCommand::PipelineBufferBarrier;
-	commandBarrierBeforeCopy.args[0] =
-		VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
-		VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	commandBarrierBeforeCopy.args[1] = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	commandBarrierBeforeCopy.args[2] = 0;
-	commandBarrierBeforeCopy.args[3] = (qword)&buffer;
-	commandBarrierBeforeCopy.args[4] =
-		VK_ACCESS_INDEX_READ_BIT |
-		VK_ACCESS_SHADER_READ_BIT |
-		VK_ACCESS_SHADER_WRITE_BIT;
-	commandBarrierBeforeCopy.args[5] = VK_ACCESS_TRANSFER_WRITE_BIT;
+			void* staging_data = nullptr;
 
-	_deferredCommands.push_back(commandBarrierBeforeCopy);
+			vkMapMemory(
+				_logicalDevice.device,
+				(VkDeviceMemory)staging_memory,
+				0,
+				staging_buffer_byte_size,
+				0,
+				&staging_data
+			);
 
-	SNativeRenderCommand commandCopy;
-	commandCopy.cmd = ENativeRenderCommand::CopyBuffer;
-	commandCopy.args[0] = (qword)&_staging_buffer;
-	commandCopy.args[1] = (qword)&buffer;
-	commandCopy.args[2] = 0;
-	commandCopy.args[3] = 0;
-	commandCopy.args[4] = buffer.GetByteSize();
+			usize bytes_to_write = staging_buffer_byte_size;
 
-	_deferredCommands.push_back(commandCopy);
+			if (cur_pos + bytes_to_write > last_pos)
+				bytes_to_write = last_pos - cur_pos;
 
-	SNativeRenderCommand commandBarrierAfterCopy;
-	commandBarrierAfterCopy.cmd = ENativeRenderCommand::PipelineBufferBarrier;
-	commandBarrierAfterCopy.args[0] = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	commandBarrierAfterCopy.args[1] =
-		VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
-		VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	commandBarrierAfterCopy.args[2] = 0;
-	commandBarrierAfterCopy.args[3] = (qword)&buffer;
-	commandBarrierAfterCopy.args[4] = VK_ACCESS_TRANSFER_WRITE_BIT;
-	commandBarrierAfterCopy.args[5] =
-		VK_ACCESS_INDEX_READ_BIT |
-		VK_ACCESS_SHADER_READ_BIT |
-		VK_ACCESS_SHADER_WRITE_BIT;
+			memcpy(staging_data, data, bytes_to_write);
 
-	_deferredCommands.push_back(commandBarrierAfterCopy);
+			vkUnmapMemory(_logicalDevice.device, staging_memory);
+
+			ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
+			ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
+
+			CopyBufferToBuffer(
+				ECommandBuffer::Staging,
+				_staging_buffer,
+				buffer,
+				0,
+				cur_pos,
+				bytes_to_write
+			);
+
+			ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
+			ResetFence(ECommandBuffer::Staging);
+			SubmitCommands(ECommandBuffer::Staging);
+			WaitForFence(ECommandBuffer::Staging);
+
+			cur_pos += bytes_to_write;
+		}
+	}
+
+	{
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
+
+		ExecuteBufferBarrier(
+			ECommandBuffer::Staging,
+			buffer,
+			EPipelineStageBit::Transfer,
+			(EPipelineStageBit)(
+				(dword)EPipelineStageBit::VertexInput |
+				(dword)EPipelineStageBit::Vertex |
+				(dword)EPipelineStageBit::Pixel |
+				(dword)EPipelineStageBit::Compute
+			),
+			EAccessBit::TransferWrite,
+			(EAccessBit)(
+				(dword)EAccessBit::IndexRead |
+				(dword)EAccessBit::ShaderRead |
+				(dword)EAccessBit::ShaderWrite
+			)
+		);
+
+		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
+		ResetFence(ECommandBuffer::Staging);
+		SubmitCommands(ECommandBuffer::Staging);
+		WaitForFence(ECommandBuffer::Staging);
+	}
 }
 
 void triton::BGraphicsBackend2Vulkan::DestroyBuffer(CGPUBufferResource& buffer)
@@ -1709,16 +1798,7 @@ void triton::BGraphicsBackend2Vulkan::BeginFrame()
 	);
 
 	ResetCommandBuffer(ECommandBuffer::Frame, ECommandBufferReset::Clear);
-
 	ResetCommandBuffer(ECommandBuffer::Frame, ECommandBufferReset::Begin);
-
-	for (auto& command : _deferredCommands)
-		AddCommandToBuffer(
-			command.cmd,
-			&command,
-			nullptr
-		);
-	_deferredCommands.clear();
 }
 
 void triton::BGraphicsBackend2Vulkan::EndFrame()
@@ -1856,62 +1936,13 @@ void triton::BGraphicsBackend2Vulkan::ExecuteImageBarrier(
 	EImageLayout dst_layout
 )
 {
-	VkPipelineStageFlags native_src_stage_mask = 0;
-	
-	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Vertex)
-		native_src_stage_mask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Pixel)
-		native_src_stage_mask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Compute)
-		native_src_stage_mask |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Transfer)
-		native_src_stage_mask |= VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-	VkPipelineStageFlags native_dst_stage_mask = 0;
-
-	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Vertex)
-		native_dst_stage_mask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Pixel)
-		native_dst_stage_mask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Compute)
-		native_dst_stage_mask |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Transfer)
-		native_dst_stage_mask |= VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-	VkAccessFlags native_src_access_mask = 0;
-
-	if ((dword)src_access_mask & (dword)EAccessBit::ShaderRead)
-		native_src_access_mask |= VK_ACCESS_SHADER_READ_BIT;
-	if ((dword)src_access_mask & (dword)EAccessBit::TransferWrite)
-		native_src_access_mask |= VK_ACCESS_TRANSFER_WRITE_BIT;
-
-	VkAccessFlags native_dst_access_mask = 0;
-
-	if ((dword)dst_access_mask & (dword)EAccessBit::ShaderRead)
-		native_dst_access_mask |= VK_ACCESS_SHADER_READ_BIT;
-	if ((dword)dst_access_mask & (dword)EAccessBit::TransferWrite)
-		native_dst_access_mask |= VK_ACCESS_TRANSFER_WRITE_BIT;
-
-	VkAccessFlags native_aspect_mask = 0;
-
-	if ((dword)aspect_mask & (dword)EImageAspectBit::Color)
-		native_aspect_mask |= VK_IMAGE_ASPECT_COLOR_BIT;
-	if ((dword)aspect_mask & (dword)EImageAspectBit::Depth)
-		native_aspect_mask |= VK_IMAGE_ASPECT_DEPTH_BIT;
-
-	VkImageLayout native_src_layout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-	if (src_layout == EImageLayout::ShaderRead)
-		native_src_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	else if (src_layout == EImageLayout::TransferDst)
-		native_src_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-
-	VkImageLayout native_dst_layout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-	if (dst_layout == EImageLayout::ShaderRead)
-		native_dst_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	else if (dst_layout == EImageLayout::TransferDst)
-		native_dst_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	VkPipelineStageFlags native_src_stage_mask = PipelineStageToNative(src_stage_mask);
+	VkPipelineStageFlags native_dst_stage_mask = PipelineStageToNative(dst_stage_mask);
+	VkAccessFlags native_src_access_mask = AccessToNative(src_access_mask);
+	VkAccessFlags native_dst_access_mask = AccessToNative(dst_access_mask);
+	VkImageAspectFlags native_aspect_mask = ImageAspectToNative(aspect_mask);
+	VkImageLayout native_src_layout = ImageLayoutToNative(src_layout);
+	VkImageLayout native_dst_layout = ImageLayoutToNative(dst_layout);
 
 	VkImageSubresourceRange imageSubresource = {};
 	imageSubresource.aspectMask = native_aspect_mask;
@@ -1961,41 +1992,10 @@ void triton::BGraphicsBackend2Vulkan::ExecuteBufferBarrier(
 	EAccessBit dst_access_mask
 )
 {
-	VkPipelineStageFlags native_src_stage_mask = 0;
-
-	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Vertex)
-		native_src_stage_mask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Pixel)
-		native_src_stage_mask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Compute)
-		native_src_stage_mask |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	if ((dword)src_stage_mask & (dword)EPipelineStageBit::Transfer)
-		native_src_stage_mask |= VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-	VkPipelineStageFlags native_dst_stage_mask = 0;
-
-	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Vertex)
-		native_dst_stage_mask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Pixel)
-		native_dst_stage_mask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Compute)
-		native_dst_stage_mask |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	if ((dword)dst_stage_mask & (dword)EPipelineStageBit::Transfer)
-		native_dst_stage_mask |= VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-	VkAccessFlags native_src_access_mask = 0;
-
-	if ((dword)src_access_mask & (dword)EAccessBit::ShaderRead)
-		native_src_access_mask |= VK_ACCESS_SHADER_READ_BIT;
-	if ((dword)src_access_mask & (dword)EAccessBit::TransferWrite)
-		native_src_access_mask |= VK_ACCESS_TRANSFER_WRITE_BIT;
-
-	VkAccessFlags native_dst_access_mask = 0;
-
-	if ((dword)dst_access_mask & (dword)EAccessBit::ShaderRead)
-		native_dst_access_mask |= VK_ACCESS_SHADER_READ_BIT;
-	if ((dword)dst_access_mask & (dword)EAccessBit::TransferWrite)
-		native_dst_access_mask |= VK_ACCESS_TRANSFER_WRITE_BIT;
+	VkPipelineStageFlags native_src_stage_mask = PipelineStageToNative(src_stage_mask);
+	VkPipelineStageFlags native_dst_stage_mask = PipelineStageToNative(dst_stage_mask);
+	VkAccessFlags native_src_access_mask = AccessToNative(src_access_mask);
+	VkAccessFlags native_dst_access_mask = AccessToNative(dst_access_mask);
 
 	VkBufferMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -2103,7 +2103,7 @@ void triton::BGraphicsBackend2Vulkan::CopyBufferToBuffer(
 	vkCmdCopyBuffer(
 		cmd_buff,
 		(VkBuffer)src_buffer.GetInstance(),
-		(VkBuffer)src_buffer.GetInstance(),
+		(VkBuffer)dst_buffer.GetInstance(),
 		1,
 		&region
 	);
@@ -3447,50 +3447,6 @@ void triton::BGraphicsBackend2Vulkan::DestroyStagingFence()
 		);
 }
 
-void triton::BGraphicsBackend2Vulkan::WriteTextureUsingStagingBuffer(
-	const CGPUTextureResource& texture,
-	const cVector3& offset,
-	const u8* data,
-	usize byteSize
-)
-{
-	const usize scalarOffset =
-		(
-			offset.GetZ() * texture.GetWidth() * texture.GetHeight() +
-			offset.GetY() * texture.GetWidth() +
-			offset.GetX()
-		) *
-		TextureFormatToChannelCount(texture.GetFormat());
-
-	if (scalarOffset + byteSize > _staging_buffer.GetByteSize())
-		return;
-
-	VkDeviceMemory memory = (VkDeviceMemory)texture.GetDeviceMemory();
-	VkDeviceMemory stagingMemory = (VkDeviceMemory)_staging_buffer.GetDeviceMemory();
-
-	void* mappedData = nullptr;
-
-	VkResult result = vkMapMemory(
-		_logicalDevice.device,
-		(VkDeviceMemory)stagingMemory,
-		scalarOffset,
-		byteSize,
-		0,
-		&mappedData
-	);
-
-	if (result != VK_SUCCESS)
-		Print("[Vulkan]: Error: failed to map staging buffer memory");
-
-	memcpy(
-		mappedData,
-		&data[0],
-		byteSize
-	);
-
-	vkUnmapMemory(_logicalDevice.device, stagingMemory);
-}
-
 usize triton::BGraphicsBackend2Vulkan::FindProperMemoryTypeIndex(
 	VkPhysicalDeviceMemoryProperties memoryProperties,
 	VkMemoryRequirements requirements,
@@ -3663,6 +3619,80 @@ VkBufferUsageFlags triton::BGraphicsBackend2Vulkan::BufferTypeToNative(EGPUBuffe
 		return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
 	return 0;
+}
+
+triton::EImageAspectBit triton::BGraphicsBackend2Vulkan::TextureFormatToAspect(ETextureFormat format)
+{
+	EImageAspectBit aspect_mask = EImageAspectBit::Unknown;
+
+	if (format == ETextureFormat::DepthStencil)
+		aspect_mask = EImageAspectBit::Depth;
+	else
+		aspect_mask = EImageAspectBit::Color;
+
+	return aspect_mask;
+}
+
+VkPipelineStageFlags triton::BGraphicsBackend2Vulkan::PipelineStageToNative(EPipelineStageBit stage_mask)
+{
+	VkPipelineStageFlags native_stage_mask = VK_PIPELINE_STAGE_NONE;
+
+	if ((dword)stage_mask & (dword)EPipelineStageBit::TopOfPipe)
+		native_stage_mask |= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	if ((dword)stage_mask & (dword)EPipelineStageBit::Vertex)
+		native_stage_mask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	if ((dword)stage_mask & (dword)EPipelineStageBit::VertexInput)
+		native_stage_mask |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+	if ((dword)stage_mask & (dword)EPipelineStageBit::Pixel)
+		native_stage_mask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	if ((dword)stage_mask & (dword)EPipelineStageBit::Compute)
+		native_stage_mask |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	if ((dword)stage_mask & (dword)EPipelineStageBit::Transfer)
+		native_stage_mask |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+	return native_stage_mask;
+}
+
+VkAccessFlags triton::BGraphicsBackend2Vulkan::AccessToNative(EAccessBit access_mask)
+{
+	VkAccessFlags native_access_mask = 0;
+
+	if ((dword)access_mask & (dword)EAccessBit::None)
+		native_access_mask |= VK_ACCESS_NONE;
+	if ((dword)access_mask & (dword)EAccessBit::IndexRead)
+		native_access_mask |= VK_ACCESS_INDEX_READ_BIT;
+	if ((dword)access_mask & (dword)EAccessBit::ShaderRead)
+		native_access_mask |= VK_ACCESS_SHADER_READ_BIT;
+	if ((dword)access_mask & (dword)EAccessBit::ShaderWrite)
+		native_access_mask |= VK_ACCESS_SHADER_WRITE_BIT;
+	if ((dword)access_mask & (dword)EAccessBit::TransferWrite)
+		native_access_mask |= VK_ACCESS_TRANSFER_WRITE_BIT;
+
+	return native_access_mask;
+}
+
+VkImageAspectFlags triton::BGraphicsBackend2Vulkan::ImageAspectToNative(EImageAspectBit aspect_mask)
+{
+	VkImageAspectFlags native_aspect_mask = 0;
+
+	if ((dword)aspect_mask & (dword)EImageAspectBit::Color)
+		native_aspect_mask |= VK_IMAGE_ASPECT_COLOR_BIT;
+	if ((dword)aspect_mask & (dword)EImageAspectBit::Depth)
+		native_aspect_mask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+
+	return native_aspect_mask;
+}
+
+VkImageLayout triton::BGraphicsBackend2Vulkan::ImageLayoutToNative(EImageLayout layout)
+{
+	VkImageLayout native_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+	if (layout == EImageLayout::ShaderRead)
+		native_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	else if (layout == EImageLayout::TransferDst)
+		native_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+	return native_layout;
 }
 
 std::string triton::BGraphicsBackend2Vulkan::ShaderSourceInclude(

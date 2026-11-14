@@ -28,15 +28,13 @@ void triton::cRenderThread::ThreadFunction()
 	CWindow* window = app->GetWindow();
 	//gfxBackend->CreateGraphicsContext(window->GetBackendWindow());
 	//gfxBackend->MakeWindowGraphicsContextCurrent(window->GetBackendWindow());
-	EGraphicsDeviceType deviceType =
-		_context->GetSubsystem<CEngine>()->
-		GetApplication()->
-		GetCapabilities().preferredGraphicsDevice;
+	const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
 	gfxBackend->Initialize(
 		window->GetBackendWindow(),
 		True,
 		_context->GetBackend<IInputBackend>()->GetBackendWindowVulkanExtensions(),
-		deviceType,
+		caps.preferredGraphicsDevice,
+		caps.staging_buffer_byte_size,
 		window->GetSize(),
 		app->GetCapabilities().framesInFlight
 	);
@@ -216,9 +214,7 @@ void triton::cRenderThread::ExecuteCommands(
 			{
 				gfxBackend->WriteTexture(
 					*((CGPUTextureResource*)cmd._args._argA),
-					*((const cVector3*)cmd._args._argB),
-					(u8*)cmd._args._argC,
-					cmd._args._argD
+					(u8*)cmd._args._argB
 				);
 				break;
 			}

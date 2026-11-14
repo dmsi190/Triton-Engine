@@ -8,8 +8,10 @@ namespace triton
 {
 	enum class EAccessBit : types::dword
 	{
-		Unknown,
-		ShaderRead,
-		TransferWrite
+		None = 0,
+		IndexRead = 1,
+		ShaderRead = 2,
+		ShaderWrite = 4,
+		TransferWrite = 8
 	};
 }

@@ -61,5 +61,6 @@ namespace triton
         types::usize maxBindingGroupCount = 1024;
         types::usize maxStorageBufferBindingCount = maxBindingGroupCount * 16;
         types::usize maxTextureSamplerBindingCount = maxBindingGroupCount * 16;
+        types::usize staging_buffer_byte_size = 1024 * 1024;
     };
 }

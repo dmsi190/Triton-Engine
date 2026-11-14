@@ -27,6 +27,7 @@
 #include "render_resource_usage_enum.hpp"
 #include "render_pass_push_constants_struct.hpp"
 #include "render_binding_group_binding_struct.hpp"
+#include "render_command_buffer_enum.hpp"
 #include "render_command_buffer_reset_enum.hpp"
 #include "rasterizer_state.hpp"
 #include "vertex_buffer_format.hpp"
@@ -71,9 +72,7 @@ namespace triton
 
 		virtual void WriteTexture(
 			const CGPUTextureResource& texture,
-			const cVector3& offset,
-			const types::u8* data,
-			types::usize byteSize
+			const types::u8* data
 		) = 0;
 
 		virtual void DestroyTexture(CGPUTextureResource& texture) = 0;
@@ -87,7 +86,7 @@ namespace triton
 			const CGPUBufferResource& buffer,
 			types::usize offset,
 			const types::u8* data,
-			types::usize byteSize
+			types::usize data_byte_size
 		) = 0;
 		
 		virtual void DestroyBuffer(CGPUBufferResource& buffer) = 0;
