@@ -31,7 +31,7 @@ namespace triton
     class CObjectPool : public CPool
     {
     public:
-        static constexpr types::usize   cDefaultReservationSize = 1024;
+        static constexpr types::usize   cDefaultReservationSize = 16;
 
     protected:
         cContext*                       _context = nullptr;
@@ -46,7 +46,8 @@ namespace triton
         types::boolean				    _bDirtyBit = types::K_FALSE;
         CGPUBufferResource              _gpuBuffer = CGPUBufferResource::Invalid();
         types::s32                      _gpuBufferSlot = -1;
-        EGPUBufferType                  _gpuBufferType = EGPUBufferType::Unknown;
+        types::usize                    _gpu_buffer_element_size = 0;
+        types::usize                    _gpu_buffer_byte_size = 0;
 
     public:
         explicit CObjectPool(
@@ -54,7 +55,7 @@ namespace triton
             types::boolean bKeepCpuCopy,
             types::usize reservationSize = cDefaultReservationSize,
             types::s32 gpuBufferSlot = -1,
-            EGPUBufferType gpuBufferType = EGPUBufferType::Unknown
+            types::usize gpu_buffer_element_size = 0
         );
 
         virtual ~CObjectPool();
@@ -126,7 +127,6 @@ namespace triton
 
         void AllocateGpuBuffer(
             CGPUBufferResource& buffer,
-            EGPUBufferType type,
             types::usize byteSize,
             types::s32 slot
         );
@@ -145,13 +145,14 @@ namespace triton
         types::boolean bKeepStagingBuffer,
         types::usize reservationSize,
         types::s32 gpuBufferSlot,
-        EGPUBufferType gpuBufferType
+        types::usize gpu_buffer_element_size
     ) : CPool(context),
         _context(context),
         _bKeepStagingBuffer(bKeepStagingBuffer),
         _reservationSize(reservationSize),
         _gpuBufferSlot(gpuBufferSlot),
-        _gpuBufferType(gpuBufferType)
+        _gpu_buffer_element_size(gpu_buffer_element_size),
+        _gpu_buffer_byte_size(_gpu_buffer_element_size * sizeof(typename TObject::TGPULayout))
     {
         if (_reservationSize == 0)
             _reservationSize = cDefaultReservationSize;
@@ -174,6 +175,12 @@ namespace triton
     template <typename TObject>
     void CObjectPool<TObject>::Reserve(types::usize reserveCount)
     {
+        if (_gpuBufferSlot > 0 && reserveCount > _gpu_buffer_element_size)
+        {
+            Print("Error: pool overflow, gpu buffer slot = " + std::to_string(_gpuBufferSlot));
+            return;
+        }
+
         _bDirtyBit = types::K_TRUE;
 
         const types::usize prevReservedCount = _reservedCount;
@@ -201,23 +208,11 @@ namespace triton
             _staging = nullptr;
         }
 
-        if (_gpuBuffer.GetBufferType() != EGPUBufferType::Unknown && _gpuBufferSlot > -1)
-        {
-            DestroyGpuBuffer();
-            AllocateGpuBuffer(
-                _gpuBuffer,
-                _gpuBufferType,
-                reserveCount * sizeof(typename TObject::TGPULayout),
-                _gpuBufferSlot
-            );
-            Upload();
-        }
-        else if (_gpuBufferSlot > -1)
+        if (_gpuBuffer.IsValid() == types::K_FALSE && _gpuBufferSlot > -1)
         {
             AllocateGpuBuffer(
                 _gpuBuffer,
-                _gpuBufferType,
-                reserveCount * sizeof(typename TObject::TGPULayout),
+                _gpu_buffer_byte_size,
                 _gpuBufferSlot
             );
         }
@@ -262,7 +257,7 @@ namespace triton
             types::boolean bFree = types::K_TRUE;
             for (types::usize j = 0; j < count; j++)
             {
-                if (i + j >= _reservedCount)
+                if (i + j >= _reservedCount || i == _reservedCount - 1)
                     break;
 
                 if (_slots[i + j].alive == types::K_TRUE)
@@ -423,7 +418,7 @@ namespace triton
     template <typename TObject>
     void CObjectPool<TObject>::Upload()
     {
-        if (_gpuBufferSlot == -1 || _gpuBufferType == EGPUBufferType::Unknown)
+        if (_gpuBufferSlot == -1)
             return;
 
         if (_bDirtyBit == types::K_TRUE)
@@ -507,14 +502,13 @@ namespace triton
     template <typename TObject>
     void CObjectPool<TObject>::AllocateGpuBuffer(
         CGPUBufferResource& buffer,
-        EGPUBufferType type,
         types::usize byteSize,
         types::s32 slot
     )
     {
         _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
             ERenderCommand::CREATE_BUFFER,
-            (types::cpuword)type,
+            (types::cpuword)EGPUBufferType::Storage,
             byteSize
         ));
 
@@ -527,7 +521,7 @@ namespace triton
     template <typename TObject>
     void CObjectPool<TObject>::DestroyGpuBuffer()
     {
-        if (_gpuBufferSlot < 0 || _gpuBufferType == EGPUBufferType::Unknown)
+        if (_gpuBufferSlot < 0)
             return;
 
         _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(

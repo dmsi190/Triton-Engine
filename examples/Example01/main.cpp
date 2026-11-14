@@ -138,7 +138,13 @@ public:
         SHandle render_domain_handle = geom_render_pass.GetRenderDomain();
         XRenderDomain& render_domain = *_context->GetPool<CRenderDomainPool>()->Get(render_domain_handle);
 
-        SHandle render_group_handle = *render_domain.CreateRenderGroup(
+        SHandle render_group1_handle = *render_domain.CreateRenderGroup(
+            ERenderInstanceMotionType::Static,
+            model1_geom,
+            model1_model.GetMaterial(),
+            1024
+        );
+        SHandle render_group2_handle = *render_domain.CreateRenderGroup(
             ERenderInstanceMotionType::Static,
             model1_geom,
             model1_model.GetMaterial(),
@@ -146,12 +152,12 @@ public:
         );
 
         SHandle model1_object_handle = *_context->GetPool<CWorldObjectPool>()->Create(
-            render_group_handle,
+            render_group1_handle,
             cVector3(0.0f, -10.0f, 0.0f)
         );
 
         SHandle model2_object_handle = *_context->GetPool<CWorldObjectPool>()->Create(
-            render_group_handle,
+            render_group2_handle,
             cVector3(0.0f, 10.0f, 0.0f)
         );
 

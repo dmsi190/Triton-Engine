@@ -93,6 +93,8 @@ void triton::CEngine::Initialize()
 	InitializeRenderThread();
 
 	// Register subsystems and pools
+	const sCapabilities& caps = _app->GetCapabilities();
+
 	_context->RegisterPool(new CCameraPool(_context, K_TRUE));
 
 	_context->RegisterPool(new PTexturePool(_context, K_TRUE));
@@ -114,7 +116,7 @@ void triton::CEngine::Initialize()
 		K_TRUE,
 		CRenderInstanceStaticPool::cDefaultReservationSize,
 		0,
-		EGPUBufferType::Storage
+		caps.maxRenderStaticInstanceCount
 	));
 
 	_context->RegisterPool(new CRenderInstanceDynamicPool(
@@ -122,7 +124,7 @@ void triton::CEngine::Initialize()
 		K_TRUE,
 		CRenderInstanceDynamicPool::cDefaultReservationSize,
 		1,
-		EGPUBufferType::Storage
+		caps.maxRenderDynamicInstanceCount
 	));
 
 	_context->RegisterPool(new CAnimationPool(_context, K_TRUE));
@@ -132,7 +134,7 @@ void triton::CEngine::Initialize()
 		K_TRUE,
 		CMaterialPool::cDefaultReservationSize,
 		2,
-		EGPUBufferType::Storage
+		caps.maxRenderMaterialCount
 	));
 
 	_context->RegisterPool(new CModel3DPool(_context, K_TRUE));
@@ -144,7 +146,7 @@ void triton::CEngine::Initialize()
 		K_TRUE,
 		CSkinnedBonesPool::cDefaultReservationSize,
 		3,
-		EGPUBufferType::Storage
+		caps.maxSkinnedBoneCount
 	));
 
 	_context->RegisterPool(new CSkinPool(_context, K_TRUE));
