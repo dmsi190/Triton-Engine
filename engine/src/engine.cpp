@@ -95,7 +95,13 @@ void triton::CEngine::Initialize()
 	// Register subsystems and pools
 	const sCapabilities& caps = _app->GetCapabilities();
 
-	_context->RegisterPool(new CCameraPool(_context, K_TRUE));
+	_context->RegisterPool(new CCameraPool(
+		_context,
+		K_TRUE,
+		CRenderInstanceStaticPool::cDefaultReservationSize,
+		0,
+		caps.camera_count
+	));
 
 	_context->RegisterPool(new PTexturePool(_context, K_TRUE));
 
