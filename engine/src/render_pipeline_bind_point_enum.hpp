@@ -9,6 +9,7 @@ namespace triton
 	enum class EPipelineBindPoint : types::dword
 	{
 		Unknown,
-		Graphics
+		Graphics,
+		Compute
 	};
 }

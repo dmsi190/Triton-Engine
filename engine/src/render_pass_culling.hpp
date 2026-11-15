@@ -18,7 +18,7 @@ namespace triton
         CGPUBufferResource                              _indirect_draw_command_counter_buffer;
         CGPUBufferResource                              _indirect_draw_commands_buffer;
         CGPUBufferResource                              _motion_type_per_command_buffer;
-        SHandle                                         _shader;
+        CGPUShaderResource                              _shader;
         CGPUPipelineResource                            _pipeline;
         CGPUBindingGroupLayoutResource                  _binding_group_layout;
         CGPUBindingGroupResource                        _binding_group;

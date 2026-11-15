@@ -1,12 +1,39 @@
 // render_pass_culling.cpp
 
 #include "render_pass_culling.hpp"
+#include "render_command_proxy.hpp"
+#include "context.hpp"
+#include "application.hpp"
+#include "render_indirect_draw_command_struct.hpp"
 
 using namespace types;
 
 triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex) :
     IRenderPass(context, poolIndex, ERenderPassDispatch::Culling)
 {
+    const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+
+    _indirect_draw_command_counter_buffer = CRenderCommandProxy::CreateBuffer(EGPUBufferType::Storage, sizeof(u32));
+
+    _indirect_draw_commands_buffer = CRenderCommandProxy::CreateBuffer(
+        EGPUBufferType::Storage,
+        caps.render_group_count * sizeof(SIndirectDrawCommand)
+    );
+
+    _motion_type_per_command_buffer = CRenderCommandProxy::CreateBuffer(
+        EGPUBufferType::Storage,
+        caps.render_group_count * sizeof(u32)
+    );
+
+    SShaderBytecodeFiles shader_files;
+    shader_files.computeFilePath =
+        "C:/My/My_Projects_Programming/TritonEngine/runtime/data/shaders/builtin/culling.comp.spv";
+
+    _shader = CRenderCommandProxy::CreateShader(
+        EShaderStageBit::Compute,
+        shader_files
+    );
+
     std::vector<SBindingGroupBinding>* bufferBindingGroupBindings =
         CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
 

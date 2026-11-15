@@ -742,6 +742,9 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		((stageMask & (dword)EShaderStageBit::Vertex) &&
 		(stageMask & (dword)EShaderStageBit::Pixel)) ? True : False;
 
+	const boolean bIsCompute =
+		(stageMask & (dword)EShaderStageBit::Compute) ? True : False;
+
 	const boolean bHasDepth = renderTarget.GetDepthAttachment().IsValid();
 
 	usize stageCount = 0;
@@ -766,6 +769,18 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		pixelStageCreateInfo.pName = "main";
 
 		stageCreateInfos.push_back(pixelStageCreateInfo);
+	}
+	else if (bIsCompute == True)
+	{
+		stageCount = 1;
+
+		VkPipelineShaderStageCreateInfo computeStageCreateInfo = {};
+		computeStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		computeStageCreateInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+		computeStageCreateInfo.module = (VkShaderModule)shader.GetModules()[0];
+		computeStageCreateInfo.pName = "main";
+
+		stageCreateInfos.push_back(computeStageCreateInfo);
 	}
 
 	VkPipeline pipeline = VK_NULL_HANDLE;
@@ -969,6 +984,75 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 			(qword)pipelineLayout,
 			bindingGroupLayouts
 		);
+	}
+	else if (bIsCompute == True)
+	{
+		VkPipelineLayout pipeline_layout;
+		VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
+
+		{
+			pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+
+			std::vector<VkDescriptorSetLayout> native_descriptor_set_layouts;
+
+			if (bindingGroupLayouts.size())
+			{
+				for (usize i = 0; i < bindingGroupLayouts.size(); ++i)
+					native_descriptor_set_layouts.push_back(
+						(VkDescriptorSetLayout)bindingGroupLayouts.at(i).GetInstance()
+					);
+
+				pipeline_layout_create_info.setLayoutCount = native_descriptor_set_layouts.size();
+				pipeline_layout_create_info.pSetLayouts = native_descriptor_set_layouts.data();
+			}
+
+			VkPushConstantRange pushConstantRange = {};
+
+			if (bUsePushConstants == True)
+			{
+				pushConstantRange.offset = 0;
+				pushConstantRange.size = sizeof(SRenderPassGPUPushConstantsLayout);
+				pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+				pipeline_layout_create_info.pushConstantRangeCount = 1;
+				pipeline_layout_create_info.pPushConstantRanges = &pushConstantRange;
+			}
+
+			vkCreatePipelineLayout(
+				_logicalDevice.device,
+				&pipeline_layout_create_info,
+				nullptr,
+				&pipeline_layout
+			);
+		}
+
+		VkPipeline pipeline;
+		VkComputePipelineCreateInfo compute_pipeline_create_info = {};
+
+		{
+			compute_pipeline_create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+			compute_pipeline_create_info.stage = stageCreateInfos.at(0);
+			compute_pipeline_create_info.layout = pipeline_layout;
+
+			vkCreateComputePipelines(
+				_logicalDevice.device,
+				VK_NULL_HANDLE,
+				1,
+				&compute_pipeline_create_info,
+				nullptr,
+				&pipeline
+			);
+		}
+
+		{
+			return CGPUPipelineResource(
+				(qword)pipeline,
+				0,
+				EPipelineBindPoint::Compute,
+				(qword)pipeline_layout,
+				bindingGroupLayouts
+			);
+		}
 	}
 
 	return CGPUPipelineResource::Invalid();
