@@ -57,6 +57,14 @@ namespace triton
 
         inline void SetWorldPosition(const cVector3& worldPosition) { _worldPosition = worldPosition; }
 
-        struct TGPULayout {};
+        struct TGPULayout
+        {
+            glm::vec4 left_plane;
+            glm::vec4 right_plane;
+            glm::vec4 bottom_plane;
+            glm::vec4 top_plane;
+            glm::vec4 near_plane;
+            glm::vec4 far_plane;
+        };
     };
 }
