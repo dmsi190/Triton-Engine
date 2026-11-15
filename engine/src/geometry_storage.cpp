@@ -103,9 +103,9 @@ std::optional<triton::SGeometryView> triton::CGeometryStorage::Create(
 
         SGeometryView geometry;
         geometry._vertexCount = vertexCount;
-        geometry._indexCount = indexCount;
-        geometry._vertexElementOffset = vertexElementOffset;
-        geometry._indexElementOffset = indexElementOffset;
+        geometry.draw_info.index_count = indexCount;
+        geometry.draw_info.vertex_element_offset = vertexElementOffset;
+        geometry.draw_info.index_element_offset = indexElementOffset;
         geometry._vertexData = vertexData;
         geometry._indexData = indexData;
         geometry._format = format;
@@ -142,9 +142,9 @@ std::optional<triton::SGeometryView> triton::CGeometryStorage::Create(
 
         SGeometryView geometry;
         geometry._vertexCount = vertexCount;
-        geometry._indexCount = indexCount;
-        geometry._vertexElementOffset = vertexElementOffset;
-        geometry._indexElementOffset = indexElementOffset;
+        geometry.draw_info.index_count = indexCount;
+        geometry.draw_info.vertex_element_offset = vertexElementOffset;
+        geometry.draw_info.index_element_offset = indexElementOffset;
         geometry._vertexData = vertexData;
         geometry._indexData = indexData;
         geometry._format = format;

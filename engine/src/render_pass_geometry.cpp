@@ -407,10 +407,10 @@ void triton::XRenderPassGeometry::Draw()
             (cpuword)&_gpuPipeline,
             (cpuword)renderGroup.GetMotionType(),
             (cpuword)sharedGeometry._vertexCount,
-            (cpuword)sharedGeometry._indexCount,
+            (cpuword)sharedGeometry.draw_info.index_count,
             (cpuword)renderGroup.GetInstanceCount(),
-            (cpuword)sharedGeometry._indexElementOffset,
-            (cpuword)sharedGeometry._vertexElementOffset,
+            (cpuword)sharedGeometry.draw_info.index_element_offset,
+            (cpuword)sharedGeometry.draw_info.vertex_element_offset,
             (cpuword)renderGroup.GetInstanceBufferOffset()
         ));
     }

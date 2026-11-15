@@ -58,6 +58,12 @@ namespace triton
 
 		inline types::usize GetInstanceBufferOffset() const { return _instance_buffer_offset; }
 
-		struct TGPULayout {};
+		struct TGPULayout
+		{
+			types::s32 camera_index;
+			types::dword motion_type;
+			types::u32 instance_buffer_offset;
+			SGeometryDrawInfo geometry_draw_info;
+		};
 	};
 }
