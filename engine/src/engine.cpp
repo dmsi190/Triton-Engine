@@ -44,6 +44,7 @@
 #include "image_decoder_multi.hpp"
 #include "graphics_backend2_vulkan.hpp"
 #include "world.hpp"
+#include "render_command_proxy.hpp"
 
 using namespace types;
 
@@ -174,6 +175,9 @@ void triton::CEngine::Initialize()
 	_context->RegisterSubsystem(new CGraphics(_context));
 
 	_context->RegisterSubsystem(new UWorld(_context));
+
+	// Set context for render command proxy
+	CRenderCommandProxy::SetContext(_context);
 }
 
 void triton::CEngine::Shutdown()
