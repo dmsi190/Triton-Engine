@@ -26,6 +26,12 @@ namespace triton
         cMatrix4 _viewProjectionMatrix = cMatrix4(1.0f);
         cVector2 _previousCursorPosition = cVector2(0.0f);
         cVector2 _cursorPosition = cVector2(0.0f);
+        glm::vec4 left_plane;
+        glm::vec4 right_plane;
+        glm::vec4 bottom_plane;
+        glm::vec4 top_plane;
+        glm::vec4 near_plane;
+        glm::vec4 far_plane;
 
     public:
         explicit XCamera(
