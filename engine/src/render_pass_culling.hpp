@@ -19,20 +19,18 @@ namespace triton
         CGPUBufferResource                              _indirect_draw_commands_buffer;
         CGPUBufferResource                              _motion_type_per_command_buffer;
         CGPUShaderResource                              _shader;
-        CGPUPipelineResource                            _pipeline;
         CGPUBindingGroupLayoutResource                  _binding_group_layout;
         CGPUBindingGroupResource                        _binding_group;
+        CGPUPipelineResource                            _pipeline;
 
     public:
-        explicit XRenderPassCulling(
-            cContext* context,
-            types::s32 poolIndex
-        );
+        explicit XRenderPassCulling(cContext* context, types::s32 poolIndex);
+
         ~XRenderPassCulling() override;
 
         void Render() override;
 
-        inline const SHandle& GetShader() { return _shader; }
+        inline const CGPUShaderResource& GetShader() { return _shader; }
 
     private:
         void Bind();

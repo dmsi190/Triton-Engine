@@ -369,13 +369,13 @@ void triton::cRenderThread::ExecuteCommands(
 			{
 				CGPUPipelineResource resultPipeline = gfxBackend->CreatePipeline(
 					*(CGPUShaderResource*)cmd._args._argA,
-					*(SViewport*)cmd._args._argB,
-					*(CGPURenderTargetResource*)cmd._args._argC,
-					*(CGPURenderPassResource*)cmd._args._argD,
-					*(std::vector<CGPUBindingGroupLayoutResource>*)cmd._args._argE,
-					(EPrimitiveTopology)cmd._args._argF,
-					(EVertexBufferFormat)cmd._args._argG,
-					(boolean)cmd._args._argH
+					*(std::vector<CGPUBindingGroupLayoutResource>*)cmd._args._argB,
+					(boolean)cmd._args._argC,
+					cmd._args._argD ? std::optional(std::reference_wrapper(*(SViewport*)cmd._args._argD)) : std::nullopt,
+					cmd._args._argE ? std::optional(std::reference_wrapper(*(CGPURenderTargetResource*)cmd._args._argE)) : std::nullopt,
+					cmd._args._argF ? std::optional(std::reference_wrapper(*(CGPURenderPassResource*)cmd._args._argF)) : std::nullopt,
+					(EPrimitiveTopology)cmd._args._argG,
+					(EVertexBufferFormat)cmd._args._argH
 				);
 				
 				new (_sync->GetResultBuffer().data) CGPUPipelineResource(resultPipeline);

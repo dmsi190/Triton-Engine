@@ -144,13 +144,13 @@ void triton::BGraphicsBackend2Vulkan::FinalizeSwapchain(const CGPUTextureResourc
 		_swapchainPipelines.push_back(
 			CreatePipeline(
 				_swapchainShader,
+				{ _swapchainBindingGroupLayout },
+				False,
 				viewport,
 				_swapchainRenderTargets[i],
 				_swapchainRenderPasses[i],
-				{ _swapchainBindingGroupLayout },
 				EPrimitiveTopology::TriangleStrip,
-				EVertexBufferFormat::Unknown,
-				False
+				EVertexBufferFormat::Unknown
 			)
 		);
 	}
@@ -727,13 +727,13 @@ triton::CGPURenderTargetResource triton::BGraphicsBackend2Vulkan::CreateRenderTa
 
 triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 	const CGPUShaderResource& shader,
-	const SViewport& viewport,
-	CGPURenderTargetResource& renderTarget,
-	const CGPURenderPassResource& renderPass,
 	const std::vector<CGPUBindingGroupLayoutResource>& bindingGroupLayouts,
+	types::boolean bUsePushConstants,
+	const std::optional<std::reference_wrapper<SViewport>> viewport,
+	std::optional<std::reference_wrapper<CGPURenderTargetResource>> renderTarget,
+	const std::optional<std::reference_wrapper<CGPURenderPassResource>> renderPass,
 	EPrimitiveTopology primitiveTopology,
-	EVertexBufferFormat vertexBufferFormat,
-	types::boolean bUsePushConstants
+	EVertexBufferFormat vertexBufferFormat
 )
 {
 	const dword stageMask = shader.GetStageMask();
@@ -745,7 +745,7 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 	const boolean bIsCompute =
 		(stageMask & (dword)EShaderStageBit::Compute) ? True : False;
 
-	const boolean bHasDepth = renderTarget.GetDepthAttachment().IsValid();
+	const boolean bHasDepth = renderTarget->get().GetDepthAttachment().IsValid();
 
 	usize stageCount = 0;
 	std::vector<VkPipelineShaderStageCreateInfo> stageCreateInfos;
@@ -839,13 +839,13 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		inputAssemblyStateCreateInfo.topology = PrimitiveTopologyToNative(primitiveTopology);
 		inputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
 
-		VkViewport nativeViewport = ViewportToNative(viewport);
+		VkViewport nativeViewport = ViewportToNative(viewport->get());
 
 		VkRect2D scissor = {};
 		scissor.offset.x = 0;
 		scissor.offset.y = 0;
-		scissor.extent.width = viewport.rect.GetZ();
-		scissor.extent.height = viewport.rect.GetW();
+		scissor.extent.width = viewport->get().rect.GetZ();
+		scissor.extent.height = viewport->get().rect.GetW();
 
 		VkPipelineViewportStateCreateInfo viewportStateCreateInfo = {};
 		viewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -963,7 +963,7 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
 		graphicsPipelineCreateInfo.pDynamicState = nullptr;
 		graphicsPipelineCreateInfo.layout = pipelineLayout;
-		graphicsPipelineCreateInfo.renderPass = (VkRenderPass)renderPass.GetInstance();
+		graphicsPipelineCreateInfo.renderPass = (VkRenderPass)renderPass->get().GetInstance();
 		graphicsPipelineCreateInfo.subpass = 0;
 		graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
 		graphicsPipelineCreateInfo.basePipelineIndex = -1;

@@ -100,13 +100,13 @@ namespace triton
 
 		virtual CGPUPipelineResource CreatePipeline(
 			const CGPUShaderResource& shader,
-			const SViewport& viewport,
-			CGPURenderTargetResource& renderTarget,
-			const CGPURenderPassResource& renderPass,
 			const std::vector<CGPUBindingGroupLayoutResource>& bindingGroupLayouts,
-			EPrimitiveTopology primitiveTopology,
-			EVertexBufferFormat vertexBufferFormat,
-			types::boolean bUsePushConstants
+			types::boolean bUsePushConstants,
+			const std::optional<std::reference_wrapper<SViewport>> viewport = std::nullopt,
+			std::optional<std::reference_wrapper<CGPURenderTargetResource>> renderTarget = std::nullopt,
+			const std::optional<std::reference_wrapper<CGPURenderPassResource>> renderPass = std::nullopt,
+			EPrimitiveTopology primitiveTopology = EPrimitiveTopology::Unknown,
+			EVertexBufferFormat vertexBufferFormat = EVertexBufferFormat::Unknown
 		) = 0;
 
 		virtual void DestroyPipeline(CGPUPipelineResource& pipeline) = 0;

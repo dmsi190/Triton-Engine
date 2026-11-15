@@ -28,6 +28,18 @@ triton::CGPUBufferResource triton::CRenderCommandProxy::CreateBuffer(
         WaitForRenderCommandResult<CGPUBufferResource>();
 }
 
+void triton::CRenderCommandProxy::DestroyBuffer(CGPUBufferResource& buffer)
+{
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::DESTROY_BUFFER,
+        (cpuword)&buffer
+    ));
+
+    _context->GetSubsystem<CEngine>()->
+        GetSynchronization()->
+        WaitForRenderCommandResult<void*>();
+}
+
 triton::CGPUShaderResource triton::CRenderCommandProxy::CreateShader(
     EShaderStageBit stage_mask,
     const SShaderBytecodeFiles& files
@@ -44,6 +56,18 @@ triton::CGPUShaderResource triton::CRenderCommandProxy::CreateShader(
         WaitForRenderCommandResult<CGPUShaderResource>();
 }
 
+void triton::CRenderCommandProxy::DestroyShader(CGPUShaderResource& shader)
+{
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::DESTROY_SHADER,
+        (cpuword)&shader
+    ));
+
+    _context->GetSubsystem<CEngine>()->
+        GetSynchronization()->
+        WaitForRenderCommandResult<void*>();
+}
+
 triton::CGPUBindingGroupLayoutResource triton::CRenderCommandProxy::CreateBindingGroupLayout(
     const std::vector<SBindingGroupBinding>& bindings
 )
@@ -56,6 +80,18 @@ triton::CGPUBindingGroupLayoutResource triton::CRenderCommandProxy::CreateBindin
     return _context->GetSubsystem<CEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<CGPUBindingGroupLayoutResource>();
+}
+
+void triton::CRenderCommandProxy::DestroyBindingGroupLayout(CGPUBindingGroupLayoutResource& binding_group_layout)
+{
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::DestroyBindingGroupLayout,
+        (cpuword)&binding_group_layout
+    ));
+
+    _context->GetSubsystem<CEngine>()->
+        GetSynchronization()->
+        WaitForRenderCommandResult<void*>();
 }
 
 triton::CGPUBindingGroupResource triton::CRenderCommandProxy::CreateBindingGroup(
@@ -76,4 +112,56 @@ triton::CGPUBindingGroupResource triton::CRenderCommandProxy::CreateBindingGroup
     return _context->GetSubsystem<CEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<CGPUBindingGroupResource>();
+}
+
+void triton::CRenderCommandProxy::DestroyBindingGroup(CGPUBindingGroupResource& binding_group)
+{
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::DestroyBindingGroup,
+        (cpuword)&binding_group
+    ));
+
+    _context->GetSubsystem<CEngine>()->
+        GetSynchronization()->
+        WaitForRenderCommandResult<void*>();
+}
+
+triton::CGPUPipelineResource triton::CRenderCommandProxy::CreatePipeline(
+    const CGPUShaderResource& shader,
+    const std::vector<CGPUBindingGroupLayoutResource>& bindingGroupLayouts,
+    types::boolean bUsePushConstants,
+    const std::optional<std::reference_wrapper<SViewport>> viewport,
+    std::optional<std::reference_wrapper<CGPURenderTargetResource>> renderTarget,
+    const std::optional<std::reference_wrapper<CGPURenderPassResource>> renderPass,
+    EPrimitiveTopology primitiveTopology,
+    EVertexBufferFormat vertexBufferFormat
+)
+{
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::CREATE_PIPELINE,
+        (cpuword)&shader,
+        (cpuword)&bindingGroupLayouts,
+        (cpuword)bUsePushConstants,
+        (cpuword)(viewport.has_value() ? &viewport->get() : 0),
+        (cpuword)(renderTarget.has_value() ? &renderTarget->get() : 0),
+        (cpuword)(renderPass.has_value() ? &renderPass->get() : 0),
+        (cpuword)primitiveTopology,
+        (cpuword)vertexBufferFormat
+    ));
+
+    return _context->GetSubsystem<CEngine>()->
+        GetSynchronization()->
+        WaitForRenderCommandResult<CGPUPipelineResource>();
+}
+
+void triton::CRenderCommandProxy::DestroyPipeline(CGPUPipelineResource& pipeline)
+{
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::DESTROY_PIPELINE,
+        (cpuword)&pipeline
+    ));
+
+    _context->GetSubsystem<CEngine>()->
+        GetSynchronization()->
+        WaitForRenderCommandResult<void*>();
 }

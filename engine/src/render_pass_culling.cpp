@@ -5,11 +5,22 @@
 #include "context.hpp"
 #include "application.hpp"
 #include "render_indirect_draw_command_struct.hpp"
+#include "camera_pool.hpp"
+#include "world_render_group_pool.hpp"
+#include "render_instance_static_pool.hpp"
+#include "render_instance_dynamic_pool.hpp"
 
 using namespace types;
 
 triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex) :
-    IRenderPass(context, poolIndex, ERenderPassDispatch::Culling)
+    IRenderPass(context, poolIndex, ERenderPassDispatch::Culling),
+    _indirect_draw_command_counter_buffer(CGPUBufferResource::Invalid()),
+    _indirect_draw_commands_buffer(CGPUBufferResource::Invalid()),
+    _motion_type_per_command_buffer(CGPUBufferResource::Invalid()),
+    _shader(CGPUShaderResource::Invalid()),
+    _binding_group_layout(CGPUBindingGroupLayoutResource::Invalid()),
+    _binding_group(CGPUBindingGroupResource::Invalid()),
+    _pipeline(CGPUPipelineResource::Invalid())
 {
     const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
 
@@ -34,142 +45,110 @@ triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex)
         shader_files
     );
 
-    std::vector<SBindingGroupBinding>* bufferBindingGroupBindings =
+    std::vector<SBindingGroupBinding>* bindings =
         CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
 
-    bufferBindingGroupBindings->push_back({ 0, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, nullptr });
-    bufferBindingGroupBindings->push_back({ 1, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, nullptr });
-    bufferBindingGroupBindings->push_back({ 2, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, nullptr });
-    bufferBindingGroupBindings->push_back({ 3, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, nullptr });
-
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-        ERenderCommand::CreateBindingGroupLayout,
-        (cpuword)bufferBindingGroupBindings
-    ));
-
-    _gpuBindingGroupLayouts.push_back(
-        _context->GetSubsystem<CEngine>()->
-        GetSynchronization()->
-        WaitForRenderCommandResult<CGPUBindingGroupLayoutResource>()
+    bindings->push_back(
+        SBindingGroupBinding(
+            0,
+            EBindingGroupBindingType::StorageBuffer,
+            EShaderStageBit::Compute,
+            (CGPUResource*)&_indirect_draw_command_counter_buffer
+        )
+    );
+    bindings->push_back(
+        SBindingGroupBinding(
+            1,
+            EBindingGroupBindingType::StorageBuffer,
+            EShaderStageBit::Compute,
+            (CGPUResource*)&_indirect_draw_commands_buffer
+        )
+    );
+    bindings->push_back(
+        SBindingGroupBinding(
+            2,
+            EBindingGroupBindingType::StorageBuffer,
+            EShaderStageBit::Compute,
+            (CGPUResource*)&_motion_type_per_command_buffer
+        )
+    );
+    bindings->push_back(
+        SBindingGroupBinding(
+            3,
+            EBindingGroupBindingType::StorageBuffer,
+            EShaderStageBit::Compute,
+            (CGPUResource*)&_context->GetPool<CCameraPool>()->GetGPUBuffer()
+        )
+    );
+    bindings->push_back(
+        SBindingGroupBinding(
+            4,
+            EBindingGroupBindingType::StorageBuffer,
+            EShaderStageBit::Compute,
+            (CGPUResource*)&_context->GetPool<CRenderGroupPool>()->GetGPUBuffer()
+        )
+    );
+    bindings->push_back(
+        SBindingGroupBinding(
+            5,
+            EBindingGroupBindingType::StorageBuffer,
+            EShaderStageBit::Compute,
+            (CGPUResource*)&_context->GetPool<CRenderInstanceStaticPool>()->GetGPUBuffer()
+        )
+    );
+    bindings->push_back(
+        SBindingGroupBinding(
+            6,
+            EBindingGroupBindingType::StorageBuffer,
+            EShaderStageBit::Compute,
+            (CGPUResource*)&_context->GetPool<CRenderInstanceDynamicPool>()->GetGPUBuffer()
+        )
     );
 
-    CObjectAllocator::Destroy<std::vector<SBindingGroupBinding>>(bufferBindingGroupBindings);
+    _binding_group_layout = CRenderCommandProxy::CreateBindingGroupLayout(*bindings);
 
-    std::vector<SBindingGroupBinding>* textureBindingGroupBindings =
-        CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
-
-    textureBindingGroupBindings->push_back({ 0, EBindingGroupBindingType::TextureSampler, (dword)EShaderStageBit::Pixel, nullptr });
-    textureBindingGroupBindings->push_back({ 1, EBindingGroupBindingType::TextureSampler, (dword)EShaderStageBit::Pixel, nullptr });
-    textureBindingGroupBindings->push_back({ 2, EBindingGroupBindingType::TextureSampler, (dword)EShaderStageBit::Pixel, nullptr });
-    textureBindingGroupBindings->push_back({ 3, EBindingGroupBindingType::TextureSampler, (dword)EShaderStageBit::Pixel, nullptr });
-
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-        ERenderCommand::CreateBindingGroupLayout,
-        (cpuword)textureBindingGroupBindings
-    ));
-
-    _gpuBindingGroupLayouts.push_back(
-        _context->GetSubsystem<CEngine>()->
-        GetSynchronization()->
-        WaitForRenderCommandResult<CGPUBindingGroupLayoutResource>()
+    _binding_group = CRenderCommandProxy::CreateBindingGroup(
+        0,
+        _binding_group_layout,
+        *bindings,
+        {}
     );
 
-    CObjectAllocator::Destroy<std::vector<SBindingGroupBinding>>(textureBindingGroupBindings);
+    CObjectAllocator::Destroy<std::vector<SBindingGroupBinding>>(bindings);
 
-    std::vector<SBindingGroupBinding>* bufferBindingGroupBufferBindings =
-        CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
-    std::vector<SBindingGroupBinding>* bufferBindingGroupTextureBindings =
-        CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
+    std::vector<CGPUBindingGroupLayoutResource>* binding_group_layouts =
+        CObjectAllocator::Create<std::vector<CGPUBindingGroupLayoutResource>>(64);
 
-    const CGPUBufferResource& instanceRigidBuffer = _context->GetPool<CRenderInstanceStaticPool>()->GetGPUBuffer();
-    const CGPUBufferResource& instanceDynamicBuffer = _context->GetPool<CRenderInstanceDynamicPool>()->GetGPUBuffer();
-    const CGPUBufferResource& materialBuffer = _context->GetPool<CMaterialPool>()->GetGPUBuffer();
-    const CGPUBufferResource& skinnedBoneBuffer = _context->GetPool<CSkinnedBonesPool>()->GetGPUBuffer();
-    bufferBindingGroupBufferBindings->push_back({ 0, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, (CGPUResource*)&instanceRigidBuffer });
-    bufferBindingGroupBufferBindings->push_back({ 1, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, (CGPUResource*)&instanceDynamicBuffer });
-    bufferBindingGroupBufferBindings->push_back({ 2, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, (CGPUResource*)&materialBuffer });
-    bufferBindingGroupBufferBindings->push_back({ 3, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, (CGPUResource*)&skinnedBoneBuffer });
+    binding_group_layouts->push_back(_binding_group_layout);
 
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-        ERenderCommand::CreateBindingGroup,
-        (cpuword)0,
-        (cpuword)&_gpuBindingGroupLayouts[0],
-        (cpuword)bufferBindingGroupBufferBindings,
-        (cpuword)bufferBindingGroupTextureBindings
-    ));
-
-    _gpuBindingGroupBuffersArrays[0].push_back(
-        _context->GetSubsystem<CEngine>()->
-        GetSynchronization()->
-        WaitForRenderCommandResult<CGPUBindingGroupResource>()
-    );
-    _gpuBindingGroupBuffersArrays[1].push_back(
-        _gpuBindingGroupBuffersArrays[0][0]
+    _pipeline = CRenderCommandProxy::CreatePipeline(
+        _shader,
+        *binding_group_layouts,
+        False
     );
 
-    CObjectAllocator::Destroy<std::vector<SBindingGroupBinding>>(bufferBindingGroupTextureBindings);
-    CObjectAllocator::Destroy<std::vector<SBindingGroupBinding>>(bufferBindingGroupBufferBindings);
-
-    XShader& shader = *_context->GetPool<CShaderPool>()->Get(_shader);
-
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-        ERenderCommand::CREATE_PIPELINE,
-        (cpuword)&shader.GetGPUResource(),
-        (cpuword)&_viewport,
-        (cpuword)&gpuRenderTarget,
-        (cpuword)&_gpuRenderPass,
-        (cpuword)&_gpuBindingGroupLayouts,
-        (cpuword)primitiveTopology,
-        (cpuword)EVertexBufferFormat::Rigid_48,
-        (cpuword)True
-    ));
-
-    _gpuPipeline = _context->GetSubsystem<CEngine>()->
-        GetSynchronization()->
-        WaitForRenderCommandResult<CGPUPipelineResource>();
+    CObjectAllocator::Destroy<std::vector<CGPUBindingGroupLayoutResource>>(binding_group_layouts);
 }
 
-triton::XRenderPassGeometry::~XRenderPassGeometry()
+triton::XRenderPassCulling::~XRenderPassCulling()
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-        ERenderCommand::DESTROY_PIPELINE,
-        (cpuword)&_gpuPipeline
-    ));
-
-    _context->GetSubsystem<CEngine>()->
-        GetSynchronization()->
-        WaitForRenderCommandResult<void*>();
-
-    for (auto& gpuBindingGroupLayout : _gpuBindingGroupLayouts)
-    {
-        _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-            ERenderCommand::DestroyBindingGroupLayout,
-            (cpuword)&gpuBindingGroupLayout
-        ));
-
-        _context->GetSubsystem<CEngine>()->
-            GetSynchronization()->
-            WaitForRenderCommandResult<void*>();
-    }
-
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-        ERenderCommand::DESTROY_RENDER_PASS,
-        (cpuword)&_gpuRenderPass
-    ));
-
-    _context->GetSubsystem<CEngine>()->
-        GetSynchronization()->
-        WaitForRenderCommandResult<void*>();
+    CRenderCommandProxy::DestroyPipeline(_pipeline);
+    CRenderCommandProxy::DestroyBindingGroup(_binding_group);
+    CRenderCommandProxy::DestroyBindingGroupLayout(_binding_group_layout);
+    CRenderCommandProxy::DestroyShader(_shader);
+    CRenderCommandProxy::DestroyBuffer(_motion_type_per_command_buffer);
+    CRenderCommandProxy::DestroyBuffer(_indirect_draw_commands_buffer);
+    CRenderCommandProxy::DestroyBuffer(_indirect_draw_command_counter_buffer);
 }
 
-void triton::XRenderPassGeometry::Render()
+void triton::XRenderPassCulling::Render()
 {
     Bind();
     Draw();
     Unbind();
 }
 
-void triton::XRenderPassGeometry::Bind()
+void triton::XRenderPassCulling::Bind()
 {
     // TODO: [Vulkan backend] This must be done using render command queue on main thread
     // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -204,7 +183,7 @@ void triton::XRenderPassGeometry::Bind()
     }*/
 }
 
-void triton::XRenderPassGeometry::Draw()
+void triton::XRenderPassCulling::Draw()
 {
     // TODO: [Vulkan backend] This must be done using render command queue on main thread
     // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -389,7 +368,7 @@ void triton::XRenderPassGeometry::Draw()
     ));
 }
 
-void triton::XRenderPassGeometry::Unbind()
+void triton::XRenderPassCulling::Unbind()
 {
     // TODO: [Vulkan backend] This must be done using render command queue on main thread
     // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
