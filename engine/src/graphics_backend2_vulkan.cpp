@@ -127,7 +127,12 @@ void triton::BGraphicsBackend2Vulkan::FinalizeSwapchain(const CGPUTextureResourc
 	);
 
 	const std::vector<SBindingGroupBinding> texturesToBind = {
-		{ 0, EBindingGroupBindingType::TextureSampler, 0, (CGPUResource*)&presentTexture }
+		SBindingGroupBinding(
+			0,
+			EBindingGroupBindingType::TextureSampler,
+			EShaderStageBit::Pixel,
+			(CGPUResource*)&presentTexture
+		)
 	};
 
 	for (usize i = 0; i < _swapchainRenderPasses.size(); i++)
@@ -1094,9 +1099,9 @@ triton::CGPUBindingGroupLayoutResource triton::BGraphicsBackend2Vulkan::CreateBi
 
 		nativeBindings[i].descriptorCount = 1;
 
-		if (bindings[i].shaderStageMask & (dword)EShaderStageBit::Vertex)
+		if ((dword)bindings[i].shaderStageMask & (dword)EShaderStageBit::Vertex)
 			nativeBindings[i].stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
-		if (bindings[i].shaderStageMask & (dword)EShaderStageBit::Pixel)
+		if ((dword)bindings[i].shaderStageMask & (dword)EShaderStageBit::Pixel)
 			nativeBindings[i].stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
 	}
 
@@ -1659,6 +1664,44 @@ void triton::BGraphicsBackend2Vulkan::DestroyShader(CGPUShaderResource& shader)
 
 		shader.Invalidate();
 	}
+}
+
+void triton::BGraphicsBackend2Vulkan::Dispatch(
+	const CGPUPipelineResource& pipeline,
+	const std::vector<CGPUBindingGroupResource>& binding_groups,
+	const cVector3& work_group_count
+)
+{
+	vkCmdBindPipeline(
+		_frameCommandBuffers[_currentFrame],
+		VK_PIPELINE_BIND_POINT_COMPUTE,
+		(VkPipeline)pipeline.GetInstance()
+	);
+
+	std::vector<VkDescriptorSet> native_descriptor_sets;
+
+	for (usize i = 0; i < binding_groups.size(); ++i)
+		native_descriptor_sets.push_back((VkDescriptorSet)binding_groups.at(i).GetInstance());
+
+	const usize first_set_index = binding_groups.at(0).GetIndex();
+
+	vkCmdBindDescriptorSets(
+		_frameCommandBuffers[_currentFrame],
+		VK_PIPELINE_BIND_POINT_COMPUTE,
+		(VkPipelineLayout)pipeline.GetLayout(),
+		0,
+		native_descriptor_sets.size(),
+		native_descriptor_sets.data(),
+		0,
+		nullptr
+	);
+
+	vkCmdDispatch(
+		_frameCommandBuffers[_currentFrame],
+		work_group_count.GetX(),
+		work_group_count.GetY(),
+		work_group_count.GetZ()
+	);
 }
 
 void triton::BGraphicsBackend2Vulkan::ResetCommandBuffer(
@@ -3110,7 +3153,12 @@ void triton::BGraphicsBackend2Vulkan::CreateSwapchain(const cVector2& size, usiz
 
 	_swapchainBindingGroupLayout = CreateBindingGroupLayout(
 		{
-			{ 0, EBindingGroupBindingType::TextureSampler, (dword)EShaderStageBit::Pixel, nullptr }
+			SBindingGroupBinding(
+				0,
+				EBindingGroupBindingType::TextureSampler,
+				EShaderStageBit::Pixel,
+				nullptr
+			)
 		}
 	);
 

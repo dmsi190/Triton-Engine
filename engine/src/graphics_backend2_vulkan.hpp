@@ -157,6 +157,12 @@ namespace triton
 
 		void DestroyShader(CGPUShaderResource& shader) override final;
 
+		void Dispatch(
+			const CGPUPipelineResource& pipeline,
+			const std::vector<CGPUBindingGroupResource>& binding_groups,
+			const cVector3& work_group_count
+		) override final;
+
 		void ResetCommandBuffer(ECommandBuffer command_buffer, ECommandBufferReset reset_option) override final;
 
 		void AddCommandToBuffer(

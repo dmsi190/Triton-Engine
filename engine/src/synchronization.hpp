@@ -58,7 +58,8 @@ namespace triton
 		DestroyBindingGroup,
 		BeginRenderPass,
 		ExecuteRenderPass,
-		EndRenderPass
+		EndRenderPass,
+		Dispatch
 	};
 
 	struct SRenderCommandArgs

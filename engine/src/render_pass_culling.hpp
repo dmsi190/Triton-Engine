@@ -3,8 +3,9 @@
 #pragma once
 
 #include "render_pass.hpp"
-#include "gpu_buffer_resource.hpp"
 #include "handle.hpp"
+#include "gpu_buffer_resource.hpp"
+#include "gpu_shader_resource.hpp"
 #include "gpu_pipeline_resource.hpp"
 #include "gpu_binding_group_layout_resource.hpp"
 #include "gpu_binding_group_resource.hpp"
@@ -20,7 +21,7 @@ namespace triton
         CGPUBufferResource                              _motion_type_per_command_buffer;
         CGPUShaderResource                              _shader;
         CGPUBindingGroupLayoutResource                  _binding_group_layout;
-        CGPUBindingGroupResource                        _binding_group;
+        std::vector<CGPUBindingGroupResource>           _binding_groups;
         CGPUPipelineResource                            _pipeline;
 
     public:
@@ -30,13 +31,6 @@ namespace triton
 
         void Render() override;
 
-        inline const CGPUShaderResource& GetShader() { return _shader; }
-
-    private:
-        void Bind();
-
-        void Draw();
-
-        void Unbind();
+        inline const CGPUShaderResource& GetShader() const { return _shader; }
     };
 }

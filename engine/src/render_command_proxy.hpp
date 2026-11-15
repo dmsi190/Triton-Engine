@@ -26,7 +26,7 @@ namespace triton
 	{
 		TRITON_CLASS_NAME(CRenderCommandProxy)
 
-		static cContext* _context;
+		inline static cContext* _context;
 
 	public:
 		static void SetContext(cContext* context);
@@ -66,5 +66,11 @@ namespace triton
 		);
 
 		static void DestroyPipeline(CGPUPipelineResource& pipeline);
+
+		static void Dispatch(
+			const CGPUPipelineResource& pipeline,
+			const std::vector<CGPUBindingGroupResource>& binding_groups,
+			const cVector3& work_group_count
+		);
 	};
 }

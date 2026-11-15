@@ -68,10 +68,10 @@ triton::XRenderPassGeometry::XRenderPassGeometry(
     std::vector<SBindingGroupBinding>* bufferBindingGroupBindings =
         CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
 
-    bufferBindingGroupBindings->push_back({ 0, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, nullptr });
-    bufferBindingGroupBindings->push_back({ 1, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, nullptr });
-    bufferBindingGroupBindings->push_back({ 2, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, nullptr });
-    bufferBindingGroupBindings->push_back({ 3, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, nullptr });
+    bufferBindingGroupBindings->push_back({ 0, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
+    bufferBindingGroupBindings->push_back({ 1, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
+    bufferBindingGroupBindings->push_back({ 2, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
+    bufferBindingGroupBindings->push_back({ 3, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
 
     _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CreateBindingGroupLayout,
@@ -89,10 +89,10 @@ triton::XRenderPassGeometry::XRenderPassGeometry(
     std::vector<SBindingGroupBinding>* textureBindingGroupBindings =
         CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
 
-    textureBindingGroupBindings->push_back({ 0, EBindingGroupBindingType::TextureSampler, (dword)EShaderStageBit::Pixel, nullptr });
-    textureBindingGroupBindings->push_back({ 1, EBindingGroupBindingType::TextureSampler, (dword)EShaderStageBit::Pixel, nullptr });
-    textureBindingGroupBindings->push_back({ 2, EBindingGroupBindingType::TextureSampler, (dword)EShaderStageBit::Pixel, nullptr });
-    textureBindingGroupBindings->push_back({ 3, EBindingGroupBindingType::TextureSampler, (dword)EShaderStageBit::Pixel, nullptr });
+    textureBindingGroupBindings->push_back({ 0, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    textureBindingGroupBindings->push_back({ 1, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    textureBindingGroupBindings->push_back({ 2, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    textureBindingGroupBindings->push_back({ 3, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
 
     _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CreateBindingGroupLayout,
@@ -116,10 +116,10 @@ triton::XRenderPassGeometry::XRenderPassGeometry(
     const CGPUBufferResource& instanceDynamicBuffer = _context->GetPool<CRenderInstanceDynamicPool>()->GetGPUBuffer();
     const CGPUBufferResource& materialBuffer = _context->GetPool<CMaterialPool>()->GetGPUBuffer();
     const CGPUBufferResource& skinnedBoneBuffer = _context->GetPool<CSkinnedBonesPool>()->GetGPUBuffer();
-    bufferBindingGroupBufferBindings->push_back({ 0, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, (CGPUResource*)&instanceRigidBuffer });
-    bufferBindingGroupBufferBindings->push_back({ 1, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, (CGPUResource*)&instanceDynamicBuffer });
-    bufferBindingGroupBufferBindings->push_back({ 2, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, (CGPUResource*)&materialBuffer });
-    bufferBindingGroupBufferBindings->push_back({ 3, EBindingGroupBindingType::StorageBuffer, (dword)EShaderStageBit::Vertex, (CGPUResource*)&skinnedBoneBuffer });
+    bufferBindingGroupBufferBindings->push_back({ 0, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, (CGPUResource*)&instanceRigidBuffer });
+    bufferBindingGroupBufferBindings->push_back({ 1, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, (CGPUResource*)&instanceDynamicBuffer });
+    bufferBindingGroupBufferBindings->push_back({ 2, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, (CGPUResource*)&materialBuffer });
+    bufferBindingGroupBufferBindings->push_back({ 3, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, (CGPUResource*)&skinnedBoneBuffer });
 
     _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CreateBindingGroup,

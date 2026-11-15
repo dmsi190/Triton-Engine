@@ -456,6 +456,15 @@ void triton::cRenderThread::ExecuteCommands(
 				);
 				break;
 			}
+			case ERenderCommand::Dispatch:
+			{
+				gfxBackend->Dispatch(
+					*(CGPUPipelineResource*)cmd._args._argA,
+					*(const std::vector<CGPUBindingGroupResource>*)cmd._args._argB,
+					cVector3(cmd._args._argC, cmd._args._argD, cmd._args._argE)
+				);
+				break;
+			}
 		}
 	}
 }

@@ -165,3 +165,19 @@ void triton::CRenderCommandProxy::DestroyPipeline(CGPUPipelineResource& pipeline
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }
+
+void triton::CRenderCommandProxy::Dispatch(
+    const CGPUPipelineResource& pipeline,
+    const std::vector<CGPUBindingGroupResource>& binding_groups,
+    const cVector3& work_group_count
+)
+{
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::Dispatch,
+        (cpuword)&pipeline,
+        (cpuword)&binding_groups,
+        (cpuword)work_group_count.GetX(),
+        (cpuword)work_group_count.GetY(),
+        (cpuword)work_group_count.GetZ()
+    ));
+}

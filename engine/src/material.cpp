@@ -37,10 +37,10 @@ triton::XMaterial::XMaterial(
     std::vector<SBindingGroupBinding>* bindings =
         CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
 
-    bindings->push_back({ 0, EBindingGroupBindingType::TextureSampler, (dword)EShaderStageBit::Pixel, nullptr });
-    bindings->push_back({ 1, EBindingGroupBindingType::TextureSampler, (dword)EShaderStageBit::Pixel, nullptr });
-    bindings->push_back({ 2, EBindingGroupBindingType::TextureSampler, (dword)EShaderStageBit::Pixel, nullptr });
-    bindings->push_back({ 3, EBindingGroupBindingType::TextureSampler, (dword)EShaderStageBit::Pixel, nullptr });
+    bindings->push_back({ 0, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    bindings->push_back({ 1, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    bindings->push_back({ 2, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    bindings->push_back({ 3, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
 
     _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CreateBindingGroupLayout,
@@ -64,7 +64,7 @@ triton::XMaterial::XMaterial(
             {
                 0,
                 EBindingGroupBindingType::TextureSampler,
-                (dword)EShaderStageBit::Pixel,
+                EShaderStageBit::Pixel,
                 (CGPUResource*)&(*_context->GetPool<PTexturePool>()->Get(diffuseTexture.value())).get().GetGPUResource()
             }
         );
@@ -73,7 +73,7 @@ triton::XMaterial::XMaterial(
             {
                 1,
                 EBindingGroupBindingType::TextureSampler,
-                (dword)EShaderStageBit::Pixel,
+                EShaderStageBit::Pixel,
                 (CGPUResource*)&(*_context->GetPool<PTexturePool>()->Get(normalTexture.value())).get().GetGPUResource()
             }
         );
@@ -82,7 +82,7 @@ triton::XMaterial::XMaterial(
             {
                  2,
                  EBindingGroupBindingType::TextureSampler,
-                 (dword)EShaderStageBit::Pixel,
+                 EShaderStageBit::Pixel,
                  (CGPUResource*)&(*_context->GetPool<PTexturePool>()->Get(roughnessTexture.value())).get().GetGPUResource()
             }
         );
@@ -91,7 +91,7 @@ triton::XMaterial::XMaterial(
             {
                 3,
                 EBindingGroupBindingType::TextureSampler,
-                (dword)EShaderStageBit::Pixel,
+                EShaderStageBit::Pixel,
                 (CGPUResource*)&(*_context->GetPool<PTexturePool>()->Get(metallicTexture.value())).get().GetGPUResource()
             }
         );
