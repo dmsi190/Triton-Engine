@@ -59,6 +59,10 @@ writeonly buffer IndirectDrawCommands {
 	IndirectDrawCommand cmds[];
 } indirectDrawCommands;
 
+readonly buffer MotionTypePerCommandBuffer {
+	uint motionTypes[];
+} motionTypePerCommandBuffer;
+
 shared uint groupInstanceCountShared;
 
 void main()
@@ -103,5 +107,7 @@ void main()
 		indirectDrawCommand.firstInstance = renderGroupInstance.sharedGeometry.firstInstance;
 		
 		indirectDrawCommands.cmds[ indirectDrawCommandLookup ] = indirectDrawCommand;
+		
+		motionTypePerCommandBuffer.motionTypes[ indirectDrawCommandLookup ] = renderGroupInstance.motionType;
 	}
 }

@@ -159,7 +159,13 @@ void triton::CEngine::Initialize()
 
 	_context->RegisterPool(new CRenderDomainPool(_context, K_TRUE));
 
-	_context->RegisterPool(new CRenderGroupPool(_context, K_TRUE));
+	_context->RegisterPool(new CRenderGroupPool(
+		_context,
+		K_TRUE,
+		CRenderInstanceStaticPool::cDefaultReservationSize,
+		1,
+		caps.render_group_count
+	));
 
 	_context->RegisterPool(new CWorldObjectPool(_context, K_TRUE));
 

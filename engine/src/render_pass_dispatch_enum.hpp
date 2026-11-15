@@ -8,6 +8,7 @@ namespace triton
     {
         None,
         Clear,
+        Culling,
         Geometry,
         Text,
         Processing
