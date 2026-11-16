@@ -146,13 +146,13 @@ triton::XRenderPassGeometry::XRenderPassGeometry(
     _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CREATE_PIPELINE,
         (cpuword)&shader.GetGPUResource(),
+        (cpuword)&_gpuBindingGroupLayouts,
+        (cpuword)True,
         (cpuword)&_viewport,
         (cpuword)&gpuRenderTarget,
         (cpuword)&_gpuRenderPass,
-        (cpuword)&_gpuBindingGroupLayouts,
         (cpuword)primitiveTopology,
-        (cpuword)EVertexBufferFormat::Rigid_48,
-        (cpuword)True
+        (cpuword)EVertexBufferFormat::Rigid_48
     ));
 
     _gpuPipeline = _context->GetSubsystem<CEngine>()->
