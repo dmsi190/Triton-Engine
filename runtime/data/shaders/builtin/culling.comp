@@ -2,6 +2,80 @@
 
 layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
+struct IndirectDrawCommand
+{
+	uint index_count;
+    uint instance_count;
+    uint first_index;
+    int vertex_offset;
+    uint first_instance;
+};
+
+struct Camera
+{
+    vec4 left_plane;
+    vec4 right_plane;
+    vec4 bottom_plane;
+    vec4 top_plane;
+    vec4 near_plane;
+    vec4 far_plane;
+};
+
+struct RenderGroup
+{
+    int camera_index;
+	uint motion_type;
+	uint instance_buffer_offset;
+	uint geometry_index_count;
+	uint geometry_index_element_offset;
+	uint geometry_vertex_element_offset;
+	uint geometry_instance_offset;
+};
+
+struct Instance
+{
+    float use2D;
+	int material_index;
+	int skinned_bone_buffer_offset;
+	uint property_bits;
+	mat4 world_matrix;
+};
+
+layout(set = 0, binding = 0, std430) writeonly buffer IndirectDrawCommandCounterBuffer
+{
+    uint count;
+} indirect_draw_command_counter_buffer;
+
+layout(set = 0, binding = 1, std430) writeonly buffer IndirectDrawCommandsBuffer
+{
+    IndirectDrawCommand commands[];
+} indirect_draw_commands_buffer;
+
+layout(set = 0, binding = 2, std430) writeonly buffer MotionTypePerCommandBuffer
+{
+    uint motion_types[];
+} motion_type_per_command_buffer;
+
+layout(set = 0, binding = 3, std430) writeonly buffer CameraBuffer
+{
+    Camera cameras[];
+} camera_buffer;
+
+layout(set = 0, binding = 4, std430) writeonly buffer RenderGroupBuffer
+{
+    RenderGroup groups[];
+} render_group_buffer;
+
+layout(set = 0, binding = 5, std430) writeonly buffer RenderInstanceStaticBuffer
+{
+    Instance instances[];
+} render_instance_static_buffer;
+
+layout(set = 0, binding = 6, std430) writeonly buffer RenderInstanceDynamicBuffer
+{
+    Instance instances[];
+} render_instance_dynamic_buffer;
+
 void main()
 {
 }
