@@ -56,22 +56,22 @@ layout(set = 0, binding = 2, std430) writeonly buffer MotionTypePerCommandBuffer
     uint motion_types[];
 } motion_type_per_command_buffer;
 
-layout(set = 0, binding = 3, std430) writeonly buffer CameraBuffer
+layout(set = 0, binding = 3, std430) readonly buffer CameraBuffer
 {
     Camera cameras[];
 } camera_buffer;
 
-layout(set = 0, binding = 4, std430) writeonly buffer RenderGroupBuffer
+layout(set = 0, binding = 4, std430) readonly buffer RenderGroupBuffer
 {
     RenderGroup groups[];
 } render_group_buffer;
 
-layout(set = 0, binding = 5, std430) writeonly buffer RenderInstanceStaticBuffer
+layout(set = 0, binding = 5, std430) readonly buffer RenderInstanceStaticBuffer
 {
     Instance instances[];
 } render_instance_static_buffer;
 
-layout(set = 0, binding = 6, std430) writeonly buffer RenderInstanceDynamicBuffer
+layout(set = 0, binding = 6, std430) readonly buffer RenderInstanceDynamicBuffer
 {
     Instance instances[];
 } render_instance_dynamic_buffer;
