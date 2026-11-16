@@ -58,9 +58,11 @@ namespace triton
 		
 		virtual ~iObject() = default;
 
-		// TODO: Copying of object is now removed, bring it back
-		//iObject(const iObject& rhs) = delete;
-		//iObject& operator=(const iObject& rhs) = delete;
+		iObject() = delete;
+		iObject(const iObject&) = delete;
+		iObject& operator=(const iObject&) = delete;
+		iObject(iObject&&) = delete;
+		iObject& operator=(iObject&&) = delete;
 
 		virtual ClassType GetType() const = 0;
 
