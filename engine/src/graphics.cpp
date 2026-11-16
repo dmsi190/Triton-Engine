@@ -527,44 +527,54 @@ void triton::CGraphics::CreateRenderPasses()
         _compositeFinalShader
     );*/
 
-    CRenderPassGeometryPool* renderPassGeometryPool = _context->GetPool<CRenderPassGeometryPool>();
-    CRenderTargetPool* renderTargetPool = _context->GetPool<CRenderTargetPool>();
+    {
+        CRenderPassCullingPool* culling_pass_pool = _context->GetPool<CRenderPassCullingPool>();
 
-    XRenderTarget& opaqueRenderTarget = *renderTargetPool->Get(_opaqueRenderTarget);
+        _culling_pass = *culling_pass_pool->Create();
+    }
 
-    SViewport viewport;
-    viewport.rect = cVector4(
-        0,
-        0,
-        opaqueRenderTarget.GetColorAttachmentSize(0).GetX(),
-        opaqueRenderTarget.GetColorAttachmentSize(0).GetY()
-    );
+    {
+        CRenderPassGeometryPool* renderPassGeometryPool = _context->GetPool<CRenderPassGeometryPool>();
+        CRenderTargetPool* renderTargetPool = _context->GetPool<CRenderTargetPool>();
 
-    const std::vector<EResourceUsage> srcAttachmentsUsage =
-        { EResourceUsage::Unknown, EResourceUsage::Unknown };
-    const std::vector<EResourceUsage> dstAttachmentsUsage =
-        { EResourceUsage::PixelShaderRead, EResourceUsage::DepthAttachment };
-    
-    const std::vector<CGPUBufferResource> inputBuffers = {
-        _context->GetPool<CRenderInstanceStaticPool>()->GetGPUBuffer()
-    };
+        XRenderTarget& opaqueRenderTarget = *renderTargetPool->Get(_opaqueRenderTarget);
 
-    const std::vector<SShaderTextureBinding> inputTextures;
+        SViewport viewport;
+        viewport.rect = cVector4(
+            0,
+            0,
+            opaqueRenderTarget.GetColorAttachmentSize(0).GetX(),
+            opaqueRenderTarget.GetColorAttachmentSize(0).GetY()
+        );
 
-    _opaqueRigid = *renderPassGeometryPool->Create(
-        _renderDomain,
-        _opaqueRenderTarget,
-        True,
-        cVector4(0.45f, 0.45f, 0.45f, 1.0f),
-        1.0f,
-        srcAttachmentsUsage,
-        dstAttachmentsUsage,
-        _opaqueRigidPBRShader,
-        EPrimitiveTopology::TriangleList,
-        viewport,
-        inputBuffers,
-        inputTextures
-    );
+        const std::vector<EResourceUsage> srcAttachmentsUsage = {
+            EResourceUsage::Unknown, EResourceUsage::Unknown
+        };
+        const std::vector<EResourceUsage> dstAttachmentsUsage = {
+            EResourceUsage::PixelShaderRead, EResourceUsage::DepthAttachment
+        };
+
+        const std::vector<CGPUBufferResource> inputBuffers = {
+            _context->GetPool<CRenderInstanceStaticPool>()->GetGPUBuffer()
+        };
+
+        const std::vector<SShaderTextureBinding> inputTextures;
+
+        _opaqueRigid = *renderPassGeometryPool->Create(
+            _renderDomain,
+            _opaqueRenderTarget,
+            True,
+            cVector4(0.45f, 0.45f, 0.45f, 1.0f),
+            1.0f,
+            srcAttachmentsUsage,
+            dstAttachmentsUsage,
+            _opaqueRigidPBRShader,
+            EPrimitiveTopology::TriangleList,
+            viewport,
+            inputBuffers,
+            inputTextures
+        );
+    }
 }
 
 void triton::CGraphics::FinalizeSwapchain(const CGPUTextureResource& presentTexture)
@@ -668,19 +678,11 @@ void triton::CGraphics::UnbindBuffers()
 
 void triton::CGraphics::ExecuteBuiltinPasses()
 {
-    // TODO: [Vulkan backend] This must be done using render command queue on main thread
-    // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
     CRenderPassGeometryPool* renderPassGeometryPool = _context->GetPool<CRenderPassGeometryPool>();
-    //CRenderPassProcessingPool* processingRPPool = _context->GetPool<CRenderPassProcessingPool>();
-    //
+
     XRenderPassGeometry& opaqueRigid = *renderPassGeometryPool->Get(_opaqueRigid);
-    //XRenderPassGeometry& opaqueSkinned = *geometryRPPool->Get(_opaqueSkinned);
-    //XRenderPassProcessing& compositeFinal = *processingRPPool->Get(_compositeFinal);
-    //
+
     opaqueRigid.Render();
-    //opaqueSkinned.Render();
-    //compositeFinal.Render();
 }
 
 // TODO: Implement new text drawing approach

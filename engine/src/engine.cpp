@@ -62,6 +62,9 @@ void triton::CEngine::Initialize()
 {
 	CThreadGuard::CaptureMainThreadId();
 
+	// Set context for render command proxy
+	CRenderCommandProxy::SetContext(_context);
+
 	// NOTE: The order of the objects registered below matters
 
 	// Register Engine as subsystem
@@ -111,6 +114,8 @@ void triton::CEngine::Initialize()
 	_context->RegisterPool(new CInputLayoutPool(_context, K_TRUE));
 
 	_context->RegisterPool(new CGPUBufferPool(_context, K_TRUE));
+
+	_context->RegisterPool(new CRenderPassCullingPool(_context, K_TRUE));
 
 	_context->RegisterPool(new CRenderPassGeometryPool(_context, K_TRUE));
 
@@ -175,9 +180,6 @@ void triton::CEngine::Initialize()
 	_context->RegisterSubsystem(new CGraphics(_context));
 
 	_context->RegisterSubsystem(new UWorld(_context));
-
-	// Set context for render command proxy
-	CRenderCommandProxy::SetContext(_context);
 }
 
 void triton::CEngine::Shutdown()

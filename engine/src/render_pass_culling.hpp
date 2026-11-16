@@ -32,5 +32,7 @@ namespace triton
         void Render() override;
 
         inline const CGPUShaderResource& GetShader() const { return _shader; }
+
+        struct TGPULayout {};
     };
 }

@@ -750,8 +750,6 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 	const boolean bIsCompute =
 		(stageMask & (dword)EShaderStageBit::Compute) ? True : False;
 
-	const boolean bHasDepth = renderTarget->get().GetDepthAttachment().IsValid();
-
 	usize stageCount = 0;
 	std::vector<VkPipelineShaderStageCreateInfo> stageCreateInfos;
 
@@ -949,6 +947,9 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		graphicsPipelineCreateInfo.pMultisampleState = &multisampleStateCreateInfo;
 
 		VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = {};
+
+		const boolean bHasDepth = renderTarget->get().GetDepthAttachment().IsValid();
+
 		if (bHasDepth == True)
 		{
 			depthStencilStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;

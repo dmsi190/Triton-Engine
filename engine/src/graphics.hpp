@@ -39,6 +39,7 @@ namespace triton
         SHandle                             _transparentRenderTarget;
         SHandle                             _camera;
         SHandle                             _renderDomain;
+        SHandle                             _culling_pass;
         SHandle                             _opaqueRigid;
         SHandle                             _opaqueSkinned;
         SHandle                             _transparent;

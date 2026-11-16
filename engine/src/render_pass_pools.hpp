@@ -3,11 +3,33 @@
 #pragma once
 
 #include "object_pool.hpp"
+#include "render_pass_culling.hpp"
 #include "render_pass_geometry.hpp"
 #include "render_pass_processing.hpp"
 
 namespace triton
 {
+    class CRenderPassCullingPool : public CObjectPool<XRenderPassCulling>
+    {
+        TRITON_CLASS_NAME(CRenderPassCullingPool)
+
+    public:
+        using CObjectPool<XRenderPassCulling>::CObjectPool;
+        ~CRenderPassCullingPool() override = default;
+
+        XRenderPassCulling::TGPULayout ConvertToGpuLayout(const XRenderPassCulling& object) override
+        {
+            XRenderPassCulling::TGPULayout gpul;
+
+            return gpul;
+        }
+
+        void Update() override
+        {
+            Upload();
+        }
+    };
+
     class CRenderPassGeometryPool : public CObjectPool<XRenderPassGeometry>
     {
         TRITON_CLASS_NAME(CRenderPassGeometryPool)
