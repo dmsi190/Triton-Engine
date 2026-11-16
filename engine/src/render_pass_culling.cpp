@@ -55,7 +55,7 @@ triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex)
             2,
             EBindingGroupBindingType::StorageBuffer,
             EShaderStageBit::Compute,
-            (CGPUResource*)&CGraphicsBuffers::GetMainMotionTypesBuffer()
+            (CGPUResource*)&CGraphicsBuffers::GetMainCommandRenderGroupIndicesBuffer()
         )
     );
     bindings->push_back(
@@ -63,7 +63,7 @@ triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex)
             3,
             EBindingGroupBindingType::StorageBuffer,
             EShaderStageBit::Compute,
-            (CGPUResource*)&CGraphicsBuffers::GetShadowMotionTypesBuffer()
+            (CGPUResource*)&CGraphicsBuffers::GetShadowCommandRenderGroupIndicesBuffer()
         )
     );
     bindings->push_back(

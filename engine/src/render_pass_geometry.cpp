@@ -120,13 +120,13 @@ triton::XRenderPassGeometry::XRenderPassGeometry(
     const CGPUBufferResource& instanceDynamicBuffer = _context->GetPool<CRenderInstanceDynamicPool>()->GetGPUBuffer();
     const CGPUBufferResource& materialBuffer = _context->GetPool<CMaterialPool>()->GetGPUBuffer();
     const CGPUBufferResource& skinnedBoneBuffer = _context->GetPool<CSkinnedBonesPool>()->GetGPUBuffer();
-    const CGPUBufferResource& main_motion_types_buffer = CGraphicsBuffers::GetMainMotionTypesBuffer();
+    const CGPUBufferResource& main_command_render_group_indices_buffer = CGraphicsBuffers::GetMainCommandRenderGroupIndicesBuffer();
     
     bufferBindingGroupBufferBindings->push_back({ 0, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, (CGPUResource*)&instanceRigidBuffer });
     bufferBindingGroupBufferBindings->push_back({ 1, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, (CGPUResource*)&instanceDynamicBuffer });
     bufferBindingGroupBufferBindings->push_back({ 2, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, (CGPUResource*)&materialBuffer });
     bufferBindingGroupBufferBindings->push_back({ 3, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, (CGPUResource*)&skinnedBoneBuffer });
-    bufferBindingGroupBufferBindings->push_back({ 4, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, (CGPUResource*)&main_motion_types_buffer });
+    bufferBindingGroupBufferBindings->push_back({ 4, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, (CGPUResource*)&main_command_render_group_indices_buffer });
 
     _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CreateBindingGroup,

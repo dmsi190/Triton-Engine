@@ -53,15 +53,15 @@ layout(set = 0, binding = 1, std430) writeonly buffer ShadowIndirectDrawCommands
     IndirectDrawCommand commands[];
 } shadow_indirect_draw_commands_buffer;
 
-layout(set = 0, binding = 2, std430) writeonly buffer MainMotionTypesBuffer
+layout(set = 0, binding = 2, std430) writeonly buffer MainCommandRenderGroupIndicesBuffer
 {
-    uint motion_types[];
-} main_motion_types_buffer;
+    uint indices[];
+} main_command_render_group_indices;
 
-layout(set = 0, binding = 3, std430) writeonly buffer ShadowMotionTypesBuffer
+layout(set = 0, binding = 3, std430) writeonly buffer ShadowCommandRenderGroupIndicesBuffer
 {
-    uint motion_types[];
-} shadows_motion_types_buffer;
+    uint indices[];
+} shadow_command_render_group_indices;
 
 layout(set = 0, binding = 4, std430) writeonly buffer VisibleRenderStaticIndicesBuffer
 {

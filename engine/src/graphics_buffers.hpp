@@ -16,8 +16,8 @@ namespace triton
 		inline static cContext*				_context;
 		inline static CGPUBufferResource	_main_indirect_draw_commands_buffer = CGPUBufferResource::Invalid();
 		inline static CGPUBufferResource	_shadow_indirect_draw_commands_buffer = CGPUBufferResource::Invalid();
-		inline static CGPUBufferResource	_main_motion_types_buffer = CGPUBufferResource::Invalid();
-		inline static CGPUBufferResource	_shadow_motion_types_buffer = CGPUBufferResource::Invalid();
+		inline static CGPUBufferResource	_main_command_render_group_indices_buffer = CGPUBufferResource::Invalid();
+		inline static CGPUBufferResource	_shadow_command_render_group_indices_buffer = CGPUBufferResource::Invalid();
 		inline static CGPUBufferResource	_visible_render_static_indices_buffer = CGPUBufferResource::Invalid();
 		inline static CGPUBufferResource	_visible_render_dynamic_indices_buffer = CGPUBufferResource::Invalid();
 
@@ -30,9 +30,9 @@ namespace triton
 
 		static const CGPUBufferResource& GetShadowIndirectDrawCommandsBuffer() { return _shadow_indirect_draw_commands_buffer; }
 
-		static const CGPUBufferResource& GetMainMotionTypesBuffer() { return _main_motion_types_buffer; }
+		static const CGPUBufferResource& GetMainCommandRenderGroupIndicesBuffer() { return _main_command_render_group_indices_buffer; }
 
-		static const CGPUBufferResource& GetShadowMotionTypesBuffer() { return _shadow_motion_types_buffer; }
+		static const CGPUBufferResource& GetShadowCommandRenderGroupIndicesBuffer() { return _shadow_command_render_group_indices_buffer; }
 
 		static const CGPUBufferResource& GetVisibleRenderStaticIndicesBuffer() { return _visible_render_static_indices_buffer; }
 

@@ -26,12 +26,12 @@ void triton::CGraphicsBuffers::Initialize(cContext* context)
         sizeof(u32) + caps.render_group_count * sizeof(SIndirectDrawCommand)
     );
 
-    _main_motion_types_buffer = CRenderCommandProxy::CreateBuffer(
+    _main_command_render_group_indices_buffer = CRenderCommandProxy::CreateBuffer(
         EGPUBufferType::Storage,
         caps.render_group_count * sizeof(u32)
     );
 
-    _shadow_motion_types_buffer = CRenderCommandProxy::CreateBuffer(
+    _shadow_command_render_group_indices_buffer = CRenderCommandProxy::CreateBuffer(
         EGPUBufferType::Storage,
         caps.render_group_count * sizeof(u32)
     );
@@ -51,8 +51,8 @@ void triton::CGraphicsBuffers::Release()
 {
     CRenderCommandProxy::DestroyBuffer(_visible_render_dynamic_indices_buffer);
     CRenderCommandProxy::DestroyBuffer(_visible_render_static_indices_buffer);
-    CRenderCommandProxy::DestroyBuffer(_shadow_motion_types_buffer);
-    CRenderCommandProxy::DestroyBuffer(_main_motion_types_buffer);
+    CRenderCommandProxy::DestroyBuffer(_shadow_command_render_group_indices_buffer);
+    CRenderCommandProxy::DestroyBuffer(_main_command_render_group_indices_buffer);
     CRenderCommandProxy::DestroyBuffer(_shadow_indirect_draw_commands_buffer);
     CRenderCommandProxy::DestroyBuffer(_main_indirect_draw_commands_buffer);
 }
