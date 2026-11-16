@@ -1648,6 +1648,47 @@ triton::CGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 			modules
 		);
 	}
+	else if (stageMask & (dword)EShaderStageBit::Compute && bytecodeFiles.computeFilePath.has_value())
+	{
+		u8* compute_shader_bytecode = nullptr;
+
+		const usize compute_shader_bytecode_size = _context->GetSubsystem<CFileSystem>()->BinaryFileToArray(
+			bytecodeFiles.computeFilePath.value().string(),
+			compute_shader_bytecode,
+			0
+		);
+
+		VkResult result;
+
+		VkShaderModuleCreateInfo compute_shader_module_create_info = {};
+		compute_shader_module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		compute_shader_module_create_info.codeSize = compute_shader_bytecode_size;
+		compute_shader_module_create_info.pCode = (uint32_t*)compute_shader_bytecode;
+
+		VkShaderModule compute_shader_module = VK_NULL_HANDLE;
+
+		result = vkCreateShaderModule(
+			_logicalDevice.device,
+			&compute_shader_module_create_info,
+			nullptr,
+			&compute_shader_module
+		);
+
+		if (result != VK_SUCCESS)
+			Print("[Vulkan]: Error: failed to create compute shader");
+
+		_context->GetSubsystem<CFileSystem>()->ReleaseBinaryFileArray(compute_shader_bytecode);
+
+		std::vector<qword> modules(1);
+		modules[0] = (qword)compute_shader_module;
+
+		return CGPUShaderResource(
+			0,
+			0,
+			stageMask,
+			modules
+		);
+	}
 
 	return CGPUShaderResource::Invalid();
 }

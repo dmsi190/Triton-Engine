@@ -678,11 +678,14 @@ void triton::CGraphics::UnbindBuffers()
 
 void triton::CGraphics::ExecuteBuiltinPasses()
 {
-    CRenderPassGeometryPool* renderPassGeometryPool = _context->GetPool<CRenderPassGeometryPool>();
+    CRenderPassCullingPool* culling_pass_pool = _context->GetPool<CRenderPassCullingPool>();
+    CRenderPassGeometryPool* geometry_pass_pool = _context->GetPool<CRenderPassGeometryPool>();
 
-    XRenderPassGeometry& opaqueRigid = *renderPassGeometryPool->Get(_opaqueRigid);
+    XRenderPassCulling& culling_pass = *culling_pass_pool->Get(_culling_pass);
+    XRenderPassGeometry& opaque_rigid_pass = *geometry_pass_pool->Get(_opaqueRigid);
 
-    opaqueRigid.Render();
+    culling_pass.Render();
+    opaque_rigid_pass.Render();
 }
 
 // TODO: Implement new text drawing approach
