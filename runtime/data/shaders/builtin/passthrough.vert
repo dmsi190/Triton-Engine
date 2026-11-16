@@ -58,10 +58,10 @@ layout(set = 0, binding = 2, std430) readonly buffer MaterialBuffer
     Material materials[];
 } materialBuffer;
 
-layout(set = 0, binding = 4, std430) readonly buffer MotionTypePerCommandBuffer
+layout(set = 0, binding = 3, std430) writeonly buffer MainMotionTypesBuffer
 {
     uint motion_types[];
-} motion_type_per_command_buffer;
+} main_motion_types_buffer;
 
 void main()
 {

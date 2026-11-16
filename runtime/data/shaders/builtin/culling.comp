@@ -41,37 +41,54 @@ struct Instance
 	mat4 world_matrix;
 };
 
-layout(set = 0, binding = 0, std430) writeonly buffer IndirectDrawCommandCounterBuffer
+layout(set = 0, binding = 0, std430) writeonly buffer MainIndirectDrawCommandsBuffer
 {
-    uint count;
-} indirect_draw_command_counter_buffer;
-
-layout(set = 0, binding = 1, std430) writeonly buffer IndirectDrawCommandsBuffer
-{
+    uint command_count;
     IndirectDrawCommand commands[];
-} indirect_draw_commands_buffer;
+} main_indirect_draw_commands_buffer;
 
-layout(set = 0, binding = 2, std430) writeonly buffer MotionTypePerCommandBuffer
+layout(set = 0, binding = 1, std430) writeonly buffer ShadowIndirectDrawCommandsBuffer
+{
+    uint command_count;
+    IndirectDrawCommand commands[];
+} shadow_indirect_draw_commands_buffer;
+
+layout(set = 0, binding = 2, std430) writeonly buffer MainMotionTypesBuffer
 {
     uint motion_types[];
-} motion_type_per_command_buffer;
+} main_motion_types_buffer;
 
-layout(set = 0, binding = 3, std430) readonly buffer CameraBuffer
+layout(set = 0, binding = 3, std430) writeonly buffer ShadowMotionTypesBuffer
+{
+    uint motion_types[];
+} shadows_motion_types_buffer;
+
+layout(set = 0, binding = 4, std430) writeonly buffer VisibleRenderStaticIndicesBuffer
+{
+    uint indices[];
+} visible_render_static_indices_buffer;
+
+layout(set = 0, binding = 5, std430) writeonly buffer VisibleRenderDynamicIndicesBuffer
+{
+    uint indices[];
+} visible_render_dynamic_indices_buffer;
+
+layout(set = 0, binding = 6, std430) readonly buffer CameraBuffer
 {
     Camera cameras[];
 } camera_buffer;
 
-layout(set = 0, binding = 4, std430) readonly buffer RenderGroupBuffer
+layout(set = 0, binding = 7, std430) readonly buffer RenderGroupBuffer
 {
     RenderGroup groups[];
 } render_group_buffer;
 
-layout(set = 0, binding = 5, std430) readonly buffer RenderInstanceStaticBuffer
+layout(set = 0, binding = 8, std430) readonly buffer RenderInstanceStaticBuffer
 {
     Instance instances[];
 } render_instance_static_buffer;
 
-layout(set = 0, binding = 6, std430) readonly buffer RenderInstanceDynamicBuffer
+layout(set = 0, binding = 9, std430) readonly buffer RenderInstanceDynamicBuffer
 {
     Instance instances[];
 } render_instance_dynamic_buffer;

@@ -6,6 +6,7 @@
 #include "context.hpp"
 #include "engine.hpp"
 #include "application.hpp"
+#include "world_render_instance.hpp"
 
 using namespace types;
 
@@ -15,19 +16,43 @@ void triton::CGraphicsBuffers::Initialize(cContext* context)
 
     const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
 
-    _indirect_draw_commands_buffer = CRenderCommandProxy::CreateBuffer(
+    _main_indirect_draw_commands_buffer = CRenderCommandProxy::CreateBuffer(
         EGPUBufferType::Storage,
-        caps.render_group_count * sizeof(SIndirectDrawCommand)
+        sizeof(u32) + caps.render_group_count * sizeof(SIndirectDrawCommand)
     );
 
-    _motion_type_per_command_buffer = CRenderCommandProxy::CreateBuffer(
+    _shadow_indirect_draw_commands_buffer = CRenderCommandProxy::CreateBuffer(
+        EGPUBufferType::Storage,
+        sizeof(u32) + caps.render_group_count * sizeof(SIndirectDrawCommand)
+    );
+
+    _main_motion_types_buffer = CRenderCommandProxy::CreateBuffer(
         EGPUBufferType::Storage,
         caps.render_group_count * sizeof(u32)
+    );
+
+    _shadow_motion_types_buffer = CRenderCommandProxy::CreateBuffer(
+        EGPUBufferType::Storage,
+        caps.render_group_count * sizeof(u32)
+    );
+
+    _visible_render_static_indices_buffer = CRenderCommandProxy::CreateBuffer(
+        EGPUBufferType::Storage,
+        caps.maxRenderStaticInstanceCount * sizeof(XRenderInstance::TGPULayout)
+    );
+
+    _visible_render_dynamic_indices_buffer = CRenderCommandProxy::CreateBuffer(
+        EGPUBufferType::Storage,
+        caps.maxRenderDynamicInstanceCount * sizeof(XRenderInstance::TGPULayout)
     );
 }
 
 void triton::CGraphicsBuffers::Release()
 {
-    CRenderCommandProxy::DestroyBuffer(_motion_type_per_command_buffer);
-    CRenderCommandProxy::DestroyBuffer(_indirect_draw_commands_buffer);
+    CRenderCommandProxy::DestroyBuffer(_visible_render_dynamic_indices_buffer);
+    CRenderCommandProxy::DestroyBuffer(_visible_render_static_indices_buffer);
+    CRenderCommandProxy::DestroyBuffer(_shadow_motion_types_buffer);
+    CRenderCommandProxy::DestroyBuffer(_main_motion_types_buffer);
+    CRenderCommandProxy::DestroyBuffer(_shadow_indirect_draw_commands_buffer);
+    CRenderCommandProxy::DestroyBuffer(_main_indirect_draw_commands_buffer);
 }

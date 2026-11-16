@@ -15,15 +15,12 @@ using namespace types;
 
 triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex) :
     IRenderPass(context, poolIndex, ERenderPassDispatch::Culling),
-    _indirect_draw_command_counter_buffer(CGPUBufferResource::Invalid()),
     _shader(CGPUShaderResource::Invalid()),
     _binding_group_layout(CGPUBindingGroupLayoutResource::Invalid()),
     _binding_groups(),
     _pipeline(CGPUPipelineResource::Invalid())
 {
     const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
-
-    _indirect_draw_command_counter_buffer = CRenderCommandProxy::CreateBuffer(EGPUBufferType::Storage, sizeof(u32));
 
     SShaderBytecodeFiles shader_files;
     shader_files.computeFilePath =
@@ -42,7 +39,7 @@ triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex)
             0,
             EBindingGroupBindingType::StorageBuffer,
             EShaderStageBit::Compute,
-            (CGPUResource*)&_indirect_draw_command_counter_buffer
+            (CGPUResource*)&CGraphicsBuffers::GetMainIndirectDrawCommandsBuffer()
         )
     );
     bindings->push_back(
@@ -50,7 +47,7 @@ triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex)
             1,
             EBindingGroupBindingType::StorageBuffer,
             EShaderStageBit::Compute,
-            (CGPUResource*)&CGraphicsBuffers::GetIndirectDrawCommandsBuffer()
+            (CGPUResource*)&CGraphicsBuffers::GetMainIndirectDrawCommandsBuffer()
         )
     );
     bindings->push_back(
@@ -58,7 +55,7 @@ triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex)
             2,
             EBindingGroupBindingType::StorageBuffer,
             EShaderStageBit::Compute,
-            (CGPUResource*)&CGraphicsBuffers::GetMotionTypePerCommandBuffer()
+            (CGPUResource*)&CGraphicsBuffers::GetMainMotionTypesBuffer()
         )
     );
     bindings->push_back(
@@ -66,7 +63,7 @@ triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex)
             3,
             EBindingGroupBindingType::StorageBuffer,
             EShaderStageBit::Compute,
-            (CGPUResource*)&_context->GetPool<CCameraPool>()->GetGPUBuffer()
+            (CGPUResource*)&CGraphicsBuffers::GetShadowMotionTypesBuffer()
         )
     );
     bindings->push_back(
@@ -74,7 +71,7 @@ triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex)
             4,
             EBindingGroupBindingType::StorageBuffer,
             EShaderStageBit::Compute,
-            (CGPUResource*)&_context->GetPool<CRenderGroupPool>()->GetGPUBuffer()
+            (CGPUResource*)&CGraphicsBuffers::GetVisibleRenderStaticIndicesBuffer()
         )
     );
     bindings->push_back(
@@ -82,12 +79,36 @@ triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex)
             5,
             EBindingGroupBindingType::StorageBuffer,
             EShaderStageBit::Compute,
-            (CGPUResource*)&_context->GetPool<CRenderInstanceStaticPool>()->GetGPUBuffer()
+            (CGPUResource*)&CGraphicsBuffers::GetVisibleRenderStaticIndicesBuffer()
         )
     );
     bindings->push_back(
         SBindingGroupBinding(
             6,
+            EBindingGroupBindingType::StorageBuffer,
+            EShaderStageBit::Compute,
+            (CGPUResource*)&_context->GetPool<CCameraPool>()->GetGPUBuffer()
+        )
+    );
+    bindings->push_back(
+        SBindingGroupBinding(
+            7,
+            EBindingGroupBindingType::StorageBuffer,
+            EShaderStageBit::Compute,
+            (CGPUResource*)&_context->GetPool<CRenderGroupPool>()->GetGPUBuffer()
+        )
+    );
+    bindings->push_back(
+        SBindingGroupBinding(
+            8,
+            EBindingGroupBindingType::StorageBuffer,
+            EShaderStageBit::Compute,
+            (CGPUResource*)&_context->GetPool<CRenderInstanceStaticPool>()->GetGPUBuffer()
+        )
+    );
+    bindings->push_back(
+        SBindingGroupBinding(
+            9,
             EBindingGroupBindingType::StorageBuffer,
             EShaderStageBit::Compute,
             (CGPUResource*)&_context->GetPool<CRenderInstanceDynamicPool>()->GetGPUBuffer()
@@ -127,7 +148,6 @@ triton::XRenderPassCulling::~XRenderPassCulling()
     CRenderCommandProxy::DestroyBindingGroup(_binding_groups.at(0));
     CRenderCommandProxy::DestroyBindingGroupLayout(_binding_group_layout);
     CRenderCommandProxy::DestroyShader(_shader);
-    CRenderCommandProxy::DestroyBuffer(_indirect_draw_command_counter_buffer);
 
     _binding_groups.clear();
 }
