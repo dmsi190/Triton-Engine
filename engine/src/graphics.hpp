@@ -61,6 +61,8 @@ namespace triton
 
         inline const SHandle& GetCamera() const { return _camera; }
 
+        inline const SHandle& GetCullingPass() const { return _culling_pass; }
+
         const SHandle& GetOpaqueRigidRenderPass() const { return _opaqueRigid; }
 
         const SHandle& GetOpaqueSkinnedRenderPass() const { return _opaqueSkinned; }

@@ -9,14 +9,13 @@
 #include "world_render_group_pool.hpp"
 #include "render_instance_static_pool.hpp"
 #include "render_instance_dynamic_pool.hpp"
+#include "graphics_buffers.hpp"
 
 using namespace types;
 
 triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex) :
     IRenderPass(context, poolIndex, ERenderPassDispatch::Culling),
     _indirect_draw_command_counter_buffer(CGPUBufferResource::Invalid()),
-    _indirect_draw_commands_buffer(CGPUBufferResource::Invalid()),
-    _motion_type_per_command_buffer(CGPUBufferResource::Invalid()),
     _shader(CGPUShaderResource::Invalid()),
     _binding_group_layout(CGPUBindingGroupLayoutResource::Invalid()),
     _binding_groups(),
@@ -25,16 +24,6 @@ triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex)
     const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
 
     _indirect_draw_command_counter_buffer = CRenderCommandProxy::CreateBuffer(EGPUBufferType::Storage, sizeof(u32));
-
-    _indirect_draw_commands_buffer = CRenderCommandProxy::CreateBuffer(
-        EGPUBufferType::Storage,
-        caps.render_group_count * sizeof(SIndirectDrawCommand)
-    );
-
-    _motion_type_per_command_buffer = CRenderCommandProxy::CreateBuffer(
-        EGPUBufferType::Storage,
-        caps.render_group_count * sizeof(u32)
-    );
 
     SShaderBytecodeFiles shader_files;
     shader_files.computeFilePath =
@@ -61,7 +50,7 @@ triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex)
             1,
             EBindingGroupBindingType::StorageBuffer,
             EShaderStageBit::Compute,
-            (CGPUResource*)&_indirect_draw_commands_buffer
+            (CGPUResource*)&CGraphicsBuffers::GetIndirectDrawCommandsBuffer()
         )
     );
     bindings->push_back(
@@ -69,7 +58,7 @@ triton::XRenderPassCulling::XRenderPassCulling(cContext* context, s32 poolIndex)
             2,
             EBindingGroupBindingType::StorageBuffer,
             EShaderStageBit::Compute,
-            (CGPUResource*)&_motion_type_per_command_buffer
+            (CGPUResource*)&CGraphicsBuffers::GetMotionTypePerCommandBuffer()
         )
     );
     bindings->push_back(
@@ -138,8 +127,6 @@ triton::XRenderPassCulling::~XRenderPassCulling()
     CRenderCommandProxy::DestroyBindingGroup(_binding_groups.at(0));
     CRenderCommandProxy::DestroyBindingGroupLayout(_binding_group_layout);
     CRenderCommandProxy::DestroyShader(_shader);
-    CRenderCommandProxy::DestroyBuffer(_motion_type_per_command_buffer);
-    CRenderCommandProxy::DestroyBuffer(_indirect_draw_commands_buffer);
     CRenderCommandProxy::DestroyBuffer(_indirect_draw_command_counter_buffer);
 
     _binding_groups.clear();

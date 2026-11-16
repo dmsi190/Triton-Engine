@@ -17,8 +17,6 @@ namespace triton
         TRITON_CLASS_NAME(XRenderPassCulling)
 
         CGPUBufferResource                              _indirect_draw_command_counter_buffer;
-        CGPUBufferResource                              _indirect_draw_commands_buffer;
-        CGPUBufferResource                              _motion_type_per_command_buffer;
         CGPUShaderResource                              _shader;
         CGPUBindingGroupLayoutResource                  _binding_group_layout;
         std::vector<CGPUBindingGroupResource>           _binding_groups;

@@ -45,6 +45,7 @@
 #include "graphics_backend2_vulkan.hpp"
 #include "world.hpp"
 #include "render_command_proxy.hpp"
+#include "graphics_buffers.hpp"
 
 using namespace types;
 
@@ -62,13 +63,13 @@ void triton::CEngine::Initialize()
 {
 	CThreadGuard::CaptureMainThreadId();
 
-	// Set context for render command proxy
-	CRenderCommandProxy::SetContext(_context);
-
 	// NOTE: The order of the objects registered below matters
 
 	// Register Engine as subsystem
 	_context->RegisterSubsystem(this);
+
+	// Set context for render command proxy
+	CRenderCommandProxy::SetContext(_context);
 
 	// Create memory allocator
 	_context->CreateMemoryAllocator();
@@ -95,6 +96,9 @@ void triton::CEngine::Initialize()
 	InitializeRenderCommandRecorder();
 	InitializeSynchronization();
 	InitializeRenderThread();
+
+	// Initialize graphics buffers
+	CGraphicsBuffers::Initialize(_context);
 
 	// Register subsystems and pools
 	const sCapabilities& caps = _app->GetCapabilities();
@@ -184,6 +188,7 @@ void triton::CEngine::Initialize()
 
 void triton::CEngine::Shutdown()
 {
+	CGraphicsBuffers::Release();
 	ReleaseRenderThread();
 	ReleaseSynchronization();
 	ReleaseRenderCommandRecorder();
