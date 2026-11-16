@@ -6,8 +6,7 @@
 #include <array>
 #include "log.hpp"
 #include "event_types.hpp"
-#include "memory_pool.hpp"
-#include "tag.hpp"
+#include "memory_allocator.hpp"
 #include "types.hpp"
 
 namespace triton
@@ -51,18 +50,16 @@ namespace triton
 		friend class cMemoryAllocator;
 
 	protected:
-		cContext* _context = nullptr;
-		types::boolean _occupied = types::K_FALSE;
-		types::s64 _allocatorIndex = 0;
-		types::boolean _allocatedUsingMemAllocator = types::K_FALSE;
-		types::s32 _poolIndex = -1;
-		cTag _id;
+		SMemoryAllocation _mem_alloc;
+		cContext* _context;
 
 	public:
 
 		iObject() = default; // TODO: remove this <<<<<-----
 
-		explicit iObject(cContext* context, types::s32 poolIndex) : _context(context), _poolIndex(poolIndex) {}
+		explicit iObject(const SMemoryAllocation& mem_alloc, cContext* context)
+			: _mem_alloc(mem_alloc), _context(context) {}
+		
 		virtual ~iObject() = default;
 
 		// TODO: Copying of object is now removed, bring it back
@@ -76,9 +73,8 @@ namespace triton
 		void Send(eEventType type);
 		void Send(eEventType type, XDataBuffer* data);
 
-		inline cContext* GetContext() const { return _context; }
-		inline const cTag& GetID() const { return _id; }
+		inline const SMemoryAllocation& GetMemoryAllocation() const { return _mem_alloc; }
 
-		inline types::s32 GetPoolIndex() const { return _poolIndex; }
+		inline cContext* GetContext() const { return _context; }
 	};
 }
