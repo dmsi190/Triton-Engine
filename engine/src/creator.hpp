@@ -27,7 +27,7 @@ namespace triton
 		{
 			object->~T();
 
-			CMemoryAllocator::Deallocate(object->GetMemoryAllocation());
+			CMemoryAllocator::Deallocate(object->_mem_alloc);
 		}
 	};
 }

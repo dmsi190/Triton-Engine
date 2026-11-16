@@ -43,11 +43,7 @@ namespace triton
 
 	class iObject
 	{
-		template <typename T>
-		friend class cIdVector;
-		template <typename T>
-		friend class cFactory;
-		friend class cMemoryAllocator;
+		friend class CCreator;
 
 	protected:
 		SMemoryAllocation _mem_alloc;
@@ -72,8 +68,6 @@ namespace triton
 		void Unsubscribe(eEventType type);
 		void Send(eEventType type);
 		void Send(eEventType type, XDataBuffer* data);
-
-		inline const SMemoryAllocation& GetMemoryAllocation() const { return _mem_alloc; }
 
 		inline cContext* GetContext() const { return _context; }
 	};
