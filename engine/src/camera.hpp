@@ -35,12 +35,13 @@ namespace triton
 
     public:
         explicit XCamera(
+            const SMemoryAllocation& mem_alloc,
             cContext* context,
-            types::s32 poolIndex,
             types::f32 fov,
             types::f32 zNear,
             types::f32 zFar
         );
+
         ~XCamera() override = default;
 
         void Bind(XRenderPassGeometry* pass);

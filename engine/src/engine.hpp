@@ -12,16 +12,13 @@
 
 namespace triton
 {
-	struct sCapabilities;
 	class cContext;
 	class IApplication;
-	template <typename T>
-	class XDynamicArray;
 	class XSynchronization;
 	class XRenderCommandRecorder;
 	class cRenderThread;
 
-	inline std::thread::id gMainThreadId = std::this_thread::get_id();
+	inline std::thread::id global_main_thread_id = std::this_thread::get_id();
 
 	class CEngine final : public CSubsystem
 	{
@@ -29,12 +26,13 @@ namespace triton
 
 		IApplication* _app = nullptr;
 		XSynchronization* _sync = nullptr;
-		XRenderCommandRecorder* _cmdRecorder = nullptr;
-		cRenderThread* _renderThread = nullptr;
+		XRenderCommandRecorder* _cmd_recorder = nullptr;
+		cRenderThread* _render_thread = nullptr;
 
 	public:
 		explicit CEngine(cContext* context, IApplication* app);
-		~CEngine();
+
+		~CEngine() override;
 
 		void Initialize();
 		void Shutdown();
@@ -42,7 +40,7 @@ namespace triton
 
 		inline IApplication* GetApplication() const { return _app; }
 
-		inline XRenderCommandRecorder* GetRenderCommandRecorder() { return _cmdRecorder; }
+		inline XRenderCommandRecorder* GetRenderCommandRecorder() { return _cmd_recorder; }
 
 		inline XSynchronization* GetSynchronization() { return _sync; }
 

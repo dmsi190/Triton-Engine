@@ -9,8 +9,8 @@ namespace triton
     struct SMemoryAllocatorBin
     {
         types::usize max_block_byte_size;
-        u8* blocks;
-        u8* occupancy;
+        types::u8* blocks;
+        types::u8* occupancy;
     };
 
     struct SMemoryAllocation

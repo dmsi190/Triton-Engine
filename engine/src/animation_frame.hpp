@@ -9,11 +9,11 @@ namespace triton
 {
     struct SAnimationFrameBone
     {
-        cMatrix4 transformMatrix = cMatrix4();
+        cMatrix4 transform = cMatrix4();
     };
 
     struct SAnimationFrame
     {
-        std::vector<SAnimationFrameBone> frameBones = {};
+        std::vector<SAnimationFrameBone> bones = {};
     };
 }

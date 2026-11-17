@@ -18,14 +18,14 @@ triton::cAudioBackendOAL::~cAudioBackendOAL()
     alcCloseDevice(_alDevice);
 }
 
-triton::sAudioBackendSound triton::cAudioBackendOAL::CreateSound(
+triton::SAudioResource triton::cAudioBackendOAL::CreateSound(
     cAudio::eDataFormat dataFormat,
     const u8* data,
     usize dataByteSize,
     usize sampleRate
 )
 {
-    sAudioBackendSound abs = {};
+    SAudioResource abs = {};
     
     ALenum wavFormat = AL_FORMAT_STEREO16;
     if (dataFormat == cAudio::eDataFormat::STEREO8)
@@ -50,28 +50,28 @@ triton::sAudioBackendSound triton::cAudioBackendOAL::CreateSound(
     return abs;
 }
 
-void triton::cAudioBackendOAL::DestroySound(sAudioBackendSound& sound)
+void triton::cAudioBackendOAL::DestroySound(SAudioResource& sound)
 {
     alDeleteBuffers(1, (ALuint*)&sound.buffer);
     alDeleteSources(1, (ALuint*)&sound.source);
 }
 
-void triton::cAudioBackendOAL::PlaySound(sAudioBackendSound& sound)
+void triton::cAudioBackendOAL::PlaySound(SAudioResource& sound)
 {
     alSourcePlay(sound.source);
 }
 
-void triton::cAudioBackendOAL::StopSound(sAudioBackendSound& sound)
+void triton::cAudioBackendOAL::StopSound(SAudioResource& sound)
 {
     alSourceStop(sound.source);
 }
 
-void triton::cAudioBackendOAL::SetSoundPosition(sAudioBackendSound& sound, const cVector3& position)
+void triton::cAudioBackendOAL::SetSoundPosition(SAudioResource& sound, const cVector3& position)
 {
     alSource3f(sound.source, AL_POSITION, position.GetX(), position.GetY(), position.GetZ());
 }
 
-void triton::cAudioBackendOAL::SetSoundVelocity(sAudioBackendSound& sound, const cVector3& velocity)
+void triton::cAudioBackendOAL::SetSoundVelocity(SAudioResource& sound, const cVector3& velocity)
 {
     alSource3f(sound.source, AL_VELOCITY, velocity.GetX(), velocity.GetY(), velocity.GetZ());
 }

@@ -43,7 +43,7 @@ namespace triton
 		types::u16 channelCount = 0;
 		types::u16 bitsPerSample = 0;
 		types::u32 sampleRate = 0;
-		types::u16* data = nullptr;
+		SMemoryAllocation data;
 		types::usize dataByteSize = 0;
 	};
 }

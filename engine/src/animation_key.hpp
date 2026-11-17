@@ -28,9 +28,9 @@ namespace triton
 
     struct SAnimationKey
     {
-        types::usize localBoneIndex = 0;
-        std::vector<SBonePositionKey> positionKeys = {};
-        std::vector<SBoneRotationKey> rotationKeys = {};
-        std::vector<SBoneScaleKey> scaleKeys = {};
+        types::usize local_bone_index = 0;
+        std::vector<SBonePositionKey> position_keys = {};
+        std::vector<SBoneRotationKey> rotation_keys = {};
+        std::vector<SBoneScaleKey> scale_keys = {};
     };
 }

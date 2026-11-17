@@ -3,7 +3,7 @@
 #pragma once
 
 #include "audio.hpp"
-#include "audio_backend_sound.hpp"
+#include "audio_resource.hpp"
 #include "backend.hpp"
 #include "math.hpp"
 
@@ -19,17 +19,17 @@ namespace triton
         explicit iAudioBackend(cContext* context);
         virtual ~iAudioBackend() override = default;
 
-        virtual sAudioBackendSound CreateSound(
+        virtual SAudioResource CreateSound(
             cAudio::eDataFormat dataFormat,
             const types::u8* data,
             types::usize dataByteSize,
             types::usize sampleRate
         ) = 0;
-        virtual void DestroySound(sAudioBackendSound& sound) = 0;
-        virtual void PlaySound(sAudioBackendSound& sound) = 0;
-        virtual void StopSound(sAudioBackendSound& sound) = 0;
-        virtual void SetSoundPosition(sAudioBackendSound& sound, const cVector3& position) = 0;
-        virtual void SetSoundVelocity(sAudioBackendSound& sound, const cVector3& velocity) = 0;
+        virtual void DestroySound(SAudioResource& sound) = 0;
+        virtual void PlaySound(SAudioResource& sound) = 0;
+        virtual void StopSound(SAudioResource& sound) = 0;
+        virtual void SetSoundPosition(SAudioResource& sound, const cVector3& position) = 0;
+        virtual void SetSoundVelocity(SAudioResource& sound, const cVector3& velocity) = 0;
         virtual void SetListenerPosition(const cVector3& position) = 0;
         virtual void SetListenerVelocity(const cVector3& velocity) = 0;
         virtual void SetListenerOrientation(const cVector3& at, const cVector3& up) = 0;

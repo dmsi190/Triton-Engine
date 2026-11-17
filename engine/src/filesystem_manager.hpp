@@ -3,7 +3,6 @@
 #pragma once
 
 #include "object.hpp"
-#include "data_buffer.hpp"
 #include "subsystem.hpp"
 #include "types.hpp"
 
@@ -11,23 +10,28 @@ namespace triton
 {
     class cContext;
 
-    class cDataFile
+    class CDataFile : public iObject
     {
         cContext* _context = nullptr;
-        types::boolean _bExists = types::K_FALSE;
-        XDataBuffer* _data = nullptr;
+        types::boolean _is_existing = types::K_FALSE;
+        SMemoryAllocation _data;
+        types::usize _byte_size;
 
     public:
-        explicit cDataFile(cContext* context, const std::string& path, types::boolean isText);
-        ~cDataFile();
+        explicit CDataFile(
+            const SMemoryAllocation& mem_alloc,
+            cContext* context,
+            const std::string& path,
+            types::boolean is_text_file
+        );
 
-        inline void* GetData() const;
-        inline XDataBuffer* GetBuffer() const { return _data; }
+        ~CDataFile() override;
 
-        inline types::boolean Exists() const
-        {
-            return _bExists;
-        }
+        inline const types::u8* GetData() const { return _data.mem; }
+
+        inline types::usize GetByteSize() const { return _byte_size; }
+
+        inline types::boolean Exists() const { return _is_existing; }
     };
 
     class CFileSystem : public CSubsystem
@@ -36,28 +40,19 @@ namespace triton
 
     public:
         explicit CFileSystem(cContext* context);
+
         ~CFileSystem() override = default;
 
-        cDataFile* CreateDataFile(const std::string& path, types::boolean isText);
         std::string TextFileToString(const std::string& path);
 
         types::usize BinaryFileToArray(
             const std::string& path,
-            types::u8*& array,
+            SMemoryAllocation& array,
             types::usize offset
         );
 
-        void ReleaseBinaryFileArray(types::u8* array);
+        void ReleaseBinaryFileArray(const SMemoryAllocation& array);
         
         types::usize TellFileByteSize(const std::string& path);
-        void DestroyDataFile(cDataFile* buffer);
     };
-}
-
-void* triton::cDataFile::GetData() const
-{
-    if (_data == nullptr)
-        return nullptr;
-    else
-        return _data->GetData();
 }

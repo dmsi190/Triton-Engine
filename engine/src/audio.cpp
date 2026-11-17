@@ -49,7 +49,6 @@ void triton::cAudio::CreateSound(eContainerFormat format, const std::string& fil
 	sAudioSound sound = {};
 
 	const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
-	cMemoryAllocator* memoryAllocator = _context->GetMemoryAllocator();
 
 	if (format == eContainerFormat::WAV)
 	{
@@ -85,14 +84,14 @@ void triton::cAudio::CreateSound(eContainerFormat format, const std::string& fil
 		// Data
 		const usize numSamples = wh._subchunk2Size / (sound.channelCount * (sound.bitsPerSample / 8));
 		sound.dataByteSize = numSamples * (sound.bitsPerSample / 8) * sound.channelCount;
-		sound.data = (u16*)memoryAllocator->Allocate(sound.dataByteSize, caps.memoryAlignment);
+		sound.data = CMemoryAllocator::Allocate(sound.dataByteSize);
 		if (sound.bitsPerSample == 16 && sound.channelCount == 2)
 		{
 			for (usize i = 0; i < numSamples; i++)
 			{
 				const usize idx = i * 2;
-				inputFile.read((char*)&sound.data[idx], sizeof(u16));
-				inputFile.read((char*)&sound.data[idx + 1], sizeof(u16));
+				inputFile.read((char*)&((u16*)sound.data.mem)[idx], sizeof(u16));
+				inputFile.read((char*)&((u16*)sound.data.mem)[idx + 1], sizeof(u16));
 			}
 		}
 		inputFile.close();

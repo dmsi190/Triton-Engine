@@ -2,6 +2,7 @@
 
 #include <tracy/Tracy.hpp>
 #include "engine.hpp"
+#include "creator.hpp"
 #include "application.hpp"
 #include "context.hpp"
 #include "graphics.hpp"
@@ -21,14 +22,12 @@
 #include "geometry_storage.hpp"
 #include "model3d_backend.hpp"
 #include "model3d_backend_assimp.hpp"
-#include "animation_pool.hpp"
 #include "synchronization.hpp"
 #include "render_thread.hpp"
 #include "camera_pool.hpp"
 #include "skinned_bones_pool.hpp"
 #include "model3d_pool.hpp"
 #include "skin_pool.hpp"
-#include "animation_pool.hpp"
 #include "input_layout_pool.hpp"
 #include "render_target_pool.hpp"
 #include "render_pass_pools.hpp"
@@ -63,6 +62,8 @@ void triton::CEngine::Initialize()
 {
 	CThreadGuard::CaptureMainThreadId();
 
+	const SCapabilities& caps = _app->GetCapabilities();
+
 	// NOTE: The order of the objects registered below matters
 
 	// Register Engine as subsystem
@@ -72,13 +73,14 @@ void triton::CEngine::Initialize()
 	CRenderCommandProxy::SetContext(_context);
 
 	// Create memory allocator
-	_context->CreateMemoryAllocator();
-
-	CObjectAllocator::Initialize(_context->GetMemoryAllocator());
+	CMemoryAllocator::Initialize(
+		caps.memory_allocator_bin_count,
+		caps.memory_allocator_bin_capacity,
+		caps.memory_allocator_bin_mem_step
+	);
 
 	// Register backends
 	_context->RegisterBackend<IInputBackend>(new CInputBackendSDL(_context));
-	//_context->RegisterBackend<IGraphicsBackend>(new XGraphicsBackendOGL(_context));
 	_context->RegisterBackend<iAudioBackend>(new cAudioBackendOAL(_context));
 	_context->RegisterBackend<IModel3DBackend>(new XModel3DBackendAssimp(_context));
 	_context->RegisterBackend<IImageDecoder>(new BImageDecoderMulti(_context));
@@ -100,85 +102,7 @@ void triton::CEngine::Initialize()
 	// Initialize graphics buffers
 	CGraphicsBuffers::Initialize(_context);
 
-	// Register subsystems and pools
-	const sCapabilities& caps = _app->GetCapabilities();
-
-	_context->RegisterPool(new CCameraPool(
-		_context,
-		K_TRUE,
-		CRenderInstanceStaticPool::cDefaultReservationSize,
-		0,
-		caps.camera_count
-	));
-
-	_context->RegisterPool(new PTexturePool(_context, K_TRUE));
-
-	_context->RegisterPool(new CShaderPool(_context, K_TRUE));
-
-	_context->RegisterPool(new CInputLayoutPool(_context, K_TRUE));
-
-	_context->RegisterPool(new CGPUBufferPool(_context, K_TRUE));
-
-	_context->RegisterPool(new CRenderPassCullingPool(_context, K_TRUE));
-
-	_context->RegisterPool(new CRenderPassGeometryPool(_context, K_TRUE));
-
-	_context->RegisterPool(new CRenderPassProcessingPool(_context, K_TRUE));
-
-	_context->RegisterPool(new CRenderTargetPool(_context, K_TRUE));
-
-	_context->RegisterPool(new CRenderInstanceStaticPool(
-		_context,
-		K_TRUE,
-		CRenderInstanceStaticPool::cDefaultReservationSize,
-		0,
-		caps.maxRenderStaticInstanceCount
-	));
-
-	_context->RegisterPool(new CRenderInstanceDynamicPool(
-		_context,
-		K_TRUE,
-		CRenderInstanceDynamicPool::cDefaultReservationSize,
-		1,
-		caps.maxRenderDynamicInstanceCount
-	));
-
-	_context->RegisterPool(new CAnimationPool(_context, K_TRUE));
-
-	_context->RegisterPool(new CMaterialPool(
-		_context,
-		K_TRUE,
-		CMaterialPool::cDefaultReservationSize,
-		2,
-		caps.maxRenderMaterialCount
-	));
-
-	_context->RegisterPool(new CModel3DPool(_context, K_TRUE));
-
-	_context->RegisterPool(new CSkeletonPool(_context, K_TRUE));
-
-	_context->RegisterPool(new CSkinnedBonesPool(
-		_context,
-		K_TRUE,
-		CSkinnedBonesPool::cDefaultReservationSize,
-		3,
-		caps.maxSkinnedBoneCount
-	));
-
-	_context->RegisterPool(new CSkinPool(_context, K_TRUE));
-
-	_context->RegisterPool(new CRenderDomainPool(_context, K_TRUE));
-
-	_context->RegisterPool(new CRenderGroupPool(
-		_context,
-		K_TRUE,
-		CRenderInstanceStaticPool::cDefaultReservationSize,
-		1,
-		caps.render_group_count
-	));
-
-	_context->RegisterPool(new CWorldObjectPool(_context, K_TRUE));
-
+	// Register subsystems
 	_context->RegisterSubsystem(new CGeometryStorage(_context));
 
 	_context->RegisterSubsystem(new CGraphics(_context));
@@ -192,6 +116,7 @@ void triton::CEngine::Shutdown()
 	ReleaseRenderThread();
 	ReleaseSynchronization();
 	ReleaseRenderCommandRecorder();
+	CMemoryAllocator::Release();
 }
 
 void triton::CEngine::Run()
@@ -201,14 +126,14 @@ void triton::CEngine::Run()
 
 void triton::CEngine::InitializeSynchronization()
 {
-	_sync = _context->Create<XSynchronization>(_context, _cmdRecorder, 1024);
+	_sync = CCreator::Create<XSynchronization>(_context, _cmd_recorder, 1024);
 }
 
 void triton::CEngine::InitializeRenderCommandRecorder()
 {
 	CThreadGuard::AssertMain();
 
-	_cmdRecorder = _context->Create<XRenderCommandRecorder>();
+	_cmd_recorder = CCreator::Create<XRenderCommandRecorder>();
 }
 
 void triton::CEngine::InitializeRenderThread()
@@ -216,8 +141,8 @@ void triton::CEngine::InitializeRenderThread()
 	CThreadGuard::AssertMain();
 
 	// Create render thread
-	_renderThread = _context->Create<cRenderThread>(_context, _sync, _app->GetWindow());
-	_renderThread->Run();
+	_render_thread = CCreator::Create<cRenderThread>(_context, _sync, _app->GetWindow());
+	_render_thread->Run();
 
 	// Wait until render thread gets initialized
 	_sync->WaitForRenderThreadToInit();
@@ -225,18 +150,19 @@ void triton::CEngine::InitializeRenderThread()
 
 void triton::CEngine::ReleaseSynchronization()
 {
-	_context->Destroy<XSynchronization>(_sync);
+	CCreator::Destroy<XSynchronization>(_sync);
 }
 
 void triton::CEngine::ReleaseRenderCommandRecorder()
 {
-	_context->Destroy<XRenderCommandRecorder>(_cmdRecorder);
+	CCreator::Destroy<XRenderCommandRecorder>(_cmd_recorder);
 }
 
 void triton::CEngine::ReleaseRenderThread()
 {
-	_renderThread->Stop();
-	_context->Destroy<cRenderThread>(_renderThread);
+	_render_thread->Stop();
+
+	CCreator::Destroy<cRenderThread>(_render_thread);
 }
 
 void triton::CEngine::MainThreadFunction()
@@ -286,13 +212,6 @@ void triton::CEngine::MainThreadFunction()
 
 			_app->Update();
 
-			_context->GetPool<CRenderInstanceStaticPool>()->Update();
-			_context->GetPool<CRenderInstanceDynamicPool>()->Update();
-			_context->GetPool<CMaterialPool>()->Update();
-			_context->GetPool<CSkinnedBonesPool>()->Update();
-			_context->GetPool<CRenderDomainPool>()->Update();
-			_context->GetPool<CRenderGroupPool>()->Update();
-
 			_context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->Clear();
 			_context->GetSubsystem<CGraphics>()->ExecutePasses();
 		}
@@ -308,7 +227,7 @@ void triton::CEngine::MainThreadFunction()
 
 			_sync->ProduceFrame(
 				producedFrameOp,
-				_cmdRecorder->GetRenderCommandPack()
+				_cmd_recorder->GetRenderCommandPack()
 			);
 		}
 	}
@@ -317,7 +236,7 @@ void triton::CEngine::MainThreadFunction()
 
 	// Stop render thread
 	// TODO: main thread must wait until render thread finishes job completely
-	_renderThread->Stop();
+	_render_thread->Stop();
 
 	_app->Stop();
 }

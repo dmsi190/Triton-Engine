@@ -7,110 +7,109 @@
 #include "application.hpp"
 #include "context.hpp"
 #include "filesystem_manager.hpp"
-#include "memory_pool.hpp"
-#include "data_buffer.hpp"
 #include "engine.hpp"
-#include "object_allocator.hpp"
+#include "creator.hpp"
 
 using namespace types;
 
-triton::cDataFile::cDataFile(cContext* context, const std::string& path, types::boolean isText) : _context(context)
+triton::CDataFile::CDataFile(
+    const SMemoryAllocation& mem_alloc,
+    cContext* context,
+    const std::string& path,
+    types::boolean is_text_file
+) : iObject(mem_alloc, context)
 {
-    if (_data)
-        CObjectAllocator::Deallocate(_data);
+    std::ifstream input_file(path, std::ios::binary);
 
-    std::ifstream inputFile(path, std::ios::binary);
-    if (!inputFile.is_open())
+    if (!input_file.is_open())
     {
-        _bExists = K_FALSE;
+        _is_existing = K_FALSE;
+
         Print("Error: file '" + path + "' does not exist");
 
         return;
     }
     else
     {
-        _bExists = K_TRUE;
+        _is_existing = K_TRUE;
     }
 
-    inputFile.seekg(0, std::ios::end);
-    const usize byteSize = inputFile.tellg();
-    inputFile.seekg(0, std::ios::beg);
-    const usize dataByteSize = byteSize + (isText == K_TRUE ? 1 : 0);
+    input_file.seekg(0, std::ios::end);
 
-    _data = _context->Create<XDataBuffer>(dataByteSize);
-    inputFile.read((char*)_data->GetData(), _data->GetByteSize());
+    const usize file_byte_size = input_file.tellg();
 
-    inputFile.close();
+    input_file.seekg(0, std::ios::beg);
+
+    _byte_size = file_byte_size + (is_text_file == True ? 1 : 0);
+
+    _data = CMemoryAllocator::Allocate(_byte_size);
+
+    input_file.read((char*)_data.mem, _byte_size);
+
+    input_file.close();
 }
 
-triton::cDataFile::~cDataFile()
+triton::CDataFile::~CDataFile()
 {
-    if (_data)
-        _context->Destroy<XDataBuffer>(_data);
+    CMemoryAllocator::Deallocate(_data);
 }
 
 triton::CFileSystem::CFileSystem(cContext* context) : CSubsystem(context) {}
 
-triton::cDataFile* triton::CFileSystem::CreateDataFile(const std::string& path, types::boolean isText)
-{
-    cDataFile* file = _context->Create<cDataFile>(_context, path, isText);
-
-    return file;
-}
-
 std::string triton::CFileSystem::TextFileToString(const std::string& path)
 {
-    cDataFile* file = _context->Create<cDataFile>(_context, path, K_TRUE);
+    CDataFile* file = CCreator::Create<CDataFile>(_context, path, K_TRUE);
+
     std::string str = "";
-    for (usize i = 0; i < file->GetBuffer()->GetByteSize(); i++)
+
+    for (usize i = 0; i < file->GetByteSize(); i++)
         str.push_back(((u8*)file->GetData())[i]);
-    _context->Destroy<cDataFile>(file);
+
+    CCreator::Destroy<CDataFile>(file);
     
     return str;
 }
 
 usize triton::CFileSystem::BinaryFileToArray(
     const std::string& path,
-    u8*& array,
+    SMemoryAllocation& array,
     usize offset
 )
 {
-    cDataFile* file = _context->Create<cDataFile>(_context, path, K_FALSE);
-    usize fileByteSize = file->GetBuffer()->GetByteSize();
-    if (offset > fileByteSize)
-        return 0;
-    usize arrayByteSize = fileByteSize - offset;
-    array = (u8*)CObjectAllocator::Allocate(arrayByteSize, 64);
-    for (usize i = offset; i < fileByteSize; i++)
-        array[i - offset] = file->GetBuffer()->GetData()[i];
-    _context->Destroy<cDataFile>(file);
+    CDataFile* file = CCreator::Create<CDataFile>(_context, path, K_FALSE);
 
-    return arrayByteSize;
+    const usize file_byte_size = file->GetByteSize();
+
+    if (offset > file_byte_size)
+        return 0;
+
+    const usize array_byte_size = file_byte_size - offset;
+
+    array = CMemoryAllocator::Allocate(array_byte_size);
+
+    for (usize i = offset; i < file_byte_size; i++)
+        array.mem[i - offset] = file->GetData()[i];
+
+    CCreator::Destroy<CDataFile>(file);
+
+    return array_byte_size;
 }
 
-void triton::CFileSystem::ReleaseBinaryFileArray(u8* array)
+void triton::CFileSystem::ReleaseBinaryFileArray(const SMemoryAllocation& array)
 {
-    if (!array)
-        return;
-
-    CObjectAllocator::Deallocate((void*)array);
+    CMemoryAllocator::Deallocate(array);
 }
 
 usize triton::CFileSystem::TellFileByteSize(const std::string& path)
 {
-    std::ifstream inputFile(path, std::ios::binary);
-    inputFile.seekg(0, std::ios::end);
-    const usize byteSize = inputFile.tellg();
-    inputFile.seekg(0, std::ios::beg);
-    inputFile.close();
+    std::ifstream input_file(path, std::ios::binary);
 
-    return byteSize;
-}
+    input_file.seekg(0, std::ios::end);
 
-void triton::CFileSystem::DestroyDataFile(cDataFile* file)
-{
-    if (file == nullptr)
-        return;
+    const usize byte_size = input_file.tellg();
 
-    _context->Destroy<cDataFile>(file);
+    input_file.seekg(0, std::ios::beg);
+    input_file.close();
+
+    return byte_size;
 }

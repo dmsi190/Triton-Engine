@@ -12,19 +12,16 @@
 using namespace types;
 
 triton::XCamera::XCamera(
+    const SMemoryAllocation& mem_alloc,
     cContext* context,
-    s32 poolIndex,
     f32 fov,
     f32 zNear,
     f32 zFar
-) : iObject(context, poolIndex), _fov(fov), _zNear(zNear), _zFar(zFar) {}
+) : iObject(mem_alloc, context), _fov(fov), _zNear(zNear), _zFar(zFar) {}
 
 void triton::XCamera::Bind(XRenderPassGeometry* pass)
 {
     CThreadGuard::AssertRender();
-
-    SHandle shaderHandle = pass->GetShader();
-    XShader& shader = *_context->GetPool<CShaderPool>()->Get(shaderHandle);
 
     // TODO: [Vulkan backend] This must be done using render command queue on main thread
     // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

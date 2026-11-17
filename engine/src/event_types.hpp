@@ -6,18 +6,17 @@ namespace triton
 {
     class iObject;
     class cContext;
-    class XDataBuffer;
 
-    using EventFunction = ::std::function<void(iObject* self, cContext* context, XDataBuffer* data)>;
+    using EventFunction = std::function<void(iObject* self, cContext* context, void* data)>;
 
     enum class eEventType
     {
-        NONE,
+        Unknown,
 
-        KEY_PRESS,
+        KeyPress,
 
-        FRAME_BEGIN,
-        FRAME_UPDATE,
-        FRAME_END
+        FrameBegin,
+        FrameUpdate,
+        FrameEnd
     };
 }

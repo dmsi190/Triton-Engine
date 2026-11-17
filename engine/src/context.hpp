@@ -10,15 +10,13 @@
 
 namespace triton
 {
-	class cMemoryAllocator;
 	class iBackend;
 	class CSubsystem;
-	class CPool;
 
 	class cContext
 	{
-		::std::unordered_map<ClassType, iBackend*> _backends;
-		::std::unordered_map<ClassType, CSubsystem*> _subsystems;
+		std::unordered_map<ClassType, iBackend*> _backends;
+		std::unordered_map<ClassType, CSubsystem*> _subsystems;
 
 	public:
 		explicit cContext() = default;
@@ -48,6 +46,15 @@ void triton::cContext::RegisterBackend(T* backend)
 	const auto it = _backends.find(type);
 	if (it == _backends.end())
 		_backends.insert({ type, backend });
+}
+
+void triton::cContext::RegisterSubsystem(CSubsystem* subsystem)
+{
+	// TODO: static_assert that T must inherit from iObject
+	ClassType type = subsystem->GetType();
+	const auto it = _subsystems.find(type);
+	if (it == _subsystems.end())
+		_subsystems.insert({ type, subsystem });
 }
 
 template <typename T>

@@ -10,16 +10,16 @@
 
 namespace triton
 {
-    struct sCapabilities
+    struct SCapabilities final
     {
-        struct sWindowDescriptor
+        struct SWindowDescriptor
         {
             std::string title = "Test app";
             cVector2 size = cVector2(640, 480);
             types::boolean fullscreen = types::K_FALSE;
         };
 
-        sWindowDescriptor window;
+        SWindowDescriptor window;
         types::usize memoryAlignment = 64;
         types::usize maxPhysicsSceneCount = 16;
         types::usize maxPhysicsMaterialCount = 256;
@@ -65,5 +65,8 @@ namespace triton
         types::usize camera_count = 256;
         types::usize render_group_count = 1024;
         types::usize staging_buffer_reserve_capacity = 1024;
+        types::usize memory_allocator_bin_count = 512;
+        types::usize memory_allocator_bin_capacity = 16384;
+        types::usize memory_allocator_bin_mem_step = 32;
     };
 }
