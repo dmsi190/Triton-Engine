@@ -33,6 +33,13 @@ namespace triton
 
 		static CGPUBufferResource CreateBuffer(EGPUBufferType type, types::usize byte_size);
 
+		static void WriteBuffer(
+			const CGPUBufferResource& buffer,
+			types::usize offset,
+			const types::u8* data,
+			types::usize byte_size
+		);
+
 		static void DestroyBuffer(CGPUBufferResource& buffer);
 
 		static CGPUShaderResource CreateShader(EShaderStageBit stage_mask, const SShaderBytecodeFiles& files);

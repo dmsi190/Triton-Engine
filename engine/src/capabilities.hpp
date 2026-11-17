@@ -64,5 +64,6 @@ namespace triton
         types::usize staging_buffer_byte_size = 1024 * 1024;
         types::usize camera_count = 256;
         types::usize render_group_count = 1024;
+        types::usize staging_buffer_reserve_capacity = 1024;
     };
 }

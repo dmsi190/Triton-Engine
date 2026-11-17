@@ -4,7 +4,6 @@
 
 #include "object.hpp"
 #include "gpu_buffer_resource.hpp"
-#include "handle.hpp"
 
 namespace triton
 {
@@ -12,26 +11,43 @@ namespace triton
 
 	class XGPUBuffer : public iObject
 	{
-		TRITON_OBJECT(XGPUBuffer)
+		TRITON_CLASS_NAME(XGPUBuffer)
 
-		CGPUBufferResource _gpuBuffer = CGPUBufferResource::Invalid();
+		types::usize _element_byte_size;
+		types::usize _element_count;
+		types::usize _reserve_capacity;
+		CGPUBufferResource _gpu_buffer = CGPUBufferResource::Invalid();
+		types::usize _staging_element_count;
+		void* _staging_buffer;
+		types::u8* _occupancy_buffer;
+		types::boolean _dirty_bit;
 
 	public:
 		explicit XGPUBuffer(
+			const SMemoryAllocation& mem_alloc,
 			cContext* context,
-			types::s32 poolIndex,
 			EGPUBufferType type,
+			types::usize element_byte_size,
 			const types::u8* data,
-			types::usize byteSize,
+			types::usize byte_size,
 			types::s32 slot
 		);
 
 		~XGPUBuffer() override;
 
-		void Write(types::usize offset, const types::u8* data, types::usize byteSize);
+		void Write(types::usize offset, const types::u8* data, types::usize byte_size);
 
-		inline const CGPUBufferResource& GetGPUResource() const { return _gpuBuffer; }
+		types::usize AcquireFreeStagingIndex();
 
-		struct TGPULayout {};
+		void ReleaseStagingIndex(types::usize index);
+
+		void WriteStaging(types::usize index, const void* element);
+
+		void Flush();
+
+		inline const CGPUBufferResource& GetGPUResource() const { return _gpu_buffer; }
+
+	private:
+		void ResizeBuffers(types::usize new_size);
 	};
 }

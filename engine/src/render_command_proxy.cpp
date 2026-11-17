@@ -28,6 +28,26 @@ triton::CGPUBufferResource triton::CRenderCommandProxy::CreateBuffer(
         WaitForRenderCommandResult<CGPUBufferResource>();
 }
 
+void triton::CRenderCommandProxy::WriteBuffer(
+    const CGPUBufferResource& buffer,
+    usize offset,
+    const u8* data,
+    usize byte_size
+)
+{
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::WRITE_BUFFER,
+        (cpuword)&buffer,
+        (cpuword)offset,
+        (cpuword)data,
+        (cpuword)byte_size
+    ));
+
+    _context->GetSubsystem<CEngine>()->
+        GetSynchronization()->
+        WaitForRenderCommandResult<void*>();
+}
+
 void triton::CRenderCommandProxy::DestroyBuffer(CGPUBufferResource& buffer)
 {
     _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(

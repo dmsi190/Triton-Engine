@@ -17,101 +17,27 @@ namespace triton
 
 	class cContext
 	{
-		cMemoryAllocator* _allocator = nullptr;
 		::std::unordered_map<ClassType, iBackend*> _backends;
 		::std::unordered_map<ClassType, CSubsystem*> _subsystems;
-		std::unordered_map<ClassType, CPool*> _pools;
 
 	public:
 		explicit cContext() = default;
 		~cContext() = default;
-
-		template <typename T, typename... Args>
-		T* Create(Args&&... args);
-
-		template <typename T, typename... Args>
-		T* Create(T* ptr, types::u32 index, Args&&... args);
-
-		template <typename T>
-		void Destroy(T* object);
-
-		cMemoryAllocator* CreateMemoryAllocator();
-		void DestroyMemoryAllocator(cMemoryAllocator* allocator);
 
 		template <typename T>
 		void RegisterBackend(T* backend);
 
 		void RegisterSubsystem(CSubsystem* subsystem);
 
-		void RegisterPool(CPool* pool);
-
 		template <typename T>
 		void ReleaseSubsystem();
-
-		template <typename T>
-		void ReleasePool();
-
-		inline cMemoryAllocator* GetMemoryAllocator() const { return _allocator; }
 
 		template <typename T>
 		inline T* GetBackend() const;
 
 		template <typename T>
 		inline T* GetSubsystem() const;
-
-		template <typename T>
-		inline T* GetPool() const;
 	};
-}
-
-template <typename T, typename... Args>
-T* triton::cContext::Create(Args&&... args)
-{
-	// TODO: rewrite object creation system completely
-	// temporary solution
-
-	const sCapabilities& caps = GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
-	cMemoryAllocator* memoryAllocator = GetMemoryAllocator();
-	T* object = (T*)memoryAllocator->Allocate(sizeof(T), caps.memoryAlignment);
-	
-	new (object) T(std::forward<Args>(args)...);
-
-	return object;
-
-	/*const ClassType type = T::GetTypeStatic();
-	const auto it = _factories.find(type);
-	if (it != _factories.end())
-		return ((cFactory<T>*)it->second)->Create(std::forward<Args>(args)...);
-	else
-		return nullptr;*/
-}
-
-template <typename T, typename... Args>
-T* triton::cContext::Create(T* ptr, types::u32 index, Args&&... args)
-{
-	// TODO: rewrite object creation system completely
-	// temporary solution
-
-	new (&ptr[index]) T(std::forward<Args>(args)...);
-
-	return &ptr[index];
-
-	/*const ClassType type = T::GetTypeStatic();
-	const auto it = _factories.find(type);
-	if (it != _factories.end())
-		return ((cFactory<T>*)it->second)->Create(ptr, index, std::forward<Args>(args)...);
-	else
-		return nullptr;*/
-}
-
-template <typename T>
-void triton::cContext::Destroy(T* object)
-{
-	if (object == nullptr)
-		return;
-
-	object->~T();
-	GetMemoryAllocator()->Deallocate(object);
 }
 
 template <typename T>
@@ -134,15 +60,6 @@ void triton::cContext::ReleaseSubsystem()
 }
 
 template <typename T>
-void triton::cContext::ReleasePool()
-{
-	const ClassType type = T::GetTypeStatic();
-	const auto it = _pools.find(type);
-	if (it == _pools.end())
-		delete it->second;
-}
-
-template <typename T>
 T* triton::cContext::GetBackend() const
 {
 	const ClassType type = T::GetTypeStatic();
@@ -159,17 +76,6 @@ T* triton::cContext::GetSubsystem() const
 	const ClassType type = T::GetTypeStatic();
 	const auto it = _subsystems.find(type);
 	if (it != _subsystems.end())
-		return (T*)it->second;
-	else
-		return nullptr;
-}
-
-template <typename T>
-T* triton::cContext::GetPool() const
-{
-	const ClassType type = T::GetTypeStatic();
-	const auto it = _pools.find(type);
-	if (it != _pools.end())
 		return (T*)it->second;
 	else
 		return nullptr;
