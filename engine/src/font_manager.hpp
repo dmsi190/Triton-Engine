@@ -1,5 +1,5 @@
 // font_manager.hpp
-
+/*
 #pragma once
 
 #include <unordered_map>
@@ -98,4 +98,4 @@ namespace triton
 
         static constexpr types::usize K_MAX_ATLAS_WIDTH = 2048;
     };
-}
+}*/

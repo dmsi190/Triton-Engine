@@ -13,14 +13,15 @@ namespace triton
 	{
 		TRITON_CLASS_NAME(XGPUBuffer)
 
-		types::usize _element_byte_size;
-		types::usize _element_count;
-		types::usize _reserve_capacity;
-		CGPUBufferResource _gpu_buffer = CGPUBufferResource::Invalid();
-		types::usize _staging_element_count;
-		void* _staging_buffer;
-		types::u8* _occupancy_buffer;
-		types::boolean _dirty_bit;
+		types::usize		_element_byte_size;
+		types::usize		_element_count;
+		types::usize		_reserve_capacity;
+		CGPUBufferResource	_gpu_buffer = CGPUBufferResource::Invalid();
+		types::usize		_staging_element_count;
+		void*				_staging_buffer;
+		types::u8*			_occupancy_buffer;
+		types::boolean		_dirty_bit;
+		types::u32			_slot;
 
 	public:
 		explicit XGPUBuffer(
@@ -28,7 +29,6 @@ namespace triton
 			cContext* context,
 			EGPUBufferType type,
 			types::usize element_byte_size,
-			const types::u8* data,
 			types::usize byte_size,
 			types::s32 slot
 		);

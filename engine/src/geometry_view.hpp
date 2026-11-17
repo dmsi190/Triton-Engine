@@ -16,9 +16,9 @@ namespace triton
 	struct SGeometryView final
 	{
 		SGeometryDrawInfo draw_info;
-		types::u32 _vertexCount = 0;
-		types::u8* _vertexData = nullptr;
-		types::u8* _indexData = nullptr;
-		EVertexBufferFormat _format = EVertexBufferFormat::Unknown;
+		types::u32 vertex_count = 0;
+		const types::u8* vertices = nullptr;
+		const types::u8* indices = nullptr;
+		EVertexBufferFormat format = EVertexBufferFormat::Unknown;
 	};
 }

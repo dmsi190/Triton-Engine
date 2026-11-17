@@ -15,7 +15,6 @@ triton::XGPUBuffer::XGPUBuffer(
     cContext* context,
     EGPUBufferType type,
     usize element_byte_size,
-    const u8* data,
     usize byte_size,
     s32 slot
 ) : iObject(mem_alloc, context),
@@ -29,7 +28,8 @@ triton::XGPUBuffer::XGPUBuffer(
     _staging_buffer(nullptr),
     _staging_element_count(0),
     _occupancy_buffer(nullptr),
-    _dirty_bit(False)
+    _dirty_bit(False),
+    _slot(slot)
 {
     _gpu_buffer = CRenderCommandProxy::CreateBuffer(type, byte_size);
 

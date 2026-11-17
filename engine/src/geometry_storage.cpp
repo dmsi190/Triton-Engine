@@ -4,150 +4,113 @@
 #include "application.hpp"
 #include "context.hpp"
 #include "graphics_buffer_formats.hpp"
-#include "data_buffer.hpp"
 #include "engine.hpp"
 #include "vertex.hpp"
-#include "synchronization.hpp"
-#include "thread_guard.hpp"
 #include "gpu_buffer_types.hpp"
-#include "gpu_buffer_pool.hpp"
+#include "creator.hpp"
 
 using namespace types;
 
 triton::CGeometryStorage::CGeometryStorage(cContext* context) : CSubsystem(context)
 {
-    const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+    const SCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
 
-    _staticVertexBuffer = *_context->GetPool<CGPUBufferPool>()->Create(
+    _rigid_vertex_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
         EGPUBufferType::Vertex,
-        nullptr,
+        0,
         caps.staticVertexBufferSize,
         0
     );
 
-    _skinnedVertexBuffer = *_context->GetPool<CGPUBufferPool>()->Create(
+    _skinned_vertex_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
         EGPUBufferType::Vertex,
-        nullptr,
+        0,
         caps.skinnedVertexBufferSize,
         0
     );
 
-    _staticIndexBuffer = *_context->GetPool<CGPUBufferPool>()->Create(
+    _rigid_index_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
         EGPUBufferType::Index,
-        nullptr,
+        0,
         caps.staticIndexBufferSize,
         0
     );
-
-    _skinnedIndexBuffer = *_context->GetPool<CGPUBufferPool>()->Create(
+    
+    _skinned_index_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
         EGPUBufferType::Index,
-        nullptr,
+        0,
         caps.skinnedIndexBufferSize,
         0
     );
-
-    _staticVertexBufferCPU = _context->Create<XDataBuffer>(caps.staticVertexBufferSize);
-    _skinnedVertexBufferCPU = _context->Create<XDataBuffer>(caps.skinnedVertexBufferSize);
-    _staticIndexBufferCPU = _context->Create<XDataBuffer>(caps.staticIndexBufferSize);
-    _skinnedIndexBufferCPU = _context->Create<XDataBuffer>(caps.skinnedIndexBufferSize);
 }
 
 triton::CGeometryStorage::~CGeometryStorage()
 {
-    _context->Destroy<XDataBuffer>(_skinnedIndexBufferCPU);
-    _context->Destroy<XDataBuffer>(_staticIndexBufferCPU);
-    _context->Destroy<XDataBuffer>(_skinnedVertexBufferCPU);
-    _context->Destroy<XDataBuffer>(_staticVertexBufferCPU);
-
-    _context->GetPool<CGPUBufferPool>()->Destroy(_skinnedIndexBuffer);
-    _context->GetPool<CGPUBufferPool>()->Destroy(_staticIndexBuffer);
-    _context->GetPool<CGPUBufferPool>()->Destroy(_skinnedVertexBuffer);
-    _context->GetPool<CGPUBufferPool>()->Destroy(_staticVertexBuffer);
+    CCreator::Destroy<XGPUBuffer>(_skinned_index_buffer);
+    CCreator::Destroy<XGPUBuffer>(_rigid_index_buffer);
+    CCreator::Destroy<XGPUBuffer>(_skinned_vertex_buffer);
+    CCreator::Destroy<XGPUBuffer>(_rigid_vertex_buffer);
 }
 
-std::optional<triton::SGeometryView> triton::CGeometryStorage::Create(
+std::optional<triton::SGeometryView> triton::CGeometryStorage::Store(
     EVertexBufferFormat format,
     const u8* vertices,
-    usize inputVertexCount,
+    usize vertex_count,
     const u8* indices,
-    usize inputIndexCount
+    usize index_count
 )
 {
     if (format == EVertexBufferFormat::Rigid_48)
     {
-        const usize verticesByteSize = sizeof(SRigidVertexGPULayout) * inputVertexCount;
-        const usize indicesByteSize = sizeof(u32) * inputIndexCount;
+        const usize vertices_byte_size = sizeof(SRigidVertexGPULayout) * vertex_count;
+        const usize indices_byte_size = sizeof(u32) * index_count;
 
-        usize vertexBufferByteSize = _staticVertexBufferPointer;
-        usize indexBufferByteSize = _staticIndexBufferPointer;
-        _staticVertexBufferPointer += verticesByteSize;
-        _staticIndexBufferPointer += indicesByteSize;
+        _rigid_vertex_buffer->Write(_rigid_vertex_buffer_size, vertices, vertices_byte_size);
+        _rigid_index_buffer->Write(_rigid_index_buffer_size, indices, indices_byte_size);
 
-        const usize cVertexByteSize = sizeof(SRigidVertexGPULayout);
-        const usize cIndexByteSize = sizeof(u32);
-        usize vertexCount = verticesByteSize / cVertexByteSize;
-        usize indexCount = indicesByteSize / cIndexByteSize;
-        usize vertexElementOffset = vertexBufferByteSize / cVertexByteSize;
-        usize indexElementOffset = indexBufferByteSize / cIndexByteSize;
-        
-        u8* vertexData = &_staticVertexBufferCPU->GetData()[vertexBufferByteSize];
-        u8* indexData = &_staticIndexBufferCPU->GetData()[indexBufferByteSize];
-        _staticVertexBufferCPU->Write(vertices, verticesByteSize, vertexBufferByteSize);
-        _staticIndexBufferCPU->Write(indices, indicesByteSize, indexBufferByteSize);
-
-        XGPUBuffer& staticVertexBuffer = *_context->GetPool<CGPUBufferPool>()->Get(_staticVertexBuffer);
-        XGPUBuffer& staticIndexBuffer = *_context->GetPool<CGPUBufferPool>()->Get(_staticIndexBuffer);
-
-        staticVertexBuffer.Write(vertexBufferByteSize, vertexData, verticesByteSize);
-        staticIndexBuffer.Write(indexBufferByteSize, indexData, indicesByteSize);
+        const usize vertex_element_offset = _rigid_vertex_buffer_size / sizeof(SRigidVertexGPULayout);
+        const usize index_element_offset = _rigid_index_buffer_size / sizeof(u32);
 
         SGeometryView geometry;
-        geometry._vertexCount = vertexCount;
-        geometry.draw_info.index_count = indexCount;
-        geometry.draw_info.vertex_element_offset = vertexElementOffset;
-        geometry.draw_info.index_element_offset = indexElementOffset;
-        geometry._vertexData = vertexData;
-        geometry._indexData = indexData;
-        geometry._format = format;
+        geometry.vertex_count = vertex_count;
+        geometry.draw_info.index_count = index_count;
+        geometry.draw_info.vertex_element_offset = vertex_element_offset;
+        geometry.draw_info.index_element_offset = index_element_offset;
+        geometry.vertices = vertices;
+        geometry.indices = indices;
+        geometry.format = format;
+
+        _rigid_vertex_buffer_size += vertices_byte_size;
+        _rigid_index_buffer_size += indices_byte_size;
 
         return geometry;
     }
     else if (format == EVertexBufferFormat::Skinned_80)
     {
-        const usize verticesByteSize = sizeof(SSkinnedVertexGPULayout) * inputVertexCount;
-        const usize indicesByteSize = sizeof(u32) * inputIndexCount;
+        const usize vertices_byte_size = sizeof(SSkinnedVertexGPULayout) * vertex_count;
+        const usize indices_byte_size = sizeof(u32) * index_count;
 
-        usize vertexBufferByteSize = _skinnedVertexBufferPointer;
-        usize indexBufferByteSize = _skinnedIndexBufferPointer;
-        _skinnedVertexBufferPointer += verticesByteSize;
-        _skinnedIndexBufferPointer += indicesByteSize;
+        _skinned_vertex_buffer->Write(_skinned_vertex_buffer_size, vertices, vertices_byte_size);
+        _skinned_index_buffer->Write(_skinned_index_buffer_size, indices, indices_byte_size);
 
-        const usize cVertexByteSize = sizeof(SSkinnedVertexGPULayout);
-        const usize cIndexByteSize = sizeof(u32);
-        usize vertexCount = verticesByteSize / cVertexByteSize;
-        usize indexCount = indicesByteSize / cIndexByteSize;
-        usize vertexElementOffset = vertexBufferByteSize / cVertexByteSize;
-        usize indexElementOffset = indexBufferByteSize / cIndexByteSize;
-
-        u8* vertexData = &_skinnedVertexBufferCPU->GetData()[vertexBufferByteSize];
-        u8* indexData = &_skinnedIndexBufferCPU->GetData()[indexBufferByteSize];
-        _skinnedVertexBufferCPU->Write(vertices, verticesByteSize, vertexBufferByteSize);
-        _skinnedIndexBufferCPU->Write(indices, indicesByteSize, indexBufferByteSize);
-
-        XGPUBuffer& skinnedVertexBuffer = *_context->GetPool<CGPUBufferPool>()->Get(_skinnedVertexBuffer);
-        XGPUBuffer& skinnedIndexBuffer = *_context->GetPool<CGPUBufferPool>()->Get(_skinnedIndexBuffer);
-
-        skinnedVertexBuffer.Write(vertexBufferByteSize, vertexData, verticesByteSize);
-        skinnedIndexBuffer.Write(indexBufferByteSize, indexData, indicesByteSize);
+        const usize vertex_element_offset = _skinned_vertex_buffer_size / sizeof(SSkinnedVertexGPULayout);
+        const usize index_element_offset = _skinned_index_buffer_size / sizeof(u32);
 
         SGeometryView geometry;
-        geometry._vertexCount = vertexCount;
-        geometry.draw_info.index_count = indexCount;
-        geometry.draw_info.vertex_element_offset = vertexElementOffset;
-        geometry.draw_info.index_element_offset = indexElementOffset;
-        geometry._vertexData = vertexData;
-        geometry._indexData = indexData;
-        geometry._format = format;
+        geometry.vertex_count = vertex_count;
+        geometry.draw_info.index_count = index_count;
+        geometry.draw_info.vertex_element_offset = vertex_element_offset;
+        geometry.draw_info.index_element_offset = index_element_offset;
+        geometry.vertices = vertices;
+        geometry.indices = indices;
+        geometry.format = format;
+
+        _skinned_vertex_buffer_size += vertices_byte_size;
+        _skinned_index_buffer_size += indices_byte_size;
 
         return geometry;
     }

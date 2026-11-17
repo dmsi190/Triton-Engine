@@ -12,57 +12,53 @@
 
 namespace triton
 {
+    class XGPUBuffer;
     class cEngine;
-    class XDataBuffer;
     class cContext;
 
     class CGeometryStorage final : public CSubsystem
     {
         TRITON_CLASS_NAME(CGeometryStorage)
 
-        SHandle _staticVertexBuffer;
-        SHandle _skinnedVertexBuffer;
-        SHandle _staticIndexBuffer;
-        SHandle _skinnedIndexBuffer;
-        XDataBuffer* _staticVertexBufferCPU = nullptr;
-        XDataBuffer* _skinnedVertexBufferCPU = nullptr;
-        XDataBuffer* _staticIndexBufferCPU = nullptr;
-        XDataBuffer* _skinnedIndexBufferCPU = nullptr;
-        types::usize _staticVertexBufferPointer = 0;
-        types::usize _skinnedVertexBufferPointer = 0;
-        types::usize _staticIndexBufferPointer = 0;
-        types::usize _skinnedIndexBufferPointer = 0;
+        XGPUBuffer*     _rigid_vertex_buffer;
+        XGPUBuffer*     _skinned_vertex_buffer;
+        XGPUBuffer*     _rigid_index_buffer;
+        XGPUBuffer*     _skinned_index_buffer;
+        types::usize    _rigid_vertex_buffer_size;
+        types::usize    _skinned_vertex_buffer_size;
+        types::usize    _rigid_index_buffer_size;
+        types::usize    _skinned_index_buffer_size;
 
     public:
         explicit CGeometryStorage(cContext* context);
         ~CGeometryStorage();
 
-        std::optional<triton::SGeometryView> Create(
+        std::optional<triton::SGeometryView> Store(
             EVertexBufferFormat format,
             const types::u8* vertices,
-            types::usize inputVertexCount,
+            types::usize vertex_count,
             const types::u8* indices,
-            types::usize inputIndexCount
+            types::usize index_count
         );
 
-        inline const SHandle& GetRigidVertexBuffer() const
+        inline XGPUBuffer* GetRigidVertexBuffer() const
         {
-            return _staticVertexBuffer;
+            return _rigid_vertex_buffer;
         }
 
-        inline const SHandle& GetSkinnedVertexBuffer() const
+        inline XGPUBuffer* GetSkinnedVertexBuffer() const
         {
-            return _skinnedVertexBuffer;
+            return _skinned_vertex_buffer;
         }
 
-        inline const SHandle& GetRigidIndexBuffer() const
+        inline XGPUBuffer* GetRigidIndexBuffer() const
         {
-            return _staticIndexBuffer;
+            return _rigid_index_buffer;
         }
 
-        inline const SHandle& GetSkinnedIndexBuffer() const
+        inline XGPUBuffer* GetSkinnedIndexBuffer() const
         {
-            return _skinnedIndexBuffer;
+            return _skinned_index_buffer;
         }
     };
 }
