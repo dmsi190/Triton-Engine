@@ -7,18 +7,18 @@
 
 namespace triton
 {
-    class CGPUInputLayoutResource : public CGPUResource
+    struct SGPUInputLayoutResource : public SGPUResource
     {
-    public:
-        explicit CGPUInputLayoutResource(
+        explicit SGPUInputLayoutResource(
             types::qword instance,
-            types::qword viewInstance
-        ) : CGPUResource(instance, viewInstance) {}
-        ~CGPUInputLayoutResource() override = default;
+            types::qword view_instance
+        ) : SGPUResource(instance, view_instance) {}
 
-        static CGPUInputLayoutResource Invalid()
+        ~SGPUInputLayoutResource() override = default;
+
+        static SGPUInputLayoutResource Invalid()
         {
-            return CGPUInputLayoutResource(
+            return SGPUInputLayoutResource(
                 0, 0
             );
         }

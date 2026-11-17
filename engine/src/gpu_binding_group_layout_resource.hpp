@@ -8,24 +8,21 @@
 
 namespace triton
 {
-    class CGPUBindingGroupLayoutResource : public CGPUResource
+    struct SGPUBindingGroupLayoutResource : public SGPUResource
     {
-        std::vector<SBindingGroupBinding> _bindings;
+        std::vector<SBindingGroupBinding> bindings;
 
-    public:
-        explicit CGPUBindingGroupLayoutResource(
+        explicit SGPUBindingGroupLayoutResource(
             types::qword instance,
             types::qword view,
             const std::vector<SBindingGroupBinding>& bindings
-        ) : CGPUResource(instance, view), _bindings(bindings) {}
+        ) : SGPUResource(instance, view), bindings(bindings) {}
 
-        ~CGPUBindingGroupLayoutResource() override = default;
+        ~SGPUBindingGroupLayoutResource() override = default;
 
-        static CGPUBindingGroupLayoutResource Invalid()
+        static SGPUBindingGroupLayoutResource Invalid()
         {
-            return CGPUBindingGroupLayoutResource(0, 0, {});
+            return SGPUBindingGroupLayoutResource(0, 0, {});
         }
-
-        inline const std::vector<SBindingGroupBinding>& GetBindings() const { return _bindings; }
     };
 }

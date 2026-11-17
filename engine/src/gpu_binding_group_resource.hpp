@@ -7,30 +7,25 @@
 
 namespace triton
 {
-    class CGPUBindingGroupResource : public CGPUResource
+    class SGPUBindingGroupResource : public SGPUResource
     {
-        types::qword _pool = 0;
-        types::s32 _index = 0;
+        types::qword pool = 0;
+        types::s32 index = 0;
 
-    public:
-        explicit CGPUBindingGroupResource(
+        explicit SGPUBindingGroupResource(
             types::qword instance,
             types::qword view,
             types::qword pool,
             types::s32 index
-        ) : CGPUResource(instance, view), _pool(pool), _index(index) {}
+        ) : SGPUResource(instance, view), pool(pool), index(index) {}
 
-        ~CGPUBindingGroupResource() override = default;
+        ~SGPUBindingGroupResource() override = default;
 
-        static CGPUBindingGroupResource Invalid()
+        static SGPUBindingGroupResource Invalid()
         {
-            return CGPUBindingGroupResource(
+            return SGPUBindingGroupResource(
                 0, 0, 0, -1
             );
         }
-
-        inline types::qword GetPool() const { return _pool; }
-
-        inline types::s32 GetIndex() const { return _index; }
     };
 }

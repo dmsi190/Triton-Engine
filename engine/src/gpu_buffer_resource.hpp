@@ -8,42 +8,34 @@
 
 namespace triton
 {
-    class CGPUBufferResource : public CGPUResource
+    struct SGPUBufferResource : public SGPUResource
     {
-        types::qword _deviceMemory = 0;
-        EGPUBufferType _type = EGPUBufferType::Unknown;
-        types::usize _byteSize = 0;
-        types::s32 _slot = -1;
+        types::qword device_memory = 0;
+        EGPUBufferType type = EGPUBufferType::Unknown;
+        types::usize byte_size = 0;
+        types::s32 slot = -1;
 
-    public:
-        explicit CGPUBufferResource(
+        explicit SGPUBufferResource(
             types::qword instance,
-            types::qword viewInstance,
-            types::qword deviceMemory,
+            types::qword view_instance,
+            types::qword device_memory,
             EGPUBufferType type,
-            types::usize byteSize,
+            types::usize byte_size,
             types::s32 slot
         ) :
-            CGPUResource(instance, viewInstance),
-            _deviceMemory(deviceMemory),
-            _type(type),
-            _byteSize(byteSize),
-            _slot(slot) {}
-        ~CGPUBufferResource() override = default;
+            SGPUResource(instance, view_instance),
+            device_memory(device_memory),
+            type(type),
+            byte_size(byte_size),
+            slot(slot) {}
 
-        static CGPUBufferResource Invalid()
+        ~SGPUBufferResource() override = default;
+
+        static SGPUBufferResource Invalid()
         {
-            return CGPUBufferResource(
+            return SGPUBufferResource(
                 0, 0, 0, EGPUBufferType::Unknown, 0, 0
             );
         }
-
-        inline types::qword GetDeviceMemory() const { return _deviceMemory; }
-
-        inline EGPUBufferType GetBufferType() const { return _type; }
-
-        inline types::usize GetByteSize() const { return _byteSize; }
-
-        inline types::s32 GetSlot() const { return _slot; }
     };
 }

@@ -6,26 +6,25 @@
 
 namespace triton
 {
-    class CGPUResource
+    struct SGPUResource
     {
-    protected:
-        types::qword _instance = 0;
-        types::qword _view = 0;
+        types::qword instance = 0;
+        types::qword view = 0;
 
-    public:
-        explicit CGPUResource(types::qword instance, types::qword view) : _instance(instance), _view(view) {}
+        explicit SGPUResource(types::qword instance, types::qword view)
+            : instance(instance), view(view) {}
         
-        virtual ~CGPUResource() = default;
+        virtual ~SGPUResource() = default;
 
         inline types::boolean IsValid() const
         {
-            return _instance == 0 ? types::K_FALSE : types::K_TRUE;
+            return instance ? True : False;
         }
 
-        inline void Invalidate() { _instance = 0; }
-
-        inline types::qword GetInstance() const { return _instance; }
-
-        inline types::qword GetView() const { return _view; }
+        inline void Invalidate()
+        {
+            instance = 0;
+            view = 0;
+        }
     };
 }
