@@ -19,141 +19,12 @@
 #include "shader_stage_bit_enum.hpp"
 #include "camera_pool.hpp"
 #include "world_render_domain_pool.hpp"
+#include "creator.hpp"
+#include "application.hpp"
+#include "graphics_buffers.hpp"
+#include "render_command_proxy.hpp"
 
 using namespace types;
-
-triton::CGraphics::CGraphics(cContext* context) : CSubsystem(context)
-{
-    // TODO Vulkan backend: uncomment and rewrite when Vulkan backend will be ready
-    // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-    //CreateInputLayouts();
-    CreateShaders();
-    CGPUTextureResource presentTexture = CreateRenderTargets();
-    CreateCameraAndRenderDomain();
-    CreateRenderPasses();
-    FinalizeSwapchain(presentTexture);
-}
-
-triton::CGraphics::~CGraphics()
-{
-    // TODO Vulkan backend: uncomment and rewrite when Vulkan backend will be ready
-    // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-    ReleaseSwapchainResources();
-    DestroyRenderPasses();
-    DestroyCameraAndRenderDomain();
-    DestroyRenderTargets();
-    DestroyShaders();
-    DestroyInputLayouts();
-}
-
-void triton::CGraphics::ExecutePasses()
-{
-    // TODO: [Vulkan backend] This must be done using render command queue on main thread
-    // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-    //BindBuffers();
-    ExecuteBuiltinPasses();
-    //UnbindBuffers();
-}
-
-void triton::CGraphics::ResizeRenderTargets(const cVector2& size)
-{
-    // TODO: finish this to make resizing work
-    // |||||||||||||||||||||||||||||||||||||||
-    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-
-    //UnbindPass(_opaqueStatic);
-    //UnbindPass(_opaqueSkinned);
-    //UnbindPass(_transparent);
-
-    //ResizePassViewport(_opaqueStatic);
-    //ResizePassViewport(_opaqueSkinned);
-    //ResizePassAttachments(_opaqueStatic);
-    //ResizePassViewport(_transparent);
-    //ResizePassAttachments(_transparent);
-    //ResizePassViewport(_text);
-    //ResizePassViewport(_compositeTransparent);
-    //ResizePassViewport(_compositeFinal);
-
-    //SRenderPass& opaqueStaticData = *_renderPassPool->Get(_opaqueStatic);
-    //SRenderTarget& opaqueStaticRTData = *_renderTargetPool->Get(opaqueStaticData.renderTarget);
-    //SRenderPass& transparentData = *_renderPassPool->Get(_transparent);
-    //SRenderTarget& transparentRTData = *_renderTargetPool->Get(transparentData.renderTarget);
-
-    //transparentRTData._renderTarget->SetDepthAttachment(opaqueStaticRTData._renderTarget->GetDepthAttachment());
-
-    //XRenderTarget* newOpaqueRenderTarget = _opaqueStatic->GetRenderTarget();
-    //XRenderTarget* newTransparentRenderTarget = _transparent->GetRenderTarget();
-    //gfxPipelineBackend->UpdateRenderTargetBuffers(newOpaqueRenderTarget);
-    //gfxPipelineBackend->UpdateRenderTargetBuffers(newTransparentRenderTarget);
-    //_opaqueStatic->SetRenderTarget(newOpaqueRenderTarget);
-    //_opaqueSkinned->SetRenderTarget(newOpaqueRenderTarget);
-    //_transparent->SetRenderTarget(newTransparentRenderTarget);
-
-    //auto& transparentColorAttachments = _transparent->GetRenderTarget()->GetColorAttachments();
-    //_compositeTransparent->SetInputTexture(0, SRenderPassTexture("AccumulationTexture", transparentColorAttachments[0]));
-    //_compositeTransparent->SetInputTexture(1, SRenderPassTexture("RevealageTexture", transparentColorAttachments[1]));
-
-    //auto& opaqueColorAttachments = _opaqueStatic->GetRenderTarget()->GetColorAttachments();
-    //_compositeFinal->SetInputTexture(0, SRenderPassTexture("ColorTexture", opaqueColorAttachments[0]));
-}
-
-void triton::CGraphics::LoadShaderFiles(
-    const std::string& vertexFuncPath,
-    const std::string& fragmentFuncPath,
-    std::string& vertexFunc,
-    std::string& fragmentFunc
-)
-{
-    CFileSystem* fileSystem = _context->GetSubsystem<CFileSystem>();
-
-    cDataFile* vertexFuncFile = fileSystem->CreateDataFile(vertexFuncPath, K_TRUE);
-    cDataFile* fragmentFuncFile = fileSystem->CreateDataFile(fragmentFuncPath, K_TRUE);
-
-    vertexFunc = std::string((const char*)vertexFuncFile->GetData());
-    fragmentFunc = std::string((const char*)fragmentFuncFile->GetData());
-
-    fileSystem->DestroyDataFile(vertexFuncFile);
-    fileSystem->DestroyDataFile(fragmentFuncFile);
-}
-
-void triton::CGraphics::SetShadingModel(EShadingModel shadingModel)
-{
-    // TODO: [Vulkan backend] rewrite when Vulkan backend will be ready
-    // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-    /*XRenderPassGeometry& rpStatic = *_context->GetPool<CRenderPassGeometryPool>()->Get(_opaqueStatic);
-    XRenderPassGeometry& rpSkinned = *_context->GetPool<CRenderPassGeometryPool>()->Get(_opaqueSkinned);
-    if (shadingModel == EShadingModel::BlinnPhong)
-    {
-        rpStatic.SetShader(_opaqueRigidPhongShader);
-        rpSkinned.SetShader(_opaqueSkinnedPhongShader);
-    }
-    else if (shadingModel == EShadingModel::PBR)
-    {
-        rpStatic.SetShader(_opaqueRigidPBRShader);
-        rpSkinned.SetShader(_opaqueSkinnedPBRShader);
-    }*/
-}
-
-void triton::CGraphics::CreateInputLayouts()
-{
-    CGeometryStorage* gs = _context->GetSubsystem<CGeometryStorage>();
-    const std::vector<SHandle> staticInputs = {
-        gs->GetRigidVertexBuffer(),
-        gs->GetRigidIndexBuffer()
-    };
-    const std::vector<SHandle> skinnedInputs = {
-        gs->GetSkinnedVertexBuffer(),
-        gs->GetSkinnedIndexBuffer()
-    };
-    CInputLayoutPool* iaPool = _context->GetPool<CInputLayoutPool>();
-    _inputLayoutStatic = *iaPool->Create(staticInputs, EVertexBufferFormat::Rigid_48);
-    _inputLayoutSkinned = *iaPool->Create(skinnedInputs, EVertexBufferFormat::Skinned_80);
-    _inputLayoutProcessing = *iaPool->Create(std::vector<SHandle>(), EVertexBufferFormat::Unknown);
-}
 
 void triton::CGraphics::CreateShaders()
 {
@@ -161,7 +32,7 @@ void triton::CGraphics::CreateShaders()
 
     const std::string pbrShaderPath =
         "C:/My/My_Projects_Programming/TritonEngine/runtime/data/shaders/builtin/brdf.shader";
-    const std::string opaqueStaticVertexShaderPath = 
+    const std::string opaqueStaticVertexShaderPath =
         "C:/My/My_Projects_Programming/TritonEngine/runtime/data/shaders/builtin/opaque_vertex_static.shader";
     const std::string opaqueSkinnedVertexShaderPath =
         "C:/My/My_Projects_Programming/TritonEngine/runtime/data/shaders/builtin/opaque_vertex_skinned.shader";
@@ -286,21 +157,19 @@ void triton::CGraphics::CreateShaders()
         emptyConstCharVec
     );*/
 
-    CShaderPool* shaderPool = _context->GetPool<CShaderPool>();
-
-    SShaderBytecodeFiles bytecodeFiles;
-    bytecodeFiles.vertexFilePath =
+    SShaderBytecodeFiles opaque_rigid_pbr_bytecode_files;
+    opaque_rigid_pbr_bytecode_files.vertexFilePath =
         "C:/My/My_Projects_Programming/TritonEngine/runtime/data/shaders/builtin/passthrough.vert.spv";
-    bytecodeFiles.pixelFilePath = 
+    opaque_rigid_pbr_bytecode_files.pixelFilePath =
         "C:/My/My_Projects_Programming/TritonEngine/runtime/data/shaders/builtin/passthrough.frag.spv";
 
-    _opaqueRigidPBRShader = *shaderPool->Create(
+    _opaque_rigid_pbr_shader = CCreator::Create<XShader>(
         (dword)EShaderStageBit::Vertex | (dword)EShaderStageBit::Pixel,
-        bytecodeFiles
+        opaque_rigid_pbr_bytecode_files
     );
 }
 
-triton::CGPUTextureResource triton::CGraphics::CreateRenderTargets()
+const triton::SGPUTextureResource& triton::CGraphics::CreateRenderTargets()
 {
     /*cVector2 windowSize = _context->GetSubsystem<CEngine>()->GetApplication()->GetWindow()->GetSize();
     _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
@@ -347,7 +216,7 @@ triton::CGPUTextureResource triton::CGraphics::CreateRenderTargets()
         0
     ));
     CGPUTextureResource depth = _context->GetSubsystem<CEngine>()->GetSynchronization()->WaitForRenderCommandResult<CGPUTextureResource>();
-    
+
     CRenderTargetPool* rtPool = _context->GetPool<CRenderTargetPool>();
 
     std::vector<CGPUTextureResource> opaqueColorAttachments = { color };
@@ -356,49 +225,44 @@ triton::CGPUTextureResource triton::CGraphics::CreateRenderTargets()
     std::vector<CGPUTextureResource> transparentColorAttachments = { accumulation, revealage };
     _transparentRenderTarget = *rtPool->Create(transparentColorAttachments, depth);*/
 
-    cVector2 windowSize = _context->GetSubsystem<CEngine>()->GetApplication()->GetWindow()->GetSize();
+    const cVector2 application_window_size =
+        _context->GetSubsystem<CEngine>()->GetApplication()->GetWindow()->GetSize();
 
-    PTexturePool* texturePool = _context->GetPool<PTexturePool>();
-    CRenderTargetPool* renderTargetPool = _context->GetPool<CRenderTargetPool>();
-
-    SHandle colorHandle = *texturePool->Create(
+    XTexture* color_texture = CCreator::Create<XTexture>(
         True,
         ETextureFormat::RGBA8,
         (dword)ETextureUsageBit::Sampled | (dword)ETextureUsageBit::ColorAttachment,
         ETextureDimension::Texture2D,
-        cVector3(windowSize.GetX(), windowSize.GetY(), 1.0f),
+        cVector3(application_window_size.GetX(), application_window_size.GetY(), 1.0f),
         nullptr,
         0
     );
 
-    SHandle depthHandle = *texturePool->Create(
+    XTexture* depth_texture = CCreator::Create<XTexture>(
         True,
         ETextureFormat::DepthStencil,
         (dword)(dword)ETextureUsageBit::DepthStencilAttachment,
         ETextureDimension::Texture2D,
-        cVector3(windowSize.GetX(), windowSize.GetY(), 1.0f),
+        cVector3(application_window_size.GetX(), application_window_size.GetY(), 1.0f),
         nullptr,
         0
     );
 
-    const std::vector<SHandle> colorAttachments = { colorHandle };
-    SHandle depthAttachment = depthHandle;
-
-    _opaqueRenderTarget = *renderTargetPool->Create(
-        colorAttachments,
-        depthAttachment
+    _opaque_render_target = CCreator::Create<XRenderTarget>(
+        std::vector<XTexture*>({ color_texture }),
+        depth_texture
     );
 
-    CGPUTextureResource presentTexture = texturePool->Get(colorHandle)->get().GetGPUResource();
+    const SGPUTextureResource& swapchain_present_texture = color_texture->GetGPUResource();
 
-    return presentTexture;
+    return swapchain_present_texture;
 }
 
 void triton::CGraphics::CreateCameraAndRenderDomain()
 {
-    _camera = *_context->GetPool<CCameraPool>()->Create(65.0f, 0.01f, 1000.0f);
+    _camera = CCreator::Create<XCamera>(65.0f, 0.01f, 1000.0f);
 
-    _renderDomain = *_context->GetPool<CRenderDomainPool>()->Create(_camera);
+    _render_domain = CCreator::Create<XRenderDomain>(_camera);
 }
 
 void triton::CGraphics::CreateRenderPasses()
@@ -528,164 +392,130 @@ void triton::CGraphics::CreateRenderPasses()
     );*/
 
     {
-        CRenderPassCullingPool* culling_pass_pool = _context->GetPool<CRenderPassCullingPool>();
-
-        _culling_pass = *culling_pass_pool->Create();
+        _culling_pass = CCreator::Create<XRenderPassCulling>();
     }
 
     {
-        CRenderPassGeometryPool* renderPassGeometryPool = _context->GetPool<CRenderPassGeometryPool>();
-        CRenderTargetPool* renderTargetPool = _context->GetPool<CRenderTargetPool>();
-
-        XRenderTarget& opaqueRenderTarget = *renderTargetPool->Get(_opaqueRenderTarget);
-
         SViewport viewport;
         viewport.rect = cVector4(
             0,
             0,
-            opaqueRenderTarget.GetColorAttachmentSize(0).GetX(),
-            opaqueRenderTarget.GetColorAttachmentSize(0).GetY()
+            _opaque_render_target->GetColorAttachmentSize(0).GetX(),
+            _opaque_render_target->GetColorAttachmentSize(0).GetY()
         );
 
-        const std::vector<EResourceUsage> srcAttachmentsUsage = {
+        const std::vector<EResourceUsage> src_render_target_attachments_usage = {
             EResourceUsage::Unknown, EResourceUsage::Unknown
         };
-        const std::vector<EResourceUsage> dstAttachmentsUsage = {
+        const std::vector<EResourceUsage> dst_render_target_attachments_usage = {
             EResourceUsage::PixelShaderRead, EResourceUsage::DepthAttachment
         };
 
-        const std::vector<CGPUBufferResource> inputBuffers = {
-            _context->GetPool<CRenderInstanceStaticPool>()->GetGPUBuffer()
+        const std::vector<SGPUBufferResource> input_buffers = {
+            CGraphicsBuffers::GetStaticInstanceBuffer()
         };
 
-        const std::vector<SShaderTextureBinding> inputTextures;
+        const std::vector<SShaderTextureBinding> input_textures;
 
-        _opaqueRigid = *renderPassGeometryPool->Create(
-            _renderDomain,
-            _opaqueRenderTarget,
+        _opaque_rigid_pass = CCreator::Create<XRenderPassGeometry>(
+            _render_domain,
+            _opaque_render_target,
             True,
             cVector4(0.45f, 0.45f, 0.45f, 1.0f),
             1.0f,
-            srcAttachmentsUsage,
-            dstAttachmentsUsage,
-            _opaqueRigidPBRShader,
+            src_render_target_attachments_usage,
+            dst_render_target_attachments_usage,
+            _opaque_rigid_pbr_shader,
             EPrimitiveTopology::TriangleList,
             viewport,
-            inputBuffers,
-            inputTextures
+            input_buffers,
+            input_textures
         );
     }
 }
 
-void triton::CGraphics::FinalizeSwapchain(const CGPUTextureResource& presentTexture)
-{
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-        ERenderCommand::FinalizeSwapchain,
-        (cpuword)&presentTexture
-    ));
-
-    _context->GetSubsystem<CEngine>()->
-        GetSynchronization()->
-        WaitForRenderCommandResult<void*>();
-}
-
-void triton::CGraphics::DestroyInputLayouts()
-{
-    CInputLayoutPool* iaPool = _context->GetPool<CInputLayoutPool>();
-    iaPool->Destroy(_inputLayoutProcessing);
-    iaPool->Destroy(_inputLayoutSkinned);
-    iaPool->Destroy(_inputLayoutStatic);
-}
-
 void triton::CGraphics::DestroyShaders()
 {
-    CShaderPool* shaderPool = _context->GetPool<CShaderPool>();
-    shaderPool->Destroy(_opaqueRigidPBRShader);
-    //shaderPool->Destroy(_opaqueSkinnedPBRShader);
-    //shaderPool->Destroy(_transparentShader);
-    //shaderPool->Destroy(_textShader);
-    //shaderPool->Destroy(_compositeTransparentShader);
-    //shaderPool->Destroy(_compositeFinalShader);
+    CCreator::Destroy<XShader>(_opaque_rigid_pbr_shader);
 }
 
 void triton::CGraphics::DestroyRenderTargets()
 {
-    PTexturePool* texturePool = _context->GetPool<PTexturePool>();
-    CRenderTargetPool* renderTargetPool = _context->GetPool<CRenderTargetPool>();
+    for (auto attachment : _opaque_render_target->GetColorAttachments())
+        CCreator::Destroy<XTexture>(attachment);
 
-    XRenderTarget& opaqueRT = *renderTargetPool->Get(_opaqueRenderTarget);
-    //XRenderTarget& transparentRT = *renderTargetPool->Get(_transparentRenderTarget);
+    CCreator::Destroy<XTexture>(_opaque_render_target->GetDepthAttachment());
 
-    for (auto& attachment : opaqueRT.GetColorAttachments())
-        texturePool->Destroy(attachment);
-
-    texturePool->Destroy(opaqueRT.GetDepthAttachment());
-
-    //renderTargetPool->Destroy(_transparentRenderTarget);
-    renderTargetPool->Destroy(_opaqueRenderTarget);
+    CCreator::Destroy<XRenderTarget>(_opaque_render_target);
 }
 
 void triton::CGraphics::DestroyCameraAndRenderDomain()
 {
-    _context->GetPool<CRenderDomainPool>()->Destroy(_renderDomain);
+    CCreator::Destroy<XRenderDomain>(_render_domain);
 
-    _context->GetPool<CCameraPool>()->Destroy(_camera);
+    CCreator::Destroy<XCamera>(_camera);
 }
 
 void triton::CGraphics::DestroyRenderPasses()
 {
-    CRenderPassGeometryPool* geometryRPPool = _context->GetPool<CRenderPassGeometryPool>();
-    //CRenderPassProcessingPool* processingRPPool = _context->GetPool<CRenderPassProcessingPool>();
+    CCreator::Destroy<XRenderPassGeometry>(_opaque_rigid_pass);
 
-    //processingRPPool->Destroy(_compositeFinal);
-    //processingRPPool->Destroy(_compositeTransparent);
-    //rpPool->Destroy(_text);
-    //geometryRPPool->Destroy(_transparent);
-    //geometryRPPool->Destroy(_opaqueSkinned);
-    geometryRPPool->Destroy(_opaqueRigid);
+    CCreator::Destroy<XRenderPassCulling>(_culling_pass);
 }
 
 void triton::CGraphics::ReleaseSwapchainResources()
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-        ERenderCommand::ReleaseSwapchainResources
-    ));
-
-    _context->GetSubsystem<CEngine>()->
-        GetSynchronization()->
-        WaitForRenderCommandResult<void*>();
-}
-
-void triton::CGraphics::BindBuffers()
-{
-    // TODO: [Vulkan backend] This must be done using render command queue on main thread
-    // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-    //IGraphicsBackend* gfxBackend = _context->GetBackend<IGraphicsBackend>();
-    //
-    //gfxBackend->BindBuffer(_context->GetPool<CRenderInstanceStaticPool>()->GetGPUBuffer());
-    //gfxBackend->BindBuffer(_context->GetPool<CRenderInstanceDynamicPool>()->GetGPUBuffer());
-    //gfxBackend->BindBuffer(_context->GetPool<CMaterialPool>()->GetGPUBuffer());
-}
-
-void triton::CGraphics::UnbindBuffers()
-{
-    //_context->GetSubsystem<XSkinningSubsystem>()->GetSkinnedBonesPool()->GetGPUBuffer()->Unbind();
-    //_context->GetSubsystem<XBatchSubsystem>()->GetDynamicRenderInstancePool()->GetGPUBuffer()->Unbind();
-    //_context->GetSubsystem<XBatchSubsystem>()->GetStaticRenderInstancePool()->GetGPUBuffer()->Unbind();
-    //_context->GetSubsystem<XMaterialSubsystem>()->GetPool()->GetGPUBuffer()->Unbind();
+    CRenderCommandProxy::ReleaseSwapchainResources();
 }
 
 void triton::CGraphics::ExecuteBuiltinPasses()
 {
-    CRenderPassCullingPool* culling_pass_pool = _context->GetPool<CRenderPassCullingPool>();
-    CRenderPassGeometryPool* geometry_pass_pool = _context->GetPool<CRenderPassGeometryPool>();
+    _culling_pass->Render();
+    _opaque_rigid_pass->Render();
+}
 
-    XRenderPassCulling& culling_pass = *culling_pass_pool->Get(_culling_pass);
-    XRenderPassGeometry& opaque_rigid_pass = *geometry_pass_pool->Get(_opaqueRigid);
+triton::CGraphics::CGraphics(cContext* context) : CSubsystem(context)
+{
+    // TODO Vulkan backend: uncomment and rewrite when Vulkan backend will be ready
+    // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 
-    culling_pass.Render();
-    opaque_rigid_pass.Render();
+    CreateShaders();
+
+    const SGPUTextureResource& swapchain_present_texture = CreateRenderTargets();
+
+    CreateCameraAndRenderDomain();
+
+    CreateRenderPasses();
+
+    CRenderCommandProxy::FinalizeSwapchain(swapchain_present_texture);
+}
+
+triton::CGraphics::~CGraphics()
+{
+    // TODO Vulkan backend: uncomment and rewrite when Vulkan backend will be ready
+    // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+
+    ReleaseSwapchainResources();
+
+    DestroyRenderPasses();
+
+    DestroyCameraAndRenderDomain();
+
+    DestroyRenderTargets();
+
+    DestroyShaders();
+}
+
+void triton::CGraphics::ExecutePasses()
+{
+    // TODO: [Vulkan backend] This must be done using render command queue on main thread
+    // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+    //BindBuffers();
+    ExecuteBuiltinPasses();
+    //UnbindBuffers();
 }
 
 // TODO: Implement new text drawing approach

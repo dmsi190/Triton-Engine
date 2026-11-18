@@ -26,17 +26,17 @@ namespace triton
 		explicit XRenderTarget(
 			cContext* context,
 			types::s32 poolIndex,
-			const std::vector<SHandle>& colorAttachments,
-			const SHandle& depthAttachment
+			const std::vector<XTexture*>& colorAttachments,
+			XTexture* depthAttachment
 		);
 
 		~XRenderTarget() override;
 
 		inline const CGPURenderTargetResource& GetGPUResource() const { return _gpuRenderTarget; }
 
-		inline const std::vector<SHandle>& GetColorAttachments() const { return _colorAttachments; }
+		inline const std::vector<XTexture*>& GetColorAttachments() const { return _colorAttachments; }
 
-		inline const SHandle& GetDepthAttachment() const { return _depthAttachment; }
+		inline XTexture* GetDepthAttachment() const { return _depthAttachment; }
 
 		inline const cVector3 GetColorAttachmentSize(types::usize attachmentIndex)
 		{

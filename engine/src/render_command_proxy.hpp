@@ -79,5 +79,9 @@ namespace triton
 			const std::vector<CGPUBindingGroupResource>& binding_groups,
 			const cVector3& work_group_count
 		);
+
+		static void FinalizeSwapchain(const SGPUTextureResource& present_texture);
+
+		static void ReleaseSwapchainResources();
 	};
 }

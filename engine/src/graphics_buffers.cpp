@@ -14,7 +14,12 @@ void triton::CGraphicsBuffers::Initialize(cContext* context)
 {
 	_context = context;
 
-    const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+    const SCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+
+    _static_instance_buffer = CRenderCommandProxy::CreateBuffer(
+        EGPUBufferType::Storage,
+        caps.maxRenderStaticInstanceCount * sizeof(XRenderInstance::TGPULayout)
+    );
 
     _main_indirect_draw_commands_buffer = CRenderCommandProxy::CreateBuffer(
         EGPUBufferType::Storage,

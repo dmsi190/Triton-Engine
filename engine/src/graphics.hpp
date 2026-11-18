@@ -2,93 +2,68 @@
 
 #pragma once
 
-#include <optional>
-#include <unordered_map>
-#include "object.hpp"
-#include "input_layout.hpp"
-#include "render_target.hpp"
-#include "render_pass_geometry.hpp"
-#include "render_pass_processing.hpp"
-#include "render_shading_model_enum.hpp"
-#include "math.hpp"
 #include "subsystem.hpp"
 #include "types.hpp"
 
 namespace triton
 {
-    class XVertexArrayPool;
-    class XRenderTargetPool;
-    class XRenderPassPool;
+    class XShader;
+    class XRenderTarget;
+    class XCamera;
+    class XRenderDomain;
+    class XRenderPassCulling;
+    class XRenderPassGeometry;
 
 	class CGraphics : public CSubsystem
 	{
         TRITON_CLASS_NAME(CGraphics)
 
-        SHandle                             _inputLayoutStatic;
-        SHandle                             _inputLayoutSkinned;
-        SHandle                             _inputLayoutProcessing;
-        SHandle                             _opaqueRigidPhongShader;
-        SHandle                             _opaqueSkinnedPhongShader;
-        SHandle                             _opaqueRigidPBRShader;
-        SHandle                             _opaqueSkinnedPBRShader;
-        SHandle                             _transparentShader;
-        SHandle                             _textShader;
-        SHandle                             _compositeTransparentShader;
-        SHandle                             _compositeFinalShader;
-        SHandle                             _opaqueRenderTarget;
-        SHandle                             _transparentRenderTarget;
-        SHandle                             _camera;
-        SHandle                             _renderDomain;
-        SHandle                             _culling_pass;
-        SHandle                             _opaqueRigid;
-        SHandle                             _opaqueSkinned;
-        SHandle                             _transparent;
-        //SHandle _text;
-        SHandle                             _compositeTransparent;
-        SHandle                             _compositeFinal;
+        XShader*                    _opaque_rigid_phong_shader;
+        XShader*                    _opaque_skinned_phong_shader;
+        XShader*                    _opaque_rigid_pbr_shader;
+        XShader*                    _opaque_skinned_pbr_shader;
+        XRenderTarget*              _opaque_render_target;
+        XCamera*                    _camera;
+        XRenderDomain*              _render_domain;
+        XRenderPassCulling*         _culling_pass;
+        XRenderPassGeometry*        _opaque_rigid_pass;
+        XRenderPassGeometry*        _opaque_skinned_pass;
 
 	public:
         explicit CGraphics(cContext* context);
+
         ~CGraphics() override;
 
         void ExecutePasses();
-
-        void ResizeRenderTargets(const cVector2& size);
         
-        void LoadShaderFiles(const std::string& vertexFuncPath, const std::string& fragmentFuncPath, std::string& vertexFunc, std::string& fragmentFunc);
-        
-        void SetShadingModel(EShadingModel shadingModel);
+        inline XCamera* GetCamera() const
+        {
+            return _camera;
+        }
 
-        inline const SHandle& GetCamera() const { return _camera; }
+        inline XRenderPassCulling* GetCullingPass() const
+        {
+            return _culling_pass;
+        }
 
-        inline const SHandle& GetCullingPass() const { return _culling_pass; }
+        inline XRenderPassGeometry* GetOpaqueRigidPass() const
+        {
+            return _opaque_rigid_pass;
+        }
 
-        const SHandle& GetOpaqueRigidRenderPass() const { return _opaqueRigid; }
-
-        const SHandle& GetOpaqueSkinnedRenderPass() const { return _opaqueSkinned; }
-
-        inline const SHandle& GetOpaqueRigidPBRShader() const { return _opaqueRigidPBRShader; }
-
-        inline const SHandle& GetOpaqueSkinnedPBRShader() const { return _opaqueSkinnedPBRShader; }
-
-        inline const SHandle& GetOpaqueRigidPhongShader() const { return _opaqueRigidPhongShader; }
-
-        inline const SHandle& GetOpaqueSkinnedPhongShader() const { return _opaqueSkinnedPhongShader; }
+        inline XRenderPassGeometry* GetOpaqueSkinnedPass() const
+        {
+            return _opaque_skinned_pass;
+        }
 
     private:
-        void CreateInputLayouts();
-
         void CreateShaders();
 
-        CGPUTextureResource CreateRenderTargets();
+        const SGPUTextureResource& CreateRenderTargets();
 
         void CreateCameraAndRenderDomain();
 
         void CreateRenderPasses();
-
-        void FinalizeSwapchain(const CGPUTextureResource& presentTexture);
-
-        void DestroyInputLayouts();
 
         void DestroyShaders();
 
@@ -99,10 +74,6 @@ namespace triton
         void DestroyRenderPasses();
 
         void ReleaseSwapchainResources();
-
-        void BindBuffers();
-
-        void UnbindBuffers();
 
         void ExecuteBuiltinPasses();
 	};

@@ -201,3 +201,26 @@ void triton::CRenderCommandProxy::Dispatch(
         (cpuword)work_group_count.GetZ()
     ));
 }
+
+void triton::CRenderCommandProxy::FinalizeSwapchain(const SGPUTextureResource& present_texture)
+{
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::FinalizeSwapchain,
+        (cpuword)&present_texture
+    ));
+
+    _context->GetSubsystem<CEngine>()->
+        GetSynchronization()->
+        WaitForRenderCommandResult<void*>();
+}
+
+void triton::CRenderCommandProxy::ReleaseSwapchainResources()
+{
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::ReleaseSwapchainResources
+    ));
+
+    _context->GetSubsystem<CEngine>()->
+        GetSynchronization()->
+        WaitForRenderCommandResult<void*>();
+}

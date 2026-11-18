@@ -14,6 +14,7 @@ namespace triton
 		TRITON_CLASS_NAME(CGraphicsBuffers)
 
 		inline static cContext*				_context;
+		inline static SGPUBufferResource	_static_instance_buffer = CGPUBufferResource::Invalid();
 		inline static CGPUBufferResource	_main_indirect_draw_commands_buffer = CGPUBufferResource::Invalid();
 		inline static CGPUBufferResource	_shadow_indirect_draw_commands_buffer = CGPUBufferResource::Invalid();
 		inline static CGPUBufferResource	_main_command_render_group_indices_buffer = CGPUBufferResource::Invalid();
@@ -25,6 +26,8 @@ namespace triton
 		static void Initialize(cContext* context);
 
 		static void Release();
+
+		static const SGPUBufferResource& GetStaticInstanceBuffer() { return _static_instance_buffer; }
 
 		static const CGPUBufferResource& GetMainIndirectDrawCommandsBuffer() { return _main_indirect_draw_commands_buffer; }
 
