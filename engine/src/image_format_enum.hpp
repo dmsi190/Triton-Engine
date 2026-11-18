@@ -6,7 +6,7 @@
 
 namespace triton
 {
-	enum class EImageFormat : types::u32
+	enum class EImageFormat : types::dword
 	{
 		Unknown,
 		R8,

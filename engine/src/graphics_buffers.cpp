@@ -21,6 +21,11 @@ void triton::CGraphicsBuffers::Initialize(cContext* context)
         caps.maxRenderStaticInstanceCount * sizeof(XRenderInstance::TGPULayout)
     );
 
+    _dynamic_instance_buffer = CRenderCommandProxy::CreateBuffer(
+        EGPUBufferType::Storage,
+        caps.maxRenderDynamicInstanceCount * sizeof(XRenderInstance::TGPULayout)
+    );
+
     _main_indirect_draw_commands_buffer = CRenderCommandProxy::CreateBuffer(
         EGPUBufferType::Storage,
         sizeof(u32) + caps.render_group_count * sizeof(SIndirectDrawCommand)

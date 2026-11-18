@@ -56,7 +56,7 @@ namespace triton
 		virtual void DrawQuads(types::usize count) = 0;
 
 		// Pipeline
-        virtual CGPUShaderResource CreateShader(
+        virtual SGPUShaderResource CreateShader(
             const char* vertexStr,
             const char* fragmentStr,
             const char* vertexCustomFuncStr,
@@ -69,47 +69,47 @@ namespace triton
             const char** fragmentIncludePaths
         ) = 0;
 
-        virtual void BindShader(const CGPUShaderResource& shader) = 0;
+        virtual void BindShader(const SGPUShaderResource& shader) = 0;
 
         virtual void UnbindShader() = 0;
 
-        virtual void DestroyShader(const CGPUShaderResource& shader) = 0;
+        virtual void DestroyShader(const SGPUShaderResource& shader) = 0;
 
         virtual void SetShaderUniform(
-            const CGPUShaderResource& shader,
+            const SGPUShaderResource& shader,
             const std::string& name,
             const glm::mat4& matrix
         ) = 0;
 
         virtual void SetShaderUniform(
-            const CGPUShaderResource& shader,
+            const SGPUShaderResource& shader,
             const std::string& name,
             types::usize count,
             const types::f32* values
         ) = 0;
 
         virtual void SetShaderUniform(
-            const CGPUShaderResource& shader,
+            const SGPUShaderResource& shader,
             const std::string& name,
             types::u32 value
         ) = 0;
 
         virtual void SetShaderUniform(
-            const CGPUShaderResource& shader,
+            const SGPUShaderResource& shader,
             const std::string& name,
             types::s32 value
         ) = 0;
 
         virtual void BindTextureNamed(
-            const CGPUShaderResource& shader,
-            const CGPUTextureResource& texture,
+            const SGPUShaderResource& shader,
+            const SGPUTextureResource& texture,
             const std::string& textureName,
             types::s32 slot
         ) = 0;
 
-        virtual CGPUInputLayoutResource CreateInputLayout() = 0;
+        virtual SGPUInputLayoutResource CreateInputLayout() = 0;
 
-        virtual void BindInputLayout(const CGPUInputLayoutResource& vertexArray) = 0;
+        virtual void BindInputLayout(const SGPUInputLayoutResource& vertexArray) = 0;
 
         virtual void BindRigidInputLayout() = 0;
 
@@ -117,13 +117,13 @@ namespace triton
 
         virtual void UnbindInputLayout() = 0;
 
-        virtual void DestroyInputLayout(const CGPUInputLayoutResource& vertexArray) = 0;
+        virtual void DestroyInputLayout(const SGPUInputLayoutResource& vertexArray) = 0;
 
-        virtual CGPURenderPassResource CreateRenderPass() = 0;
+        virtual SGPURenderPassResource CreateRenderPass() = 0;
 
-        virtual void BindRenderPass(const CGPURenderPassResource& renderPass) = 0;
+        virtual void BindRenderPass(const SGPURenderPassResource& renderPass) = 0;
 
-        virtual void UnbindRenderPass(const CGPURenderPassResource& renderPass) = 0;
+        virtual void UnbindRenderPass(const SGPURenderPassResource& renderPass) = 0;
 
         virtual void BindDepthState(const SDepthState& blendMode) = 0;
 
@@ -131,53 +131,53 @@ namespace triton
 
         virtual void SetViewport(const SViewport& viewport) = 0;
 
-        virtual CGPURenderTargetResource CreateRenderTarget(
-            const std::vector<CGPUTextureResource>& colorAttachments,
-            const CGPUTextureResource& depthAttachment
+        virtual SGPURenderTargetResource CreateRenderTarget(
+            const std::vector<SGPUTextureResource>& colorAttachments,
+            const SGPUTextureResource& depthAttachment
         ) = 0;
 
         virtual void ResizeRenderTargetColors(
-            CGPURenderTargetResource& renderTarget,
+            SGPURenderTargetResource& renderTarget,
             const glm::vec2& size
         ) = 0;
 
         virtual void ResizeRenderTargetDepth(
-            CGPURenderTargetResource& renderTarget,
+            SGPURenderTargetResource& renderTarget,
             const glm::vec2& size
         ) = 0;
 
-        virtual void UpdateRenderTargetBuffers(CGPURenderTargetResource& renderTarget) = 0;
+        virtual void UpdateRenderTargetBuffers(SGPURenderTargetResource& renderTarget) = 0;
 
-        virtual void BindRenderTarget(const CGPURenderTargetResource& renderTarget) = 0;
+        virtual void BindRenderTarget(const SGPURenderTargetResource& renderTarget) = 0;
 
         virtual void UnbindRenderTarget() = 0;
 
-        virtual void DestroyRenderTarget(const CGPURenderTargetResource& renderTarget) = 0;
+        virtual void DestroyRenderTarget(const SGPURenderTargetResource& renderTarget) = 0;
 
         // Resource
-        virtual CGPUBufferResource CreateBuffer(
+        virtual SGPUBufferResource CreateBuffer(
             EGPUBufferType type,
             const types::u8* data,
             types::usize byteSize,
             types::s32 slot
         ) = 0;
 
-        virtual void BindBuffer(const CGPUBufferResource& buffer) = 0;
+        virtual void BindBuffer(const SGPUBufferResource& buffer) = 0;
 
-        virtual void BindBufferNotVAO(const CGPUBufferResource& buffer) = 0;
+        virtual void BindBufferNotVAO(const SGPUBufferResource& buffer) = 0;
 
-        virtual void UnbindBuffer(const CGPUBufferResource& buffer) = 0;
+        virtual void UnbindBuffer(const SGPUBufferResource& buffer) = 0;
 
         virtual void WriteBuffer(
-            const CGPUBufferResource& buffer,
+            const SGPUBufferResource& buffer,
             types::usize offset,
             types::usize byteSize,
             const types::u8* data
         ) = 0;
 
-        virtual void DestroyBuffer(const CGPUBufferResource& buffer) = 0;
+        virtual void DestroyBuffer(const SGPUBufferResource& buffer) = 0;
 
-        virtual CGPUTextureResource CreateTexture(
+        virtual SGPUTextureResource CreateTexture(
             const cVector3& size,
             ETextureDimension dimension,
             ETextureFormat format,
@@ -185,23 +185,23 @@ namespace triton
             types::s32 slot
         ) = 0;
 
-        virtual CGPUTextureResource ResizeTexture(const CGPUTextureResource& texture, const cVector2& size) = 0;
+        virtual SGPUTextureResource ResizeTexture(const SGPUTextureResource& texture, const cVector2& size) = 0;
 
-        virtual void BindTexture(const CGPUTextureResource& texture) = 0;
+        virtual void BindTexture(const SGPUTextureResource& texture) = 0;
 
-        virtual void UnbindTexture(const CGPUTextureResource& texture) = 0;
+        virtual void UnbindTexture(const SGPUTextureResource& texture) = 0;
 
         virtual void WriteTexture(
-            const CGPUTextureResource& texture,
+            const SGPUTextureResource& texture,
             const cVector3& offset,
             const cVector2& size,
             const types::u8* data
         ) = 0;
 
-        virtual void WriteTextureToFile(const CGPUTextureResource& texture, const std::string& filename) = 0;
+        virtual void WriteTextureToFile(const SGPUTextureResource& texture, const std::string& filename) = 0;
 
-        virtual void GenerateTextureMips(const CGPUTextureResource& texture) = 0;
+        virtual void GenerateTextureMips(const SGPUTextureResource& texture) = 0;
 
-        virtual void DestroyTexture(const CGPUTextureResource& texture) = 0;
+        virtual void DestroyTexture(const SGPUTextureResource& texture) = 0;
 	};
 }

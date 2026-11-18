@@ -11,7 +11,7 @@
 #include "input_window_event.hpp"
 #include "input_key_code_enum.hpp"
 #include "input_key_state_enum.hpp"
-#include "graphics_available_backends_enum.hpp"
+#include "graphics_backend_type_enum.hpp"
 #include "types.hpp"
 
 namespace triton
@@ -30,7 +30,7 @@ namespace triton
             const ::std::string& title,
             const cVector2& size,
             types::boolean fullscreen,
-            EAvailableGraphicsBackend graphicsBackend
+            EGraphicsBackendType graphicsBackend
         ) = 0;
 
         virtual void DestroyBackendWindow(SWindowBackend& window) = 0;

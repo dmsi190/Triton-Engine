@@ -1,10 +1,10 @@
-// graphics_available_backends_enum.hpp
+// graphics_backend_type_enum.hpp
 
 #pragma once
 
 namespace triton
 {
-	enum class EAvailableGraphicsBackend
+	enum class EGraphicsBackendType
 	{
 		Unknown,
 		OpenGL,

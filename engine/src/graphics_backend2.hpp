@@ -57,77 +57,77 @@ namespace triton
 
 		virtual void Shutdown() = 0;
 
-		virtual void FinalizeSwapchain(const CGPUTextureResource& presentTexture) = 0;
+		virtual void FinalizeSwapchain(const SGPUTextureResource& presentTexture) = 0;
 
 		virtual void ReleaseSwapchainResources() = 0;
 
-		virtual CGPUTextureResource CreateTexture(
+		virtual SGPUTextureResource CreateTexture(
 			types::boolean bCreateSampler,
 			ETextureFormat format,
 			types::dword usageMask,
 			ETextureDimension dimension,
 			const cVector3& size,
-			CGPUTextureResource* resultTexture
+			SGPUTextureResource* resultTexture
 		) = 0;
 
 		virtual void WriteTexture(
-			const CGPUTextureResource& texture,
+			const SGPUTextureResource& texture,
 			const types::u8* data
 		) = 0;
 
-		virtual void DestroyTexture(CGPUTextureResource& texture) = 0;
+		virtual void DestroyTexture(SGPUTextureResource& texture) = 0;
 
-		virtual CGPUBufferResource CreateBuffer(
+		virtual SGPUBufferResource CreateBuffer(
 			EGPUBufferType type,
 			const types::usize byteSize
 		) = 0;
 
 		virtual void WriteBuffer(
-			const CGPUBufferResource& buffer,
+			const SGPUBufferResource& buffer,
 			types::usize offset,
 			const types::u8* data,
 			types::usize data_byte_size
 		) = 0;
 		
-		virtual void DestroyBuffer(CGPUBufferResource& buffer) = 0;
+		virtual void DestroyBuffer(SGPUBufferResource& buffer) = 0;
 
-		virtual CGPURenderTargetResource CreateRenderTarget(
-			const std::vector<CGPUTextureResource>& colorAttachments,
-			const CGPUTextureResource& depthAttachment
+		virtual SGPURenderTargetResource CreateRenderTarget(
+			const std::vector<SGPUTextureResource>& colorAttachments,
+			const SGPUTextureResource& depthAttachment
 		) = 0;
 
-		virtual void DestroyRenderTarget(CGPURenderTargetResource& renderTarget) = 0;
+		virtual void DestroyRenderTarget(SGPURenderTargetResource& renderTarget) = 0;
 
-		virtual CGPUPipelineResource CreatePipeline(
-			const CGPUShaderResource& shader,
-			const std::vector<CGPUBindingGroupLayoutResource>& bindingGroupLayouts,
+		virtual SGPUPipelineResource CreatePipeline(
+			const SGPUShaderResource& shader,
+			const std::vector<SGPUBindingGroupLayoutResource>& bindingGroupLayouts,
 			types::boolean bUsePushConstants,
 			const std::optional<std::reference_wrapper<SViewport>> viewport = std::nullopt,
-			std::optional<std::reference_wrapper<CGPURenderTargetResource>> renderTarget = std::nullopt,
-			const std::optional<std::reference_wrapper<CGPURenderPassResource>> renderPass = std::nullopt,
+			std::optional<std::reference_wrapper<SGPURenderTargetResource>> renderTarget = std::nullopt,
+			const std::optional<std::reference_wrapper<SGPURenderPassResource>> renderPass = std::nullopt,
 			EPrimitiveTopology primitiveTopology = EPrimitiveTopology::Unknown,
 			EVertexBufferFormat vertexBufferFormat = EVertexBufferFormat::Unknown
 		) = 0;
 
-		virtual void DestroyPipeline(CGPUPipelineResource& pipeline) = 0;
+		virtual void DestroyPipeline(SGPUPipelineResource& pipeline) = 0;
 
-		virtual CGPUBindingGroupLayoutResource CreateBindingGroupLayout(
+		virtual SGPUBindingGroupLayoutResource CreateBindingGroupLayout(
 			const std::vector<SBindingGroupBinding>& bindings
 		) = 0;
 
-		virtual void DestroyBindingGroupLayout(CGPUBindingGroupLayoutResource& bindingGroupLayout) = 0;
+		virtual void DestroyBindingGroupLayout(SGPUBindingGroupLayoutResource& bindingGroupLayout) = 0;
 
-		virtual CGPUBindingGroupResource CreateBindingGroup(
+		virtual SGPUBindingGroupResource CreateBindingGroup(
 			types::s32 index,
-			const CGPUBindingGroupLayoutResource& bindingGroupLayout,
+			const SGPUBindingGroupLayoutResource& bindingGroupLayout,
 			const std::vector<SBindingGroupBinding>& buffersToBind,
 			const std::vector<SBindingGroupBinding>& texturesToBind
 		) = 0;
 
-		virtual void DestroyBindingGroup(CGPUBindingGroupResource& bindingGroup) = 0;
+		virtual void DestroyBindingGroup(SGPUBindingGroupResource& bindingGroup) = 0;
 
-		virtual CGPURenderPassResource CreateRenderPass(
-			CGPURenderTargetResource& renderTarget,
+		virtual SGPURenderPassResource CreateRenderPass(
+			SGPURenderTargetResource& renderTarget,
 			types::boolean bClearRenderTarget,
 			const cVector4& clearColor,
 			types::f32 clearDepth,
@@ -135,18 +135,18 @@ namespace triton
 			const std::vector<EResourceUsage>& dstAttachmentsUsage
 		) = 0;
 
-		virtual void DestroyRenderPass(CGPURenderPassResource& renderPass) = 0;
+		virtual void DestroyRenderPass(SGPURenderPassResource& renderPass) = 0;
 
-		virtual CGPUShaderResource CreateShader(
+		virtual SGPUShaderResource CreateShader(
 			types::dword stageMask,
 			const SShaderBytecodeFiles& bytecodeFiles
 		) = 0;
 
-		virtual void DestroyShader(CGPUShaderResource& shader) = 0;
+		virtual void DestroyShader(SGPUShaderResource& shader) = 0;
 
 		virtual void Dispatch(
-			const CGPUPipelineResource& pipeline,
-			const std::vector<CGPUBindingGroupResource>& binding_groups,
+			const SGPUPipelineResource& pipeline,
+			const std::vector<SGPUBindingGroupResource>& binding_groups,
 			const cVector3& work_group_count
 		) = 0;
 

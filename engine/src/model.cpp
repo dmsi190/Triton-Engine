@@ -1,6 +1,6 @@
-// model3d.cpp
+// model.cpp
 
-#include "model3d.hpp"
+#include "model.hpp"
 #include "context.hpp"
 #include "tasset.hpp"
 #include "material_pool.hpp"
@@ -13,15 +13,17 @@
 
 using namespace types;
 
-triton::XModel3D::XModel3D(
+triton::XModel::XModel(
+	const SMemoryAllocation& mem_alloc,
     cContext* context,
-    types::s32 poolIndex,
 	EVertexBufferFormat vertexDataFormat,
-    EModel3DFileType fileType,
+	EModelFileType fileType,
     const std::filesystem::path& filePath
-) : iObject(context, poolIndex), _vertexDataFormat(vertexDataFormat), _fileType(fileType)
+) : iObject(mem_alloc, context),
+	_vertexDataFormat(vertexDataFormat),
+	_fileType(fileType)
 {
-    if (_fileType == EModel3DFileType::Raw)
+    if (_fileType == EModelFileType::Raw)
     {
 		std::filesystem::path modelFolderPath = filePath.parent_path();
 		std::filesystem::path modelLocalPath = filePath.filename();
@@ -36,7 +38,7 @@ triton::XModel3D::XModel3D(
 
         _data = *result;
     }
-    else if (_fileType == EModel3DFileType::Asset)
+    else if (_fileType == EModelFileType::Asset)
     {
 		std::filesystem::path assetFolderPath = filePath.parent_path();
 

@@ -32,20 +32,18 @@ namespace triton
 		SQueue											_presentQueue = SQueue(0, 0, {});
 		SQueue											_graphicsTransferPresentQueue = SQueue(0, 0, {});
 		SLogicalDevice									_logicalDevice;
-		CGPUBufferResource								_staging_buffer = CGPUBufferResource(
-			0, 0, 0, EGPUBufferType::Unknown, 0, 0
-		);
+		SGPUBufferResource								_staging_buffer = SGPUBufferResource::Invalid();
 		SSwapchain										_swapchain;
-		std::vector<CGPURenderTargetResource>			_swapchainRenderTargets;
-		std::vector<CGPURenderPassResource>				_swapchainRenderPasses;
-		CGPUShaderResource								_swapchainShader = CGPUShaderResource::Invalid();
-		std::vector<CGPUPipelineResource>				_swapchainPipelines;
-		CGPUBindingGroupLayoutResource					_swapchainBindingGroupLayout = CGPUBindingGroupLayoutResource::Invalid();
-		std::vector<CGPUBindingGroupResource>			_swapchainBindingGroups;
+		std::vector<SGPURenderTargetResource>			_swapchainRenderTargets;
+		std::vector<SGPURenderPassResource>				_swapchainRenderPasses;
+		SGPUShaderResource								_swapchainShader = SGPUShaderResource::Invalid();
+		std::vector<SGPUPipelineResource>				_swapchainPipelines;
+		SGPUBindingGroupLayoutResource					_swapchainBindingGroupLayout = SGPUBindingGroupLayoutResource::Invalid();
+		std::vector<SGPUBindingGroupResource>			_swapchainBindingGroups;
 		std::vector<SSemaphore>							_swapchainImageAvailableSemaphores;
 		std::vector<SSemaphore>							_swapchainRenderFinishedSemaphores;
 		std::vector<SFence>								_swapchainFences;
-		CGPUTextureResource								_swapchainPresentTexture = CGPUTextureResource::Invalid();
+		SGPUTextureResource								_swapchainPresentTexture = SGPUTextureResource::Invalid();
 		VkDescriptorPool								_descriptorPool = VK_NULL_HANDLE;
 		std::vector<VkCommandBuffer>					_frameCommandBuffers;
 		std::vector<VkCommandBuffer>					_stagingCommandBuffers;
@@ -70,77 +68,77 @@ namespace triton
 
 		void Shutdown() override final;
 
-		void FinalizeSwapchain(const CGPUTextureResource& presentTexture) override final;
+		void FinalizeSwapchain(const SGPUTextureResource& presentTexture) override final;
 
 		void ReleaseSwapchainResources() override final;
 
-		CGPUTextureResource CreateTexture(
+		SGPUTextureResource CreateTexture(
 			types::boolean bCreateSampler,
 			ETextureFormat format,
 			types::dword usageMask,
 			ETextureDimension dimension,
 			const cVector3& size,
-			CGPUTextureResource* resultTexture
+			SGPUTextureResource* resultTexture
 		) override final;
 
 		void WriteTexture(
-			const CGPUTextureResource& texture,
+			const SGPUTextureResource& texture,
 			const types::u8* data
 		) override final;
 
-		void DestroyTexture(CGPUTextureResource& texture) override final;
+		void DestroyTexture(SGPUTextureResource& texture) override final;
 
-		CGPUBufferResource CreateBuffer(
+		SGPUBufferResource CreateBuffer(
 			EGPUBufferType type,
 			const types::usize byteSize
 		) override final;
 
 		void WriteBuffer(
-			const CGPUBufferResource& buffer,
+			const SGPUBufferResource& buffer,
 			types::usize offset,
 			const types::u8* data,
 			types::usize data_byte_size
 		) override final;
 
-		void DestroyBuffer(CGPUBufferResource& buffer) override final;
+		void DestroyBuffer(SGPUBufferResource& buffer) override final;
 
-		CGPURenderTargetResource CreateRenderTarget(
-			const std::vector<CGPUTextureResource>& colorAttachments,
-			const CGPUTextureResource& depthAttachment
+		SGPURenderTargetResource CreateRenderTarget(
+			const std::vector<SGPUTextureResource>& colorAttachments,
+			const SGPUTextureResource& depthAttachment
 		) override final;
 
-		void DestroyRenderTarget(CGPURenderTargetResource& renderTarget) override final;
+		void DestroyRenderTarget(SGPURenderTargetResource& renderTarget) override final;
 
-		CGPUPipelineResource CreatePipeline(
-			const CGPUShaderResource& shader,
-			const std::vector<CGPUBindingGroupLayoutResource>& bindingGroupLayouts,
+		SGPUPipelineResource CreatePipeline(
+			const SGPUShaderResource& shader,
+			const std::vector<SGPUBindingGroupLayoutResource>& bindingGroupLayouts,
 			types::boolean bUsePushConstants,
 			const std::optional<std::reference_wrapper<SViewport>> viewport = std::nullopt,
-			std::optional<std::reference_wrapper<CGPURenderTargetResource>> renderTarget = std::nullopt,
-			const std::optional<std::reference_wrapper<CGPURenderPassResource>> renderPass = std::nullopt,
+			std::optional<std::reference_wrapper<SGPURenderTargetResource>> renderTarget = std::nullopt,
+			const std::optional<std::reference_wrapper<SGPURenderPassResource>> renderPass = std::nullopt,
 			EPrimitiveTopology primitiveTopology = EPrimitiveTopology::Unknown,
 			EVertexBufferFormat vertexBufferFormat = EVertexBufferFormat::Unknown
 		) override final;
 
-		void DestroyPipeline(CGPUPipelineResource& pipeline) override final;
+		void DestroyPipeline(SGPUPipelineResource& pipeline) override final;
 
-		CGPUBindingGroupLayoutResource CreateBindingGroupLayout(
+		SGPUBindingGroupLayoutResource CreateBindingGroupLayout(
 			const std::vector<SBindingGroupBinding>& bindings
 		) override final;
 
-		void DestroyBindingGroupLayout(CGPUBindingGroupLayoutResource& bindingGroupLayout) override final;
+		void DestroyBindingGroupLayout(SGPUBindingGroupLayoutResource& bindingGroupLayout) override final;
 
-		CGPUBindingGroupResource CreateBindingGroup(
+		SGPUBindingGroupResource CreateBindingGroup(
 			types::s32 index,
-			const CGPUBindingGroupLayoutResource& bindingGroupLayout,
+			const SGPUBindingGroupLayoutResource& bindingGroupLayout,
 			const std::vector<SBindingGroupBinding>& buffersToBind,
 			const std::vector<SBindingGroupBinding>& texturesToBind
 		) override final;
 
-		void DestroyBindingGroup(CGPUBindingGroupResource& bindingGroup) override final;
+		void DestroyBindingGroup(SGPUBindingGroupResource& bindingGroup) override final;
 
-		CGPURenderPassResource CreateRenderPass(
-			CGPURenderTargetResource& renderTarget,
+		SGPURenderPassResource CreateRenderPass(
+			SGPURenderTargetResource& renderTarget,
 			types::boolean bClearRenderTarget,
 			const cVector4& clearColor,
 			types::f32 clearDepth,
@@ -148,18 +146,18 @@ namespace triton
 			const std::vector<EResourceUsage>& dstAttachmentsUsage
 		) override final;
 
-		void DestroyRenderPass(CGPURenderPassResource& renderPass) override final;
+		void DestroyRenderPass(SGPURenderPassResource& renderPass) override final;
 
-		CGPUShaderResource CreateShader(
+		SGPUShaderResource CreateShader(
 			types::dword stageMask,
 			const SShaderBytecodeFiles& bytecodeFiles
 		) override final;
 
-		void DestroyShader(CGPUShaderResource& shader) override final;
+		void DestroyShader(SGPUShaderResource& shader) override final;
 
 		void Dispatch(
-			const CGPUPipelineResource& pipeline,
-			const std::vector<CGPUBindingGroupResource>& binding_groups,
+			const SGPUPipelineResource& pipeline,
+			const std::vector<SGPUBindingGroupResource>& binding_groups,
 			const cVector3& work_group_count
 		) override final;
 
@@ -177,7 +175,7 @@ namespace triton
 
 		void ExecuteImageBarrier(
 			ECommandBuffer command_buffer,
-			const CGPUTextureResource& texture,
+			const SGPUTextureResource& texture,
 			EPipelineStageBit src_stage_mask,
 			EPipelineStageBit dst_stage_mask,
 			EAccessBit src_access_mask,
@@ -189,7 +187,7 @@ namespace triton
 
 		void ExecuteBufferBarrier(
 			ECommandBuffer command_buffer,
-			const CGPUBufferResource& buffer,
+			const SGPUBufferResource& buffer,
 			EPipelineStageBit src_stage_mask,
 			EPipelineStageBit dst_stage_mask,
 			EAccessBit src_access_mask,
@@ -198,8 +196,8 @@ namespace triton
 
 		void CopyBufferToImage(
 			ECommandBuffer command_buffer,
-			const CGPUBufferResource& buffer,
-			const CGPUTextureResource& texture,
+			const SGPUBufferResource& buffer,
+			const SGPUTextureResource& texture,
 			EImageAspectBit aspect_mask,
 			const cVector3& offset,
 			const cVector3& size
@@ -207,8 +205,8 @@ namespace triton
 
 		void CopyBufferToBuffer(
 			ECommandBuffer command_buffer,
-			const CGPUBufferResource& src_buffer,
-			const CGPUBufferResource& dst_buffer,
+			const SGPUBufferResource& src_buffer,
+			const SGPUBufferResource& dst_buffer,
 			types::usize src_offset,
 			types::usize dst_offset,
 			types::usize size

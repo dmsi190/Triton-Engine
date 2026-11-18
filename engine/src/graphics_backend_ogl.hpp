@@ -40,7 +40,7 @@ namespace triton
 		virtual void DrawQuads(types::usize count) override final;
 
         // Pipeline
-        virtual CGPUShaderResource CreateShader(
+        virtual SGPUShaderResource CreateShader(
             const char* vertexStr,
             const char* fragmentStr,
             const char* vertexCustomFuncStr,
@@ -53,47 +53,47 @@ namespace triton
             const char** fragmentIncludePaths
         ) override final;
 
-        virtual void BindShader(const CGPUShaderResource& shader) override final;
+        virtual void BindShader(const SGPUShaderResource& shader) override final;
 
         virtual void UnbindShader() override final;
 
-        virtual void DestroyShader(const CGPUShaderResource& shader) override final;
+        virtual void DestroyShader(const SGPUShaderResource& shader) override final;
 
         virtual void SetShaderUniform(
-            const CGPUShaderResource& shader,
+            const SGPUShaderResource& shader,
             const std::string& name,
             const glm::mat4& matrix
         ) override final;
 
         virtual void SetShaderUniform(
-            const CGPUShaderResource& shader,
+            const SGPUShaderResource& shader,
             const std::string& name,
             types::usize count,
             const types::f32* values
         ) override final;
 
         virtual void SetShaderUniform(
-            const CGPUShaderResource& shader,
+            const SGPUShaderResource& shader,
             const std::string& name,
             types::u32 value
         ) override final;
 
         virtual void SetShaderUniform(
-            const CGPUShaderResource& shader,
+            const SGPUShaderResource& shader,
             const std::string& name,
             types::s32 value
         ) override final;
 
         virtual void BindTextureNamed(
-            const CGPUShaderResource& shader,
-            const CGPUTextureResource& texture,
+            const SGPUShaderResource& shader,
+            const SGPUTextureResource& texture,
             const std::string& textureName,
             types::s32 slot
         ) override final;
 
-        virtual CGPUInputLayoutResource CreateInputLayout() override final;
+        virtual SGPUInputLayoutResource CreateInputLayout() override final;
 
-        virtual void BindInputLayout(const CGPUInputLayoutResource& inputLayout) override final;
+        virtual void BindInputLayout(const SGPUInputLayoutResource& inputLayout) override final;
 
         virtual void BindRigidInputLayout() override final;
 
@@ -101,13 +101,13 @@ namespace triton
 
         virtual void UnbindInputLayout() override final;
 
-        virtual void DestroyInputLayout(const CGPUInputLayoutResource& vertexArray) override final;
+        virtual void DestroyInputLayout(const SGPUInputLayoutResource& vertexArray) override final;
 
-        virtual CGPURenderPassResource CreateRenderPass() override final;
+        virtual SGPURenderPassResource CreateRenderPass() override final;
 
-        virtual void BindRenderPass(const CGPURenderPassResource& renderPass) override final;
+        virtual void BindRenderPass(const SGPURenderPassResource& renderPass) override final;
 
-        virtual void UnbindRenderPass(const CGPURenderPassResource& renderPass) override final;
+        virtual void UnbindRenderPass(const SGPURenderPassResource& renderPass) override final;
 
         virtual void BindDepthState(const SDepthState& blendMode) override final;
 
@@ -115,53 +115,53 @@ namespace triton
 
         virtual void SetViewport(const SViewport& viewport) override final;
 
-        virtual CGPURenderTargetResource CreateRenderTarget(
-            const std::vector<CGPUTextureResource>& colorAttachments,
-            const CGPUTextureResource& depthAttachment
+        virtual SGPURenderTargetResource CreateRenderTarget(
+            const std::vector<SGPUTextureResource>& colorAttachments,
+            const SGPUTextureResource& depthAttachment
         ) override final;
 
         virtual void ResizeRenderTargetColors(
-            CGPURenderTargetResource& renderTarget,
+            SGPURenderTargetResource& renderTarget,
             const glm::vec2& size
         ) override final;
 
         virtual void ResizeRenderTargetDepth(
-            CGPURenderTargetResource& renderTarget,
+            SGPURenderTargetResource& renderTarget,
             const glm::vec2& size
         ) override final;
 
-        virtual void UpdateRenderTargetBuffers(CGPURenderTargetResource& renderTarget) override final;
+        virtual void UpdateRenderTargetBuffers(SGPURenderTargetResource& renderTarget) override final;
 
-        virtual void BindRenderTarget(const CGPURenderTargetResource& renderTarget) override final;
+        virtual void BindRenderTarget(const SGPURenderTargetResource& renderTarget) override final;
 
         virtual void UnbindRenderTarget() override final;
 
-        virtual void DestroyRenderTarget(const CGPURenderTargetResource& renderTarget) override final;
+        virtual void DestroyRenderTarget(const SGPURenderTargetResource& renderTarget) override final;
 
         // Resource
-        virtual CGPUBufferResource CreateBuffer(
+        virtual SGPUBufferResource CreateBuffer(
             EGPUBufferType type,
             const types::u8* data,
             types::usize byteSize,
             types::s32 slot
         ) override final;
 
-        virtual void BindBuffer(const CGPUBufferResource& buffer) override final;
+        virtual void BindBuffer(const SGPUBufferResource& buffer) override final;
 
-        virtual void BindBufferNotVAO(const CGPUBufferResource& buffer) override final;
+        virtual void BindBufferNotVAO(const SGPUBufferResource& buffer) override final;
 
-        virtual void UnbindBuffer(const CGPUBufferResource& buffer) override final;
+        virtual void UnbindBuffer(const SGPUBufferResource& buffer) override final;
 
         virtual void WriteBuffer(
-            const CGPUBufferResource& buffer,
+            const SGPUBufferResource& buffer,
             types::usize offset,
             types::usize byteSize,
             const types::u8* data
         ) override final;
 
-        virtual void DestroyBuffer(const CGPUBufferResource& buffer) override final;
+        virtual void DestroyBuffer(const SGPUBufferResource& buffer) override final;
 
-        virtual CGPUTextureResource CreateTexture(
+        virtual SGPUTextureResource CreateTexture(
             const cVector3& size,
             ETextureDimension dimension,
             ETextureFormat format,
@@ -169,23 +169,23 @@ namespace triton
             types::s32 slot
         ) override final;
 
-        virtual CGPUTextureResource ResizeTexture(const CGPUTextureResource& texture, const cVector2& size) override final;
+        virtual SGPUTextureResource ResizeTexture(const SGPUTextureResource& texture, const cVector2& size) override final;
 
-        virtual void BindTexture(const CGPUTextureResource& texture) override final;
+        virtual void BindTexture(const SGPUTextureResource& texture) override final;
 
-        virtual void UnbindTexture(const CGPUTextureResource& texture) override final;
+        virtual void UnbindTexture(const SGPUTextureResource& texture) override final;
 
         virtual void WriteTexture(
-            const CGPUTextureResource& texture,
+            const SGPUTextureResource& texture,
             const cVector3& offset,
             const cVector2& size,
             const types::u8* data
         ) override final;
 
-        virtual void WriteTextureToFile(const CGPUTextureResource& texture, const std::string& filename) override final;
+        virtual void WriteTextureToFile(const SGPUTextureResource& texture, const std::string& filename) override final;
 
-        virtual void GenerateTextureMips(const CGPUTextureResource& texture) override final;
+        virtual void GenerateTextureMips(const SGPUTextureResource& texture) override final;
 
-        virtual void DestroyTexture(const CGPUTextureResource& texture) override final;
+        virtual void DestroyTexture(const SGPUTextureResource& texture) override final;
 	};
 }

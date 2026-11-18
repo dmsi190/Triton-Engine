@@ -34,7 +34,7 @@ triton::SWindowBackend triton::CInputBackendSDL::CreateBackendWindow(
     const std::string& title,
     const cVector2& size,
     boolean fullscreen,
-    EAvailableGraphicsBackend graphicsBackend
+    EGraphicsBackendType graphicsBackend
 )
 {
     SWindowBackend wb = {};
@@ -45,9 +45,9 @@ triton::SWindowBackend triton::CInputBackendSDL::CreateBackendWindow(
     if (fullscreen == False)
     {
         u64 backendIdentifier = 0;
-        if (graphicsBackend == EAvailableGraphicsBackend::OpenGL)
+        if (graphicsBackend == EGraphicsBackendType::OpenGL)
             backendIdentifier = SDL_WINDOW_OPENGL;
-        else if (graphicsBackend == EAvailableGraphicsBackend::Vulkan)
+        else if (graphicsBackend == EGraphicsBackendType::Vulkan)
             backendIdentifier = SDL_WINDOW_VULKAN;
 
         wb.instance = (qword)SDL_CreateWindow(

@@ -7,7 +7,7 @@ namespace triton
 	enum class EVertexBufferFormat
 	{
 		Unknown,
-		Rigid_48,
-		Skinned_80
+		Rigid,
+		Skinned
 	};
 }

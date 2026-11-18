@@ -5,59 +5,47 @@
 #include "material_pool.hpp"
 #include "render_binding_group_binding_struct.hpp"
 #include "shader_stage_bit_enum.hpp"
+#include "creator.hpp"
+#include "render_command_proxy.hpp"
 
 using namespace types;
 
 triton::XMaterial::XMaterial(
+    const SMemoryAllocation& mem_alloc,
     cContext* context,
-    types::s32 poolIndex,
-    const std::optional<SHandle>& diffuseTexture,
-    const std::optional<SHandle>& normalTexture,
-    const std::optional<SHandle>& roughnessTexture,
-    const std::optional<SHandle>& metallicTexture,
+    const std::optional<XTexture*>& diffuseTexture,
+    const std::optional<XTexture*>& normalTexture,
+    const std::optional<XTexture*>& roughnessTexture,
+    const std::optional<XTexture*>& metallicTexture,
     const cVector4& diffuseColor,
     const cVector4& specularColor,
     types::f32 shininess
 ) :
-    iObject(context, poolIndex),
-    _diffuseTexture(diffuseTexture.has_value() ? diffuseTexture.value() : SHandle()),
-    _normalTexture(normalTexture.has_value() ? normalTexture.value() : SHandle()),
-    _roughnessTexture(roughnessTexture.has_value() ? roughnessTexture.value() : SHandle()),
-    _metallicTexture(metallicTexture.has_value() ? metallicTexture.value() : SHandle()),
+    iObject(mem_alloc, context),
+    _diffuseTexture(diffuseTexture.has_value() ? diffuseTexture.value() : nullptr),
+    _normalTexture(normalTexture.has_value() ? normalTexture.value() : nullptr),
+    _roughnessTexture(roughnessTexture.has_value() ? roughnessTexture.value() : nullptr),
+    _metallicTexture(metallicTexture.has_value() ? metallicTexture.value() : nullptr),
     _diffuseColor(diffuseColor),
     _specularColor(specularColor),
     _shininess(shininess)
 {
-    CMaterialPool* pool = _context->GetPool<CMaterialPool>();
-    pool->WriteToStaging(
-        pool->GetPackedIndex(poolIndex),
-        *this
-    );
-
     std::vector<SBindingGroupBinding>* bindings =
-        CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
+        CCreator::Create<std::vector<SBindingGroupBinding>>();
 
     bindings->push_back({ 0, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
     bindings->push_back({ 1, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
     bindings->push_back({ 2, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
     bindings->push_back({ 3, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
 
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-        ERenderCommand::CreateBindingGroupLayout,
-        (cpuword)bindings
-    ));
+    _gpuBindingGroupLayout = CRenderCommandProxy::CreateBindingGroupLayout(*bindings);
 
-    _gpuBindingGroupLayout =
-        _context->GetSubsystem<CEngine>()->
-        GetSynchronization()->
-        WaitForRenderCommandResult<CGPUBindingGroupLayoutResource>();
-
-    CObjectAllocator::Destroy<std::vector<SBindingGroupBinding>>(bindings);
+    CCreator::Destroy<std::vector<SBindingGroupBinding>>(bindings);
 
     std::vector<SBindingGroupBinding>* buffersToBind =
-        CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
+        CCreator::Create<std::vector<SBindingGroupBinding>>();
     std::vector<SBindingGroupBinding>* texturesToBind =
-        CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
+        CCreator::Create<std::vector<SBindingGroupBinding>>();
 
     if (diffuseTexture.has_value())
         texturesToBind->push_back(
@@ -65,7 +53,7 @@ triton::XMaterial::XMaterial(
                 0,
                 EBindingGroupBindingType::TextureSampler,
                 EShaderStageBit::Pixel,
-                (CGPUResource*)&(*_context->GetPool<PTexturePool>()->Get(diffuseTexture.value())).get().GetGPUResource()
+                (SGPUResource*)&diffuseTexture.value()->GetGPUResource()
             }
         );
     if (normalTexture.has_value())
@@ -74,7 +62,7 @@ triton::XMaterial::XMaterial(
                 1,
                 EBindingGroupBindingType::TextureSampler,
                 EShaderStageBit::Pixel,
-                (CGPUResource*)&(*_context->GetPool<PTexturePool>()->Get(normalTexture.value())).get().GetGPUResource()
+                (SGPUResource*)&normalTexture.value()->GetGPUResource()
             }
         );
     if (roughnessTexture.has_value())
@@ -83,7 +71,7 @@ triton::XMaterial::XMaterial(
                  2,
                  EBindingGroupBindingType::TextureSampler,
                  EShaderStageBit::Pixel,
-                 (CGPUResource*)&(*_context->GetPool<PTexturePool>()->Get(roughnessTexture.value())).get().GetGPUResource()
+                 (SGPUResource*)&roughnessTexture.value()->GetGPUResource()
             }
         );
     if (metallicTexture.has_value())
@@ -92,34 +80,21 @@ triton::XMaterial::XMaterial(
                 3,
                 EBindingGroupBindingType::TextureSampler,
                 EShaderStageBit::Pixel,
-                (CGPUResource*)&(*_context->GetPool<PTexturePool>()->Get(metallicTexture.value())).get().GetGPUResource()
+                (SGPUResource*)&metallicTexture.value()->GetGPUResource()
             }
         );
 
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-        ERenderCommand::CreateBindingGroup,
-        (cpuword)1,
-        (cpuword)&_gpuBindingGroupLayout,
-        (cpuword)buffersToBind,
-        (cpuword)texturesToBind
-    ));
+    _gpuBindingGroup = CRenderCommandProxy::CreateBindingGroup(
+        1,
+        &_gpuBindingGroupLayout,
+        buffersToBind,
+        texturesToBind
+    );
 
-    _gpuBindingGroup =
-        _context->GetSubsystem<CEngine>()->
-        GetSynchronization()->
-        WaitForRenderCommandResult<CGPUBindingGroupResource>();
-
-    CObjectAllocator::Destroy<std::vector<SBindingGroupBinding>>(texturesToBind);
-    CObjectAllocator::Destroy<std::vector<SBindingGroupBinding>>(buffersToBind);
+    CCreator::Destroy<std::vector<SBindingGroupBinding>>(texturesToBind);
+    CCreator::Destroy<std::vector<SBindingGroupBinding>>(buffersToBind);
 }
 
 void triton::XMaterial::SetShininess(types::f32 shininess)
 {
-    _shininess = shininess;
-
-    CMaterialPool* pool = _context->GetPool<CMaterialPool>();
-    pool->WriteToStaging(
-        pool->GetPackedIndex(_poolIndex),
-        *this
-    );
 }

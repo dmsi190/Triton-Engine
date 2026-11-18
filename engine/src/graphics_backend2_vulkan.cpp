@@ -9,7 +9,6 @@
 #include "graphics_backend2_vulkan.hpp"
 #include "input_backend.hpp"
 #include "context.hpp"
-#include "object_allocator.hpp"
 #include "filesystem_manager.hpp"
 #include "log.hpp"
 #include "memory_units.hpp"
@@ -116,7 +115,7 @@ void triton::BGraphicsBackend2Vulkan::Shutdown()
 	DestroyInstance();
 }
 
-void triton::BGraphicsBackend2Vulkan::FinalizeSwapchain(const CGPUTextureResource& presentTexture)
+void triton::BGraphicsBackend2Vulkan::FinalizeSwapchain(const SGPUTextureResource& presentTexture)
 {
 	SViewport viewport;
 	viewport.rect = cVector4(
@@ -131,7 +130,7 @@ void triton::BGraphicsBackend2Vulkan::FinalizeSwapchain(const CGPUTextureResourc
 			0,
 			EBindingGroupBindingType::TextureSampler,
 			EShaderStageBit::Pixel,
-			(CGPUResource*)&presentTexture
+			(SGPUResource*)&presentTexture
 		)
 	};
 
@@ -172,13 +171,13 @@ void triton::BGraphicsBackend2Vulkan::ReleaseSwapchainResources()
 		DestroyBindingGroup(bindingGroup);
 }
 
-triton::CGPUTextureResource triton::BGraphicsBackend2Vulkan::CreateTexture(
+triton::SGPUTextureResource triton::BGraphicsBackend2Vulkan::CreateTexture(
 	boolean bCreateSampler,
 	ETextureFormat format,
 	dword usageMask,
 	ETextureDimension dimension,
 	const cVector3& size,
-	CGPUTextureResource* resultTexture // TODO: remove this argument completely and implement separate ERenderCommand::PipelineImageBarrier 
+	SGPUTextureResource* resultTexture // TODO: remove this argument completely and implement separate ERenderCommand::PipelineImageBarrier 
 )
 {
 	const VkFormat nativeFormat = TextureFormatToNative(format);
@@ -298,7 +297,7 @@ triton::CGPUTextureResource triton::BGraphicsBackend2Vulkan::CreateTexture(
 			Print("[Vulkan]: Error: failed to create sampler");
 	}
 
-	CGPUTextureResource resultTextureInstance = CGPUTextureResource(
+	SGPUTextureResource resultTextureInstance = SGPUTextureResource(
 		(qword)image,
 		(qword)imageView,
 		bCreateSampler == True ? (qword)sampler : 0,
@@ -312,7 +311,7 @@ triton::CGPUTextureResource triton::BGraphicsBackend2Vulkan::CreateTexture(
 
 	*resultTexture = resultTextureInstance;
 
-	EImageAspectBit aspect_mask = TextureFormatToAspect(resultTextureInstance.GetFormat());
+	EImageAspectBit aspect_mask = TextureFormatToAspect(resultTextureInstance.format);
 
 	{
 		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
@@ -340,14 +339,14 @@ triton::CGPUTextureResource triton::BGraphicsBackend2Vulkan::CreateTexture(
 }
 
 void triton::BGraphicsBackend2Vulkan::WriteTexture(
-	const CGPUTextureResource& texture,
+	const SGPUTextureResource& texture,
 	const u8* data
 )
 {
 	if (texture.IsValid() == False || !data)
 		return;
 
-	EImageAspectBit aspect_mask = TextureFormatToAspect(texture.GetFormat());
+	EImageAspectBit aspect_mask = TextureFormatToAspect(texture.format);
 
 	{
 		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
@@ -372,7 +371,7 @@ void triton::BGraphicsBackend2Vulkan::WriteTexture(
 	}
 
 	{
-		const ETextureFormat texture_format = texture.GetFormat();
+		const ETextureFormat texture_format = texture.format;
 		
 		usize pixel_byte_size = 0;
 
@@ -390,9 +389,9 @@ void triton::BGraphicsBackend2Vulkan::WriteTexture(
 			return;
 		}
 
-		const usize staging_buffer_byte_size = _staging_buffer.GetByteSize();
+		const usize staging_buffer_byte_size = _staging_buffer.byte_size;
 
-		const usize row_byte_size = texture.GetWidth() * pixel_byte_size;
+		const usize row_byte_size = texture.size.GetX() * pixel_byte_size;
 		const usize rows_per_staging = staging_buffer_byte_size / row_byte_size;
 
 		if (!rows_per_staging)
@@ -401,14 +400,14 @@ void triton::BGraphicsBackend2Vulkan::WriteTexture(
 			return;
 		}
 
-		const usize row_width = texture.GetWidth();
-		const usize row_count = texture.GetHeight();
+		const usize row_width = texture.size.GetX();
+		const usize row_count = texture.size.GetY();
 		
 		usize cur_row = 0;
 
 		while (cur_row < row_count)
 		{
-			VkDeviceMemory staging_memory = (VkDeviceMemory)_staging_buffer.GetDeviceMemory();
+			VkDeviceMemory staging_memory = (VkDeviceMemory)_staging_buffer.device_memory;
 
 			void* staging_data = nullptr;
 
@@ -479,38 +478,38 @@ void triton::BGraphicsBackend2Vulkan::WriteTexture(
 	}
 }
 
-void triton::BGraphicsBackend2Vulkan::DestroyTexture(CGPUTextureResource& texture)
+void triton::BGraphicsBackend2Vulkan::DestroyTexture(SGPUTextureResource& texture)
 {
 	if (texture.IsValid())
 	{
-		if (texture.GetSampler())
+		if (texture.sampler)
 			vkDestroySampler(
 				_logicalDevice.device,
-				(VkSampler)texture.GetSampler(),
+				(VkSampler)texture.sampler,
 				nullptr
 			);
 
 		vkDestroyImageView(
 			_logicalDevice.device,
-			(VkImageView)texture.GetView(),
+			(VkImageView)texture.view,
 			nullptr
 		);
 
 		vkDestroyImage(
 			_logicalDevice.device,
-			(VkImage)texture.GetInstance(),
+			(VkImage)texture.instance,
 			nullptr
 		);
 
 		vkFreeMemory(
 			_logicalDevice.device,
-			(VkDeviceMemory)texture.GetDeviceMemory(),
+			(VkDeviceMemory)texture.device_memory,
 			nullptr
 		);
 	}
 }
 
-triton::CGPUBufferResource triton::BGraphicsBackend2Vulkan::CreateBuffer(
+triton::SGPUBufferResource triton::BGraphicsBackend2Vulkan::CreateBuffer(
 	EGPUBufferType type,
 	const usize byteSize
 )
@@ -564,7 +563,7 @@ triton::CGPUBufferResource triton::BGraphicsBackend2Vulkan::CreateBuffer(
 	if (result != VK_SUCCESS)
 		Print("[Vulkan]: Error: failed to bind memory to buffer");
 
-	return CGPUBufferResource(
+	return SGPUBufferResource(
 		(qword)buffer,
 		0,
 		(qword)memory,
@@ -575,7 +574,7 @@ triton::CGPUBufferResource triton::BGraphicsBackend2Vulkan::CreateBuffer(
 }
 
 void triton::BGraphicsBackend2Vulkan::WriteBuffer(
-	const CGPUBufferResource& buffer,
+	const SGPUBufferResource& buffer,
 	usize offset,
 	const u8* data,
 	usize data_byte_size
@@ -583,7 +582,7 @@ void triton::BGraphicsBackend2Vulkan::WriteBuffer(
 {
 	if (buffer.IsValid() == False ||
 		!data_byte_size ||
-		offset + data_byte_size > buffer.GetByteSize())
+		offset + data_byte_size > buffer.byte_size)
 		return;
 
 	{
@@ -615,7 +614,7 @@ void triton::BGraphicsBackend2Vulkan::WriteBuffer(
 	}
 
 	{
-		const usize staging_buffer_byte_size = _staging_buffer.GetByteSize();
+		const usize staging_buffer_byte_size = _staging_buffer.byte_size;
 
 		const usize last_pos = offset + data_byte_size;
 
@@ -623,7 +622,7 @@ void triton::BGraphicsBackend2Vulkan::WriteBuffer(
 
 		while (cur_pos < last_pos)
 		{
-			VkDeviceMemory staging_memory = (VkDeviceMemory)_staging_buffer.GetDeviceMemory();
+			VkDeviceMemory staging_memory = (VkDeviceMemory)_staging_buffer.device_memory;
 
 			void* staging_data = nullptr;
 
@@ -695,19 +694,19 @@ void triton::BGraphicsBackend2Vulkan::WriteBuffer(
 	}
 }
 
-void triton::BGraphicsBackend2Vulkan::DestroyBuffer(CGPUBufferResource& buffer)
+void triton::BGraphicsBackend2Vulkan::DestroyBuffer(SGPUBufferResource& buffer)
 {
 	if (buffer.IsValid() == True)
 	{
 		vkDestroyBuffer(
 			_logicalDevice.device,
-			(VkBuffer)buffer.GetInstance(),
+			(VkBuffer)buffer.instance,
 			nullptr
 		);
 
 		vkFreeMemory(
 			_logicalDevice.device,
-			(VkDeviceMemory)buffer.GetDeviceMemory(),
+			(VkDeviceMemory)buffer.device_memory,
 			nullptr
 		);
 
@@ -715,33 +714,31 @@ void triton::BGraphicsBackend2Vulkan::DestroyBuffer(CGPUBufferResource& buffer)
 	}
 }
 
-triton::CGPURenderTargetResource triton::BGraphicsBackend2Vulkan::CreateRenderTarget(
-	const std::vector<CGPUTextureResource>& colorAttachments,
-	const CGPUTextureResource& depthAttachment
+triton::SGPURenderTargetResource triton::BGraphicsBackend2Vulkan::CreateRenderTarget(
+	const std::vector<SGPUTextureResource>& colorAttachments,
+	const SGPUTextureResource& depthAttachment
 )
 {
-	void* instance = CObjectAllocator::Allocate(sizeof(cpuword), 64);
-
-	return CGPURenderTargetResource(
-		(cpuword)instance,
+	return SGPURenderTargetResource(
+		(cpuword)1,
 		0,
 		colorAttachments,
 		depthAttachment
 	);
 }
 
-triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
-	const CGPUShaderResource& shader,
-	const std::vector<CGPUBindingGroupLayoutResource>& bindingGroupLayouts,
+triton::SGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
+	const SGPUShaderResource& shader,
+	const std::vector<SGPUBindingGroupLayoutResource>& bindingGroupLayouts,
 	types::boolean bUsePushConstants,
 	const std::optional<std::reference_wrapper<SViewport>> viewport,
-	std::optional<std::reference_wrapper<CGPURenderTargetResource>> renderTarget,
-	const std::optional<std::reference_wrapper<CGPURenderPassResource>> renderPass,
+	std::optional<std::reference_wrapper<SGPURenderTargetResource>> renderTarget,
+	const std::optional<std::reference_wrapper<SGPURenderPassResource>> renderPass,
 	EPrimitiveTopology primitiveTopology,
 	EVertexBufferFormat vertexBufferFormat
 )
 {
-	const dword stageMask = shader.GetStageMask();
+	const dword stageMask = shader.stage_mask;
 
 	const boolean bIsVertexPixel =
 		((stageMask & (dword)EShaderStageBit::Vertex) &&
@@ -760,7 +757,7 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		VkPipelineShaderStageCreateInfo vertexStageCreateInfo = {};
 		vertexStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vertexStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		vertexStageCreateInfo.module = (VkShaderModule)shader.GetModules()[0];
+		vertexStageCreateInfo.module = (VkShaderModule)shader.modules[0];
 		vertexStageCreateInfo.pName = "main";
 
 		stageCreateInfos.push_back(vertexStageCreateInfo);
@@ -768,7 +765,7 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		VkPipelineShaderStageCreateInfo pixelStageCreateInfo = {};
 		pixelStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		pixelStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		pixelStageCreateInfo.module = (VkShaderModule)shader.GetModules()[1];
+		pixelStageCreateInfo.module = (VkShaderModule)shader.modules[1];
 		pixelStageCreateInfo.pName = "main";
 
 		stageCreateInfos.push_back(pixelStageCreateInfo);
@@ -780,7 +777,7 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		VkPipelineShaderStageCreateInfo computeStageCreateInfo = {};
 		computeStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		computeStageCreateInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-		computeStageCreateInfo.module = (VkShaderModule)shader.GetModules()[0];
+		computeStageCreateInfo.module = (VkShaderModule)shader.modules[0];
 		computeStageCreateInfo.pName = "main";
 
 		stageCreateInfos.push_back(computeStageCreateInfo);
@@ -905,7 +902,7 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		{
 			for (usize i = 0; i < bindingGroupLayouts.size(); ++i)
 				nativeDescriptorSetLayouts.push_back(
-					(VkDescriptorSetLayout)bindingGroupLayouts.at(i).GetInstance()
+					(VkDescriptorSetLayout)bindingGroupLayouts.at(i).instance
 				);
 			
 			pipelineLayoutCreateInfo.setLayoutCount = nativeDescriptorSetLayouts.size();
@@ -969,7 +966,7 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
 		graphicsPipelineCreateInfo.pDynamicState = nullptr;
 		graphicsPipelineCreateInfo.layout = pipelineLayout;
-		graphicsPipelineCreateInfo.renderPass = (VkRenderPass)renderPass->get().GetInstance();
+		graphicsPipelineCreateInfo.renderPass = (VkRenderPass)renderPass->get().instance;
 		graphicsPipelineCreateInfo.subpass = 0;
 		graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
 		graphicsPipelineCreateInfo.basePipelineIndex = -1;
@@ -983,7 +980,7 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 			&pipeline
 		);
 
-		return CGPUPipelineResource(
+		return SGPUPipelineResource(
 			(qword)pipeline,
 			0,
 			EPipelineBindPoint::Graphics,
@@ -1005,7 +1002,7 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 			{
 				for (usize i = 0; i < bindingGroupLayouts.size(); ++i)
 					native_descriptor_set_layouts.push_back(
-						(VkDescriptorSetLayout)bindingGroupLayouts.at(i).GetInstance()
+						(VkDescriptorSetLayout)bindingGroupLayouts.at(i).instance
 					);
 
 				pipeline_layout_create_info.setLayoutCount = native_descriptor_set_layouts.size();
@@ -1051,7 +1048,7 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		}
 
 		{
-			return CGPUPipelineResource(
+			return SGPUPipelineResource(
 				(qword)pipeline,
 				0,
 				EPipelineBindPoint::Compute,
@@ -1061,16 +1058,16 @@ triton::CGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		}
 	}
 
-	return CGPUPipelineResource::Invalid();
+	return SGPUPipelineResource::Invalid();
 }
 
-void triton::BGraphicsBackend2Vulkan::DestroyPipeline(CGPUPipelineResource& pipeline)
+void triton::BGraphicsBackend2Vulkan::DestroyPipeline(SGPUPipelineResource& pipeline)
 {
 	if (pipeline.IsValid())
 	{
 		vkDestroyPipeline(
 			_logicalDevice.device,
-			(VkPipeline)pipeline.GetInstance(),
+			(VkPipeline)pipeline.instance,
 			nullptr
 		);
 
@@ -1078,14 +1075,14 @@ void triton::BGraphicsBackend2Vulkan::DestroyPipeline(CGPUPipelineResource& pipe
 	}
 }
 
-triton::CGPUBindingGroupLayoutResource triton::BGraphicsBackend2Vulkan::CreateBindingGroupLayout(
+triton::SGPUBindingGroupLayoutResource triton::BGraphicsBackend2Vulkan::CreateBindingGroupLayout(
 	const std::vector<SBindingGroupBinding>& bindings
 )
 {
 	const usize bindingCount = bindings.size();
 
 	if (!bindingCount)
-		return CGPUBindingGroupLayoutResource::Invalid();
+		return SGPUBindingGroupLayoutResource::Invalid();
 
 	std::vector<VkDescriptorSetLayoutBinding> nativeBindings(bindingCount);
 
@@ -1123,20 +1120,20 @@ triton::CGPUBindingGroupLayoutResource triton::BGraphicsBackend2Vulkan::CreateBi
 	if (result != VK_SUCCESS)
 		Print("[Vulkan]: Error: failed to create descriptor set layout");
 
-	return CGPUBindingGroupLayoutResource(
+	return SGPUBindingGroupLayoutResource(
 		(qword)descriptorSetLayout,
 		0,
 		bindings
 	);
 }
 
-void triton::BGraphicsBackend2Vulkan::DestroyBindingGroupLayout(CGPUBindingGroupLayoutResource& bindingGroupLayout)
+void triton::BGraphicsBackend2Vulkan::DestroyBindingGroupLayout(SGPUBindingGroupLayoutResource& bindingGroupLayout)
 {
 	if (bindingGroupLayout.IsValid() == True)
 	{
 		vkDestroyDescriptorSetLayout(
 			_logicalDevice.device,
-			(VkDescriptorSetLayout)bindingGroupLayout.GetInstance(),
+			(VkDescriptorSetLayout)bindingGroupLayout.instance,
 			nullptr
 		);
 
@@ -1144,20 +1141,20 @@ void triton::BGraphicsBackend2Vulkan::DestroyBindingGroupLayout(CGPUBindingGroup
 	}
 }
 
-triton::CGPUBindingGroupResource triton::BGraphicsBackend2Vulkan::CreateBindingGroup(
+triton::SGPUBindingGroupResource triton::BGraphicsBackend2Vulkan::CreateBindingGroup(
 	s32 index,
-	const CGPUBindingGroupLayoutResource& bindingGroupLayout,
+	const SGPUBindingGroupLayoutResource& bindingGroupLayout,
 	const std::vector<SBindingGroupBinding>& buffersToBind,
 	const std::vector<SBindingGroupBinding>& texturesToBind
 )
 {
-	const auto& bindingGroupBindings = bindingGroupLayout.GetBindings();
+	const auto& bindingGroupBindings = bindingGroupLayout.bindings;
 	const usize bindingCount = bindingGroupBindings.size();
 
 	if (!bindingCount)
-		return CGPUBindingGroupResource::Invalid();
+		return SGPUBindingGroupResource::Invalid();
 
-	VkDescriptorSetLayout descriptorSetLayout = (VkDescriptorSetLayout)bindingGroupLayout.GetInstance();
+	VkDescriptorSetLayout descriptorSetLayout = (VkDescriptorSetLayout)bindingGroupLayout.instance;
 
 	VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {};
 	descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -1186,13 +1183,13 @@ triton::CGPUBindingGroupResource triton::BGraphicsBackend2Vulkan::CreateBindingG
 
 		if (bindingGroupBinding.type == EBindingGroupBindingType::StorageBuffer)
 		{
-			const CGPUBufferResource* bufferToBind = nullptr;
+			const SGPUBufferResource* bufferToBind = nullptr;
 			
 			for (usize j = 0; j < buffersToBind.size(); ++j)
 				if (buffersToBind[j].index == bindingGroupBinding.index)
-					bufferToBind = (const CGPUBufferResource*)buffersToBind[j].resource;
+					bufferToBind = (const SGPUBufferResource*)buffersToBind[j].resource;
 
-			nativeDescriptorBufferInfos[i].buffer = (VkBuffer)bufferToBind->GetInstance();
+			nativeDescriptorBufferInfos[i].buffer = (VkBuffer)bufferToBind->instance;
 			nativeDescriptorBufferInfos[i].offset = 0;
 			nativeDescriptorBufferInfos[i].range = VK_WHOLE_SIZE;
 
@@ -1209,15 +1206,15 @@ triton::CGPUBindingGroupResource triton::BGraphicsBackend2Vulkan::CreateBindingG
 		}
 		else if (bindingGroupBinding.type == EBindingGroupBindingType::TextureSampler)
 		{
-			const CGPUTextureResource* textureToBind = nullptr;
+			const SGPUTextureResource* textureToBind = nullptr;
 
 			for (usize j = 0; j < texturesToBind.size(); ++j)
 				if (texturesToBind[j].index == bindingGroupBinding.index)
-					textureToBind = (const CGPUTextureResource*)texturesToBind[j].resource;
+					textureToBind = (const SGPUTextureResource*)texturesToBind[j].resource;
 
 			nativeDescriptorImageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			nativeDescriptorImageInfos[i].imageView = (VkImageView)textureToBind->GetView();
-			nativeDescriptorImageInfos[i].sampler = (VkSampler)textureToBind->GetSampler();
+			nativeDescriptorImageInfos[i].imageView = (VkImageView)textureToBind->view;
+			nativeDescriptorImageInfos[i].sampler = (VkSampler)textureToBind->sampler;
 
 			VkWriteDescriptorSet writeDescriptorSet = {};
 			writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1240,7 +1237,7 @@ triton::CGPUBindingGroupResource triton::BGraphicsBackend2Vulkan::CreateBindingG
 		nullptr
 	);
 
-	return CGPUBindingGroupResource(
+	return SGPUBindingGroupResource(
 		(qword)descriptorSet,
 		0,
 		(qword)_descriptorPool,
@@ -1248,14 +1245,14 @@ triton::CGPUBindingGroupResource triton::BGraphicsBackend2Vulkan::CreateBindingG
 	);
 }
 
-void triton::BGraphicsBackend2Vulkan::DestroyBindingGroup(CGPUBindingGroupResource& bindingGroup)
+void triton::BGraphicsBackend2Vulkan::DestroyBindingGroup(SGPUBindingGroupResource& bindingGroup)
 {
 	if (bindingGroup.IsValid() == True)
 	{
-		VkDescriptorSet descriptorSet = (VkDescriptorSet)bindingGroup.GetInstance();
+		VkDescriptorSet descriptorSet = (VkDescriptorSet)bindingGroup.instance;
 		vkFreeDescriptorSets(
 			_logicalDevice.device,
-			(VkDescriptorPool)bindingGroup.GetPool(),
+			(VkDescriptorPool)bindingGroup.pool,
 			1,
 			&descriptorSet
 		);
@@ -1264,18 +1261,14 @@ void triton::BGraphicsBackend2Vulkan::DestroyBindingGroup(CGPUBindingGroupResour
 	}
 }
 
-void triton::BGraphicsBackend2Vulkan::DestroyRenderTarget(CGPURenderTargetResource& renderTarget)
+void triton::BGraphicsBackend2Vulkan::DestroyRenderTarget(SGPURenderTargetResource& renderTarget)
 {
 	if (renderTarget.IsValid())
-	{
-		CObjectAllocator::Deallocate((void*)renderTarget.GetInstance());
-
 		renderTarget.Invalidate();
-	}
 }
 
-triton::CGPURenderPassResource triton::BGraphicsBackend2Vulkan::CreateRenderPass(
-	CGPURenderTargetResource& renderTarget,
+triton::SGPURenderPassResource triton::BGraphicsBackend2Vulkan::CreateRenderPass(
+	SGPURenderTargetResource& renderTarget,
 	boolean bClearRenderTarget,
 	const cVector4& clearColor,
 	types::f32 clearDepth,
@@ -1542,7 +1535,7 @@ triton::CGPURenderPassResource triton::BGraphicsBackend2Vulkan::CreateRenderPass
 	if (result != VK_SUCCESS)
 		Print("[Vulkan]: Error: failed to create render pass framebuffer");
 
-	return CGPURenderPassResource(
+	return SGPURenderPassResource(
 		(types::qword)renderPass,
 		0,
 		(types::qword)framebuffer,
@@ -1552,13 +1545,13 @@ triton::CGPURenderPassResource triton::BGraphicsBackend2Vulkan::CreateRenderPass
 	);
 }
 
-void triton::BGraphicsBackend2Vulkan::DestroyRenderPass(CGPURenderPassResource& renderPass)
+void triton::BGraphicsBackend2Vulkan::DestroyRenderPass(SGPURenderPassResource& renderPass)
 {
 	if (renderPass.IsValid() == True)
 	{
 		vkDestroyRenderPass(
 			_logicalDevice.device,
-			(VkRenderPass)renderPass.GetInstance(),
+			(VkRenderPass)renderPass.instance,
 			nullptr
 		);
 
@@ -1566,7 +1559,7 @@ void triton::BGraphicsBackend2Vulkan::DestroyRenderPass(CGPURenderPassResource& 
 	}
 }
 
-triton::CGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
+triton::SGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 	dword stageMask,
 	const SShaderBytecodeFiles& bytecodeFiles
 )
@@ -1577,21 +1570,21 @@ triton::CGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 		!bytecodeFiles.tessellationControlFilePath.has_value() &&
 		!bytecodeFiles.tessellationEvaluationFilePath.has_value() &&
 		!bytecodeFiles.computeFilePath.has_value()))
-		return CGPUShaderResource::Invalid();
+		return SGPUShaderResource::Invalid();
 
 	if (stageMask & (dword)EShaderStageBit::Vertex &&
 		stageMask & (dword)EShaderStageBit::Pixel &&
 		bytecodeFiles.vertexFilePath.has_value() &&
 		bytecodeFiles.pixelFilePath.has_value())
 	{
-		u8* vertexShaderByteCode = nullptr;
+		SMemoryAllocation vertexShaderByteCode;
 		const usize vertexShaderByteCodeSize = _context->GetSubsystem<CFileSystem>()->BinaryFileToArray(
 			bytecodeFiles.vertexFilePath.value().string(),
 			vertexShaderByteCode,
 			0
 		);
 
-		u8* pixelShaderByteCode = nullptr;
+		SMemoryAllocation pixelShaderByteCode;
 		const usize pixelShaderByteCodeSize = _context->GetSubsystem<CFileSystem>()->BinaryFileToArray(
 			bytecodeFiles.pixelFilePath.value().string(),
 			pixelShaderByteCode,
@@ -1603,7 +1596,7 @@ triton::CGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 		VkShaderModuleCreateInfo vertexShaderModuleCreateInfo = {};
 		vertexShaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 		vertexShaderModuleCreateInfo.codeSize = vertexShaderByteCodeSize;
-		vertexShaderModuleCreateInfo.pCode = (uint32_t*)vertexShaderByteCode;
+		vertexShaderModuleCreateInfo.pCode = (uint32_t*)vertexShaderByteCode.mem;
 
 		VkShaderModule vertexShaderModule = VK_NULL_HANDLE;
 
@@ -1620,7 +1613,7 @@ triton::CGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 		VkShaderModuleCreateInfo pixelShaderModuleCreateInfo = {};
 		pixelShaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 		pixelShaderModuleCreateInfo.codeSize = pixelShaderByteCodeSize;
-		pixelShaderModuleCreateInfo.pCode = (uint32_t*)pixelShaderByteCode;
+		pixelShaderModuleCreateInfo.pCode = (uint32_t*)pixelShaderByteCode.mem;
 
 		VkShaderModule pixelShaderModule = VK_NULL_HANDLE;
 
@@ -1641,7 +1634,7 @@ triton::CGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 		modules[0] = (qword)vertexShaderModule;
 		modules[1] = (qword)pixelShaderModule;
 
-		return CGPUShaderResource(
+		return SGPUShaderResource(
 			0,
 			0,
 			stageMask,
@@ -1650,7 +1643,7 @@ triton::CGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 	}
 	else if (stageMask & (dword)EShaderStageBit::Compute && bytecodeFiles.computeFilePath.has_value())
 	{
-		u8* compute_shader_bytecode = nullptr;
+		SMemoryAllocation compute_shader_bytecode;
 
 		const usize compute_shader_bytecode_size = _context->GetSubsystem<CFileSystem>()->BinaryFileToArray(
 			bytecodeFiles.computeFilePath.value().string(),
@@ -1663,7 +1656,7 @@ triton::CGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 		VkShaderModuleCreateInfo compute_shader_module_create_info = {};
 		compute_shader_module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 		compute_shader_module_create_info.codeSize = compute_shader_bytecode_size;
-		compute_shader_module_create_info.pCode = (uint32_t*)compute_shader_bytecode;
+		compute_shader_module_create_info.pCode = (uint32_t*)compute_shader_bytecode.mem;
 
 		VkShaderModule compute_shader_module = VK_NULL_HANDLE;
 
@@ -1682,7 +1675,7 @@ triton::CGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 		std::vector<qword> modules(1);
 		modules[0] = (qword)compute_shader_module;
 
-		return CGPUShaderResource(
+		return SGPUShaderResource(
 			0,
 			0,
 			stageMask,
@@ -1690,14 +1683,14 @@ triton::CGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 		);
 	}
 
-	return CGPUShaderResource::Invalid();
+	return SGPUShaderResource::Invalid();
 }
 
-void triton::BGraphicsBackend2Vulkan::DestroyShader(CGPUShaderResource& shader)
+void triton::BGraphicsBackend2Vulkan::DestroyShader(SGPUShaderResource& shader)
 {
 	if (shader.IsValid())
 	{
-		for (auto& module : shader.GetModules())
+		for (auto& module : shader.modules)
 			vkDestroyShaderModule(
 				_logicalDevice.device,
 				(VkShaderModule)module,
@@ -1709,28 +1702,28 @@ void triton::BGraphicsBackend2Vulkan::DestroyShader(CGPUShaderResource& shader)
 }
 
 void triton::BGraphicsBackend2Vulkan::Dispatch(
-	const CGPUPipelineResource& pipeline,
-	const std::vector<CGPUBindingGroupResource>& binding_groups,
+	const SGPUPipelineResource& pipeline,
+	const std::vector<SGPUBindingGroupResource>& binding_groups,
 	const cVector3& work_group_count
 )
 {
 	vkCmdBindPipeline(
 		_frameCommandBuffers[_currentFrame],
 		VK_PIPELINE_BIND_POINT_COMPUTE,
-		(VkPipeline)pipeline.GetInstance()
+		(VkPipeline)pipeline.instance
 	);
 
 	std::vector<VkDescriptorSet> native_descriptor_sets;
 
 	for (usize i = 0; i < binding_groups.size(); ++i)
-		native_descriptor_sets.push_back((VkDescriptorSet)binding_groups.at(i).GetInstance());
+		native_descriptor_sets.push_back((VkDescriptorSet)binding_groups.at(i).instance);
 
-	const usize first_set_index = binding_groups.at(0).GetIndex();
+	const usize first_set_index = binding_groups.at(0).index;
 
 	vkCmdBindDescriptorSets(
 		_frameCommandBuffers[_currentFrame],
 		VK_PIPELINE_BIND_POINT_COMPUTE,
-		(VkPipelineLayout)pipeline.GetLayout(),
+		(VkPipelineLayout)pipeline.layout,
 		0,
 		native_descriptor_sets.size(),
 		native_descriptor_sets.data(),
@@ -1792,13 +1785,13 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 
 	if (command == ENativeRenderCommand::BeginRenderPass)
 	{
-		CGPURenderPassResource& renderPass = *(CGPURenderPassResource*)commandArgA;
-		CGPURenderTargetResource& renderTarget = *(CGPURenderTargetResource*)commandArgB;
+		SGPURenderPassResource& renderPass = *(SGPURenderPassResource*)commandArgA;
+		SGPURenderTargetResource& renderTarget = *(SGPURenderTargetResource*)commandArgB;
 
 		VkRenderPassBeginInfo renderPassBeginInfo = {};
 		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassBeginInfo.renderPass = (VkRenderPass)renderPass.GetInstance();
-		renderPassBeginInfo.framebuffer = (VkFramebuffer)renderPass.GetFramebuffer();
+		renderPassBeginInfo.renderPass = (VkRenderPass)renderPass.instance;
+		renderPassBeginInfo.framebuffer = (VkFramebuffer)renderPass.framebuffer;
 		renderPassBeginInfo.renderArea.offset.x = 0;
 		renderPassBeginInfo.renderArea.offset.y = 0;
 		renderPassBeginInfo.renderArea.extent.width = (uint32_t)renderTarget.GetSize().GetX();
@@ -1806,18 +1799,18 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 		
 		VkClearValue clearValues[2] = {};
 		clearValues[0].color = {
-			renderPass.GetColorClearValue().GetX(),
-			renderPass.GetColorClearValue().GetY(),
-			renderPass.GetColorClearValue().GetZ(),
-			renderPass.GetColorClearValue().GetW()
+			renderPass.clear_color.GetX(),
+			renderPass.clear_color.GetY(),
+			renderPass.clear_color.GetZ(),
+			renderPass.clear_color.GetW()
 		};
 
 		clearValues[1].depthStencil = {
-			renderPass.GetDepthClearValue(),
+			renderPass.clear_depth,
 			0
 		};
 
-		if (renderPass.IsRenderTargetClearRequired() == True)
+		if (True)
 		{
 			if (renderTarget.GetDepthAttachment().IsValid() == True)
 				renderPassBeginInfo.clearValueCount = 2;
@@ -1836,18 +1829,18 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 	{
 		vkCmdBindPipeline(
 			_frameCommandBuffers[_currentFrame],
-			PipelineBindPointToNative(((CGPUPipelineResource*)commandArgA)->GetBindingPoint()),
-			(VkPipeline)((CGPUPipelineResource*)commandArgA)->GetInstance()
+			PipelineBindPointToNative(((SGPUPipelineResource*)commandArgA)->bind_point),
+			(VkPipeline)((SGPUPipelineResource*)commandArgA)->instance
 		);
 	}
 	else if (command == ENativeRenderCommand::Draw)
 	{
 		const SNativeCommandDrawInfo& drawInfo = *(SNativeCommandDrawInfo*)commandArgA;
-		CGPUPipelineResource& pipeline = *(CGPUPipelineResource*)commandArgB;
+		SGPUPipelineResource& pipeline = *(SGPUPipelineResource*)commandArgB;
 
 		vkCmdPushConstants(
 			_frameCommandBuffers[_currentFrame],
-			(VkPipelineLayout)pipeline.GetLayout(),
+			(VkPipelineLayout)pipeline.layout,
 			VK_SHADER_STAGE_VERTEX_BIT,
 			offsetof(SRenderPassGPUPushConstantsLayout, instanceMotionType),
 			4,
@@ -1887,9 +1880,9 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 	}
 	else if (command == ENativeRenderCommand::BindVertexBuffer)
 	{
-		const CGPUBufferResource& vertexBuffer = *(CGPUBufferResource*)commandArgA;
+		const SGPUBufferResource& vertexBuffer = *(SGPUBufferResource*)commandArgA;
 
-		VkBuffer nativeVertexBuffer = (VkBuffer)vertexBuffer.GetInstance();
+		VkBuffer nativeVertexBuffer = (VkBuffer)vertexBuffer.instance;
 		VkDeviceSize offset = 0;
 
 		vkCmdBindVertexBuffers(
@@ -1902,9 +1895,9 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 	}
 	else if (command == ENativeRenderCommand::BindIndexBuffer)
 	{
-		CGPUBufferResource& indexBuffer = *(CGPUBufferResource*)commandArgA;
+		SGPUBufferResource& indexBuffer = *(SGPUBufferResource*)commandArgA;
 
-		VkBuffer nativeIndexBuffer = (VkBuffer)indexBuffer.GetInstance();
+		VkBuffer nativeIndexBuffer = (VkBuffer)indexBuffer.instance;
 
 		vkCmdBindIndexBuffer(
 			_frameCommandBuffers[_currentFrame],
@@ -1916,11 +1909,11 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 	else if (command == ENativeRenderCommand::PushConstants)
 	{
 		SRenderPassGPUPushConstantsLayout& pushConstants = *(SRenderPassGPUPushConstantsLayout*)commandArgA;
-		CGPUPipelineResource& pipeline = *(CGPUPipelineResource*)commandArgB;
+		SGPUPipelineResource& pipeline = *(SGPUPipelineResource*)commandArgB;
 
 		vkCmdPushConstants(
 			_frameCommandBuffers[_currentFrame],
-			(VkPipelineLayout)pipeline.GetLayout(),
+			(VkPipelineLayout)pipeline.layout,
 			VK_SHADER_STAGE_VERTEX_BIT,
 			0,
 			sizeof(SRenderPassGPUPushConstantsLayout),
@@ -1929,24 +1922,24 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 	}
 	else if (command == ENativeRenderCommand::BindDescriptorSets)
 	{
-		std::vector<CGPUBindingGroupResource>& bindingGroups = *(std::vector<CGPUBindingGroupResource>*)commandArgA;
+		std::vector<SGPUBindingGroupResource>& bindingGroups = *(std::vector<SGPUBindingGroupResource>*)commandArgA;
 		
 		if (!bindingGroups.size())
 			return;
 		
-		CGPUPipelineResource& pipeline = *(CGPUPipelineResource*)commandArgB;
+		SGPUPipelineResource& pipeline = *(SGPUPipelineResource*)commandArgB;
 
 		std::vector<VkDescriptorSet> nativeDescriptorSets;
 		
 		for (usize i = 0; i < bindingGroups.size(); ++i)
-			nativeDescriptorSets.push_back((VkDescriptorSet)bindingGroups[i].GetInstance());
+			nativeDescriptorSets.push_back((VkDescriptorSet)bindingGroups[i].instance);
 
-		const usize firstSetIndex = bindingGroups[0].GetIndex();
+		const usize firstSetIndex = bindingGroups[0].index;
 
 		vkCmdBindDescriptorSets(
 			_frameCommandBuffers[_currentFrame],
 			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			(VkPipelineLayout)pipeline.GetLayout(),
+			(VkPipelineLayout)pipeline.layout,
 			firstSetIndex,
 			nativeDescriptorSets.size(),
 			nativeDescriptorSets.data(),
@@ -1996,16 +1989,16 @@ void triton::BGraphicsBackend2Vulkan::EndFrame()
 
 	VkClearValue clearValue = {};
 	clearValue.color = {
-		_swapchainRenderPasses[imageIndex].GetColorClearValue().GetX(),
-		_swapchainRenderPasses[imageIndex].GetColorClearValue().GetY(),
-		_swapchainRenderPasses[imageIndex].GetColorClearValue().GetZ(),
-		_swapchainRenderPasses[imageIndex].GetColorClearValue().GetW()
+		_swapchainRenderPasses[imageIndex].clear_color.GetX(),
+		_swapchainRenderPasses[imageIndex].clear_color.GetY(),
+		_swapchainRenderPasses[imageIndex].clear_color.GetZ(),
+		_swapchainRenderPasses[imageIndex].clear_color.GetW()
 	};
 
 	VkRenderPassBeginInfo renderPassBeginInfo = {};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassBeginInfo.renderPass = (VkRenderPass)_swapchainRenderPasses[imageIndex].GetInstance();
-	renderPassBeginInfo.framebuffer = (VkFramebuffer)_swapchainRenderPasses[imageIndex].GetFramebuffer();
+	renderPassBeginInfo.renderPass = (VkRenderPass)_swapchainRenderPasses[imageIndex].instance;
+	renderPassBeginInfo.framebuffer = (VkFramebuffer)_swapchainRenderPasses[imageIndex].framebuffer;
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent.width = _swapchain.size.GetX();
 	renderPassBeginInfo.renderArea.extent.height = _swapchain.size.GetY();
@@ -2021,16 +2014,16 @@ void triton::BGraphicsBackend2Vulkan::EndFrame()
 	vkCmdBindPipeline(
 		_frameCommandBuffers[_currentFrame],
 		VK_PIPELINE_BIND_POINT_GRAPHICS,
-		(VkPipeline)_swapchainPipelines[imageIndex].GetInstance()
+		(VkPipeline)_swapchainPipelines[imageIndex].instance
 	);
 
 	VkDescriptorSet nativeDescriptorSet =
-		(VkDescriptorSet)_swapchainBindingGroups[imageIndex].GetInstance();
+		(VkDescriptorSet)_swapchainBindingGroups[imageIndex].instance;
 
 	vkCmdBindDescriptorSets(
 		_frameCommandBuffers[_currentFrame],
 		VK_PIPELINE_BIND_POINT_GRAPHICS,
-		(VkPipelineLayout)_swapchainPipelines[imageIndex].GetLayout(),
+		(VkPipelineLayout)_swapchainPipelines[imageIndex].layout,
 		0,
 		1,
 		&nativeDescriptorSet,
@@ -2095,7 +2088,7 @@ void triton::BGraphicsBackend2Vulkan::EndFrame()
 
 void triton::BGraphicsBackend2Vulkan::ExecuteImageBarrier(
 	ECommandBuffer command_buffer,
-	const CGPUTextureResource& texture,
+	const SGPUTextureResource& texture,
 	EPipelineStageBit src_stage_mask,
 	EPipelineStageBit dst_stage_mask,
 	EAccessBit src_access_mask,
@@ -2122,7 +2115,7 @@ void triton::BGraphicsBackend2Vulkan::ExecuteImageBarrier(
 
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.image = (VkImage)texture.GetInstance();
+	barrier.image = (VkImage)texture.instance;
 	barrier.subresourceRange = imageSubresource;
 	barrier.srcAccessMask = native_src_access_mask;
 	barrier.dstAccessMask = native_dst_access_mask;
@@ -2154,7 +2147,7 @@ void triton::BGraphicsBackend2Vulkan::ExecuteImageBarrier(
 
 void triton::BGraphicsBackend2Vulkan::ExecuteBufferBarrier(
 	ECommandBuffer command_buffer,
-	const CGPUBufferResource& buffer,
+	const SGPUBufferResource& buffer,
 	EPipelineStageBit src_stage_mask,
 	EPipelineStageBit dst_stage_mask,
 	EAccessBit src_access_mask,
@@ -2168,9 +2161,9 @@ void triton::BGraphicsBackend2Vulkan::ExecuteBufferBarrier(
 
 	VkBufferMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-	barrier.buffer = (VkBuffer)buffer.GetInstance();
+	barrier.buffer = (VkBuffer)buffer.instance;
 	barrier.offset = 0;
-	barrier.size = buffer.GetByteSize();
+	barrier.size = buffer.byte_size;
 	barrier.srcAccessMask = native_src_access_mask;
 	barrier.dstAccessMask = native_dst_access_mask;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -2199,8 +2192,8 @@ void triton::BGraphicsBackend2Vulkan::ExecuteBufferBarrier(
 
 void triton::BGraphicsBackend2Vulkan::CopyBufferToImage(
 	ECommandBuffer command_buffer,
-	const CGPUBufferResource& buffer,
-	const CGPUTextureResource& texture,
+	const SGPUBufferResource& buffer,
+	const SGPUTextureResource& texture,
 	EImageAspectBit aspect_mask,
 	const cVector3& offset,
 	const cVector3& size
@@ -2240,8 +2233,8 @@ void triton::BGraphicsBackend2Vulkan::CopyBufferToImage(
 
 	vkCmdCopyBufferToImage(
 		cmd_buff,
-		(VkBuffer)buffer.GetInstance(),
-		(VkImage)texture.GetInstance(),
+		(VkBuffer)buffer.instance,
+		(VkImage)texture.instance,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1,
 		&region
@@ -2250,8 +2243,8 @@ void triton::BGraphicsBackend2Vulkan::CopyBufferToImage(
 
 void triton::BGraphicsBackend2Vulkan::CopyBufferToBuffer(
 	ECommandBuffer command_buffer,
-	const CGPUBufferResource& src_buffer,
-	const CGPUBufferResource& dst_buffer,
+	const SGPUBufferResource& src_buffer,
+	const SGPUBufferResource& dst_buffer,
 	usize src_offset,
 	usize dst_offset,
 	usize size
@@ -2271,8 +2264,8 @@ void triton::BGraphicsBackend2Vulkan::CopyBufferToBuffer(
 
 	vkCmdCopyBuffer(
 		cmd_buff,
-		(VkBuffer)src_buffer.GetInstance(),
-		(VkBuffer)dst_buffer.GetInstance(),
+		(VkBuffer)src_buffer.instance,
+		(VkBuffer)dst_buffer.instance,
 		1,
 		&region
 	);
@@ -3254,7 +3247,7 @@ void triton::BGraphicsBackend2Vulkan::DestroyStagingBuffer()
 
 void triton::BGraphicsBackend2Vulkan::CreateDescriptorPool()
 {
-	const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+	const SCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
 
 	VkDescriptorPoolSize sizes[] =
 	{
@@ -3424,7 +3417,7 @@ void triton::BGraphicsBackend2Vulkan::CreateSwapchainRenderTargets()
 
 	for (usize i = 0; i < renderTargetCount; i++)
 	{
-		CGPUTextureResource colorAttachment = CGPUTextureResource(
+		SGPUTextureResource colorAttachment = SGPUTextureResource(
 			(qword)_swapchain.images[i].image,
 			(qword)_swapchain.images[i].view,
 			0,
@@ -3436,15 +3429,13 @@ void triton::BGraphicsBackend2Vulkan::CreateSwapchainRenderTargets()
 			0
 		);
 
-		const std::vector<CGPUTextureResource> colorAttachmentVec = { colorAttachment };
+		const std::vector<SGPUTextureResource> colorAttachmentVec = { colorAttachment };
 
-		void* renderTargetInstance = CObjectAllocator::Allocate(sizeof(cpuword), 64);
-
-		_swapchainRenderTargets.push_back(CGPURenderTargetResource(
-			(cpuword)renderTargetInstance,
+		_swapchainRenderTargets.push_back(SGPURenderTargetResource(
+			(cpuword)1,
 			0,
 			colorAttachmentVec,
-			CGPUTextureResource::Invalid()
+			SGPUTextureResource::Invalid()
 		));
 	}
 }
@@ -3452,11 +3443,7 @@ void triton::BGraphicsBackend2Vulkan::CreateSwapchainRenderTargets()
 void triton::BGraphicsBackend2Vulkan::DestroySwapchainRenderTargets()
 {
 	for (auto& renderTarget : _swapchainRenderTargets)
-	{
-		CObjectAllocator::Deallocate((void*)renderTarget.GetInstance());
-
 		renderTarget.Invalidate();
-	}
 }
 
 void triton::BGraphicsBackend2Vulkan::CreateSwapchainRenderPasses()

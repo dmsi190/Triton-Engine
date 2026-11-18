@@ -3,12 +3,11 @@
 #include <cctype>
 #include <cstring>
 #include "image_decoder_multi.hpp"
-#include "object_allocator.hpp"
 #include "log.hpp"
 
 using namespace types;
 
-triton::SImageBackend triton::BImageDecoderMulti::Decode(
+triton::SImageResource triton::BImageDecoderMulti::Decode(
 	EImageFormat expectedDataFormat,
 	const std::filesystem::path& filePath
 )
@@ -63,8 +62,8 @@ triton::SImageBackend triton::BImageDecoderMulti::Decode(
 	}
 }
 
-triton::SImageBackend triton::BImageDecoderMulti::Decode(
-	EImageFileFormat containerFormat,
+triton::SImageResource triton::BImageDecoderMulti::Decode(
+	EImageFileFormat fileFormat,
 	EImageFormat expectedDataFormat,
 	const types::u8* data,
 	types::usize dataByteSize
@@ -72,7 +71,7 @@ triton::SImageBackend triton::BImageDecoderMulti::Decode(
 {
 	const std::string filePathStr = "";
 
-	if (containerFormat == EImageFileFormat::PNG)
+	if (fileFormat == EImageFileFormat::PNG)
 	{
 		int stbWidth = 0;
 		int stbHeight = 0;
@@ -97,7 +96,7 @@ triton::SImageBackend triton::BImageDecoderMulti::Decode(
 			stbDesiredChannels
 		);
 	}
-	else if (containerFormat == EImageFileFormat::DDS)
+	else if (fileFormat == EImageFileFormat::DDS)
 	{
 		tinyddsloader::DDSFile dds;
 		tinyddsloader::Result ddsResult = dds.Load(
@@ -162,7 +161,7 @@ boolean triton::BImageDecoderMulti::ValidateDDSFormat(
 	return False;
 }
 
-triton::SImageBackend triton::BImageDecoderMulti::ReturnPNGData(
+triton::SImageResource triton::BImageDecoderMulti::ReturnPNGData(
 	EImageFormat expectedDataFormat,
 	const std::string& filePathStr,
 	const stbi_uc* stbData,
@@ -199,16 +198,13 @@ triton::SImageBackend triton::BImageDecoderMulti::ReturnPNGData(
 	const usize imageDataByteSize = (usize)(stbWidth * stbHeight * stbDesiredChannels);
 	const cVector3 imageSize = cVector3((f32)stbWidth, (f32)stbHeight, 1.0f);
 
-	u8* imageData = (u8*)CObjectAllocator::Allocate(imageDataByteSize, 64);
-	if (!imageData)
-	{
-		stbi_image_free((void*)stbData);
-		return {};
-	}
-	std::memcpy(&imageData[0], &stbData[0], imageDataByteSize);
+	SMemoryAllocation imageData = CMemoryAllocator::Allocate(imageDataByteSize);
+	
+	std::memcpy(&imageData.mem[0], &stbData[0], imageDataByteSize);
+
 	stbi_image_free((void*)stbData);
 
-	SImageBackend image;
+	SImageResource image;
 	image.data = imageData;
 	image.dataByteSize = imageDataByteSize;
 	image.dataFormat = expectedDataFormat;
@@ -217,7 +213,7 @@ triton::SImageBackend triton::BImageDecoderMulti::ReturnPNGData(
 	return image;
 }
 
-triton::SImageBackend triton::BImageDecoderMulti::ReturnDDSData(
+triton::SImageResource triton::BImageDecoderMulti::ReturnDDSData(
 	EImageFormat expectedDataFormat,
 	const std::string& filePathStr,
 	tinyddsloader::Result ddsResult,
@@ -271,12 +267,11 @@ triton::SImageBackend triton::BImageDecoderMulti::ReturnDDSData(
 	const usize imageDataByteSize = (usize)(ddsWidth * ddsHeight) * channelCount;
 	const cVector3 imageSize = cVector3((f32)ddsWidth, (f32)ddsHeight, 1.0f);
 
-	u8* imageData = (u8*)CObjectAllocator::Allocate(imageDataByteSize, 64);
-	if (!imageData)
-		return {};
-	std::memcpy(&imageData[0], ddsData, imageDataByteSize);
+	SMemoryAllocation imageData = CMemoryAllocator::Allocate(imageDataByteSize);
+	
+	std::memcpy(&imageData.mem[0], ddsData, imageDataByteSize);
 
-	SImageBackend image;
+	SImageResource image;
 	image.data = imageData;
 	image.dataByteSize = imageDataByteSize;
 	image.dataFormat = expectedDataFormat;

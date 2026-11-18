@@ -11,14 +11,14 @@ namespace triton
     struct SGPUShaderResource : public SGPUResource
     {
         types::dword                stage_mask = 0;
-        std::vector<types::qword>   shader_modules;
+        std::vector<types::qword>   modules;
 
         explicit SGPUShaderResource(
             types::qword instance,
             types::qword view_instance,
             types::dword stage_mask,
             const std::vector<types::qword>& shader_modules
-        ) : SGPUResource(instance, view_instance), stage_mask(stage_mask), shader_modules(shader_modules) {}
+        ) : SGPUResource(instance, view_instance), stage_mask(stage_mask), modules(shader_modules) {}
 
         ~SGPUShaderResource() override = default;
 

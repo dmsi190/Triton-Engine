@@ -1,3 +1,5 @@
+// input_window_resource.hpp
+
 #pragma once
 
 #include "math.hpp"
@@ -5,7 +7,7 @@
 
 namespace triton
 {
-    struct SWindowBackend
+    struct SWindowResource
     {
         types::qword instance = 0;
         types::qword renderContextInstance = 0;

@@ -1,4 +1,4 @@
-// image_backend_data.hpp
+// image_resource.hpp
 
 #pragma once
 
@@ -8,9 +8,9 @@
 
 namespace triton
 {
-	struct SImageBackend
+	struct SImageResource
 	{
-		types::u8* data = nullptr;
+		SMemoryAllocation data = nullptr;
 		types::usize dataByteSize = 0;
 		EImageFormat dataFormat = EImageFormat::Unknown;
 		cVector3 size = cVector3(0.0f);

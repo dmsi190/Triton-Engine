@@ -29,7 +29,7 @@ namespace triton
             const std::string& title,
             const cVector2& size,
             types::boolean fullscreen,
-            EAvailableGraphicsBackend graphicsBackend
+            EGraphicsBackendType graphicsBackend
         ) override final;
 
         virtual void DestroyBackendWindow(SWindowBackend& window) override final;

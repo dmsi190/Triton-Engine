@@ -1,4 +1,4 @@
-// model3d.hpp
+// model.hpp
 
 #pragma once
 
@@ -16,34 +16,34 @@ namespace triton
 {
     class cContext;
 
-    enum class EModel3DFileType
+    enum class EModelFileType
     {
         Unknown,
         Raw,
         Asset
     };
 
-	class XModel3D : public iObject
+	class XModel : public iObject
 	{
-        TRITON_CLASS_NAME(XModel3D)
+        TRITON_CLASS_NAME(XModel)
 
         SModel3DData            _data;
         asset::CModel3DAsset*   _asset = nullptr;
         EVertexBufferFormat     _vertexDataFormat = EVertexBufferFormat::Unknown;
-        EModel3DFileType        _fileType = EModel3DFileType::Unknown;
+        EModelFileType          _fileType = EModelFileType::Unknown;
 
     public:
-        explicit XModel3D(cContext* context, types::s32 poolIndex) : iObject(context, poolIndex) {}
+        explicit XModel(const SMemoryAllocation& mem_alloc, cContext* context) : iObject(mem_alloc, context) {}
 
-        explicit XModel3D(
+        explicit XModel(
+            const SMemoryAllocation& mem_alloc,
             cContext* context,
-            types::s32 poolIndex,
             EVertexBufferFormat vertexDataFormat,
-            EModel3DFileType fileType,
+            EModelFileType fileType,
             const std::filesystem::path& filePath
         );
 
-        ~XModel3D() override;
+        ~XModel() override;
 
         inline EVertexBufferFormat GetVertexFormat() { return _vertexDataFormat; }
 
@@ -57,11 +57,9 @@ namespace triton
 
         inline types::usize GetIndexCount() const { return _data.indexCount; }
 
-        inline SHandle GetMaterial() const
+        inline XMaterial* GetMaterial() const
         {
             return _data.materials.size() > 0 ? _data.materials.at(0) : SHandle();
         }
-
-        struct TGPULayout {};
 	};
 }

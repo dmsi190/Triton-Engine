@@ -18,13 +18,13 @@ namespace triton
 		
 		~BImageDecoderMulti() override = default;
 
-		SImageBackend Decode(
+		SImageResource Decode(
 			EImageFormat expectedDataFormat,
 			const std::filesystem::path& filePath
 		) override final;
 
-		SImageBackend Decode(
-			EImageFileFormat containerFormat,
+		SImageResource Decode(
+			EImageFileFormat fileFormat,
 			EImageFormat expectedDataFormat,
 			const types::u8* data,
 			types::usize dataByteSize
@@ -40,7 +40,7 @@ namespace triton
 			EImageFormat expectedFormat
 		);
 
-		SImageBackend ReturnPNGData(
+		SImageResource ReturnPNGData(
 			EImageFormat expectedDataFormat,
 			const std::string& filePathStr,
 			const stbi_uc* stbData,
@@ -49,7 +49,7 @@ namespace triton
 			int stbDesiredChannels
 		);
 
-		SImageBackend ReturnDDSData(
+		SImageResource ReturnDDSData(
 			EImageFormat expectedDataFormat,
 			const std::string& filePathStr,
 			tinyddsloader::Result ddsResult,
