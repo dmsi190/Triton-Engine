@@ -9,8 +9,8 @@ namespace triton
 {
     class SGPUBindingGroupResource : public SGPUResource
     {
-        types::qword pool = 0;
-        types::s32 index = 0;
+        types::qword    pool = 0;
+        types::s32      index = 0;
 
         explicit SGPUBindingGroupResource(
             types::qword instance,

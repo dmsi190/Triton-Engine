@@ -10,10 +10,10 @@ namespace triton
 {
     struct SGPUBufferResource : public SGPUResource
     {
-        types::qword device_memory = 0;
-        EGPUBufferType type = EGPUBufferType::Unknown;
-        types::usize byte_size = 0;
-        types::s32 slot = -1;
+        types::qword    device_memory = 0;
+        EGPUBufferType  type = EGPUBufferType::Unknown;
+        types::usize    byte_size = 0;
+        types::s32      slot = -1;
 
         explicit SGPUBufferResource(
             types::qword instance,

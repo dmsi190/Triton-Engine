@@ -10,40 +10,40 @@
 
 namespace triton
 {
-    class CGPUTextureResource : public CGPUResource
+    struct SGPUTextureResource : public SGPUResource
     {
-        types::qword _sampler = 0;
-        types::qword _deviceMemory = 0;
-        cVector3 _size = cVector3(0.0f);
-        ETextureFormat _format = ETextureFormat::Unknown;
-        types::dword _usageMask = 0;
-        ETextureDimension _dimension = ETextureDimension::Unknown;
-        types::s32 _slot = -1;
+        types::qword        sampler = 0;
+        types::qword        device_memory = 0;
+        cVector3            size = cVector3(0.0f);
+        ETextureFormat      format = ETextureFormat::Unknown;
+        types::dword        usage_mask = 0;
+        ETextureDimension   dimension = ETextureDimension::Unknown;
+        types::s32          slot = -1;
 
-    public:
-        explicit CGPUTextureResource(
+        explicit SGPUTextureResource(
             types::qword instance,
-            types::qword viewInstance,
+            types::qword view_instance,
             types::qword sampler,
-            types::qword deviceMemory,
+            types::qword device_memory,
             ETextureFormat format,
-            types::dword usageMask,
+            types::dword usage_mask,
             ETextureDimension dimension,
             const cVector3& size,
             types::s32 slot
-        ) : CGPUResource(instance, viewInstance),
-            _sampler(sampler),
-            _deviceMemory(deviceMemory),
-            _format(format),
-            _usageMask(usageMask),
-            _dimension(dimension),
-            _size(size),
-            _slot(slot) {}
-        ~CGPUTextureResource() override = default;
+        ) : SGPUResource(instance, view_instance),
+            sampler(sampler),
+            device_memory(device_memory),
+            format(format),
+            usage_mask(usage_mask),
+            dimension(dimension),
+            size(size),
+            slot(slot) {}
 
-        static CGPUTextureResource Invalid()
+        ~SGPUTextureResource() override = default;
+
+        static SGPUTextureResource Invalid()
         {
-            return CGPUTextureResource(
+            return SGPUTextureResource(
                 0,
                 0,
                 0,
@@ -55,25 +55,5 @@ namespace triton
                 0
             );
         }
-
-        inline types::qword GetSampler() const { return _sampler; }
-
-        inline types::qword GetDeviceMemory() const { return _deviceMemory; }
-
-        inline const cVector3& GetSize() const { return _size; }
-
-        inline types::usize GetWidth() const { return _size.GetX(); }
-
-        inline types::usize GetHeight() const { return _size.GetY(); }
-
-        inline types::usize GetDepth() const { return _size.GetZ(); }
-
-        inline ETextureFormat GetFormat() const { return _format; }
-
-        inline types::dword GetUsageMask() const { return _usageMask; }
-
-        inline ETextureDimension GetDimension() const { return _dimension; }
-
-        inline types::s32 GetSlot() const { return _slot; }
     };
 }

@@ -8,29 +8,25 @@
 
 namespace triton
 {
-    class CGPUShaderResource : public CGPUResource
+    struct SGPUShaderResource : public SGPUResource
     {
-        types::dword _stageMask = 0;
-        std::vector<types::qword> _shaderModules;
+        types::dword                stage_mask = 0;
+        std::vector<types::qword>   shader_modules;
 
-    public:
-        explicit CGPUShaderResource(
+        explicit SGPUShaderResource(
             types::qword instance,
-            types::qword viewInstance,
-            types::dword stageMask,
-            const std::vector<types::qword> shaderModules
-        ) : CGPUResource(instance, viewInstance), _stageMask(stageMask), _shaderModules(shaderModules) {}
-        ~CGPUShaderResource() override = default;
+            types::qword view_instance,
+            types::dword stage_mask,
+            const std::vector<types::qword>& shader_modules
+        ) : SGPUResource(instance, view_instance), stage_mask(stage_mask), shader_modules(shader_modules) {}
 
-        static CGPUShaderResource Invalid()
+        ~SGPUShaderResource() override = default;
+
+        static SGPUShaderResource Invalid()
         {
-            return CGPUShaderResource(
+            return SGPUShaderResource(
                 0, 0, 0, std::vector<types::qword>()
             );
         }
-
-        inline types::dword GetStageMask() const { return _stageMask; }
-
-        inline const std::vector<types::qword>& GetModules() const { return _shaderModules; }
     };
 }

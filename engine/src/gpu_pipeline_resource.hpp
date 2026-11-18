@@ -11,35 +11,31 @@
 
 namespace triton
 {
-    class CGPUPipelineResource : public CGPUResource
+    struct SGPUPipelineResource : public SGPUResource
     {
-        EPipelineBindPoint _bindPoint = EPipelineBindPoint::Unknown;
-        types::qword _layout = 0;
-        std::vector<CGPUBindingGroupLayoutResource> _bindingGroupLayouts;
+        EPipelineBindPoint                              bind_point = EPipelineBindPoint::Unknown;
+        types::qword                                    layout = 0;
+        std::vector<SGPUBindingGroupLayoutResource>     binding_group_layouts;
 
-    public:
-        explicit CGPUPipelineResource(
+        explicit SGPUPipelineResource(
             types::qword instance,
-            types::qword viewInstance,
-            EPipelineBindPoint bindPoint,
+            types::qword view_instance,
+            EPipelineBindPoint bind_point,
             types::qword layout,
-            const std::vector<CGPUBindingGroupLayoutResource>& bindingGroupLayouts
+            const std::vector<SGPUBindingGroupLayoutResource>& binding_group_layouts
         ) :
-            CGPUResource(instance, viewInstance),
-            _bindPoint(bindPoint),
-            _layout(layout),
-            _bindingGroupLayouts(bindingGroupLayouts) {}
-        ~CGPUPipelineResource() override = default;
+            SGPUResource(instance, view_instance),
+            bind_point(bind_point),
+            layout(layout),
+            binding_group_layouts(binding_group_layouts) {}
 
-        static CGPUPipelineResource Invalid()
+        ~SGPUPipelineResource() override = default;
+
+        static SGPUPipelineResource Invalid()
         {
-            return CGPUPipelineResource(0, 0, EPipelineBindPoint::Unknown, 0, {});
+            return SGPUPipelineResource(
+                0, 0, EPipelineBindPoint::Unknown, 0, {}
+            );
         }
-
-        inline EPipelineBindPoint GetBindingPoint() const { return _bindPoint; }
-
-        inline types::qword GetLayout() const { return _layout; }
-
-        inline const std::vector<CGPUBindingGroupLayoutResource>& GetBindingGroupLayouts() const { return _bindingGroupLayouts; }
     };
 }

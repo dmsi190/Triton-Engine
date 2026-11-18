@@ -10,43 +10,30 @@
 
 namespace triton
 {
-    class CGPURenderTargetResource : public CGPUResource
+    struct SGPURenderTargetResource : public SGPUResource
     {
-        std::vector<CGPUTextureResource> _colorAttachments;
-        CGPUTextureResource _depthAttachment = CGPUTextureResource::Invalid();
+        std::vector<CGPUTextureResource>    color_attachments;
+        CGPUTextureResource                 depth_attachment = CGPUTextureResource::Invalid();
 
-    public:
-        explicit CGPURenderTargetResource(
+        explicit SGPURenderTargetResource(
             types::qword instance,
             types::qword view,
-            const std::vector<CGPUTextureResource>& colorAttachments,
-            const CGPUTextureResource& depthAttachment
-        ) : CGPUResource(instance, view),
-            _depthAttachment(depthAttachment)
+            const std::vector<CGPUTextureResource>& color_attachments,
+            const CGPUTextureResource& depth_attachment
+        ) : SGPUResource(instance, view),
+            depth_attachment(depth_attachment)
         {
-            for (types::usize i = 0; i < colorAttachments.size(); i++)
-                _colorAttachments.push_back(colorAttachments[i]);
+            for (types::usize i = 0; i < color_attachments.size(); i++)
+                this->color_attachments.push_back(color_attachments[i]);
         }
-        ~CGPURenderTargetResource() override = default;
 
-        static CGPURenderTargetResource Invalid()
+        ~SGPURenderTargetResource() override = default;
+
+        static SGPURenderTargetResource Invalid()
         {
-            return CGPURenderTargetResource(
+            return SGPURenderTargetResource(
                 0, 0, std::vector<CGPUTextureResource>(), CGPUTextureResource::Invalid()
             );
         }
-
-        inline types::usize GetColorAttachmentCount() const { return _colorAttachments.size(); }
-
-        inline std::vector<CGPUTextureResource>& GetColorAttachments() { return _colorAttachments; }
-
-        inline CGPUTextureResource& GetDepthAttachment() { return _depthAttachment; }
-
-        inline const cVector2& GetSize() const
-        {
-            return cVector2(_colorAttachments[0].GetWidth(), _colorAttachments[0].GetHeight());
-        }
-
-        inline void SetDepthAttachment(const CGPUTextureResource& depthAttachment) { _depthAttachment = depthAttachment; }
     };
 }

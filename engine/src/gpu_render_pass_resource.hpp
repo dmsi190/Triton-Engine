@@ -8,40 +8,34 @@
 
 namespace triton
 {
-    class CGPURenderPassResource : public CGPUResource
+    struct SGPURenderPassResource : public SGPUResource
     {
-        types::qword _framebuffer = 0;
-        types::boolean _bClearRenderTarget = types::K_FALSE;
-        cVector4 _clearColor = cVector4(0.0f);
-        types::f32 _clearDepth = 0.0f;
+        types::qword    framebuffer = 0;
+        types::boolean  clear_render_target = types::K_FALSE;
+        cVector4        clear_color = cVector4(0.0f);
+        types::f32      clear_depth = 0.0f;
 
-    public:
-        explicit CGPURenderPassResource(
+        explicit SGPURenderPassResource(
             types::qword instance,
-            types::qword viewInstance,
+            types::qword view_instance,
             types::qword framebuffer,
-            types::boolean bClearRenderTarget,
-            const cVector4& clearColor,
-            types::f32 clearDepth
+            types::boolean clear_render_target,
+            const cVector4& clear_color,
+            types::f32 clear_depth
         ) :
-            CGPUResource(instance, viewInstance),
-            _framebuffer(framebuffer),
-            _bClearRenderTarget(bClearRenderTarget),
-            _clearColor(clearColor),
-            _clearDepth(clearDepth) {}
-        ~CGPURenderPassResource() override = default;
+            SGPUResource(instance, view_instance),
+            framebuffer(framebuffer),
+            clear_render_target(clear_render_target),
+            clear_color(clear_color),
+            clear_depth(clear_depth) {}
 
-        static CGPURenderPassResource Invalid()
+        ~SGPURenderPassResource() override = default;
+
+        static SGPURenderPassResource Invalid()
         {
-            return CGPURenderPassResource(0, 0, 0, types::K_FALSE, cVector4(0.0f), 0.0f);
+            return SGPURenderPassResource(
+                0, 0, 0, types::K_FALSE, cVector4(0.0f), 0.0f
+            );
         }
-
-        inline types::qword GetFramebuffer() const { return _framebuffer; }
-
-        inline types::boolean IsRenderTargetClearRequired() const { return _bClearRenderTarget; }
-
-        inline const cVector4& GetColorClearValue() const { return _clearColor; }
-
-        inline types::f32 GetDepthClearValue() const { return _clearDepth; }
     };
 }
