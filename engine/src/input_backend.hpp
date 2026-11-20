@@ -7,7 +7,7 @@
 #include "math.hpp"
 #include "object.hpp"
 #include "backend.hpp"
-#include "input_window_backend.hpp"
+#include "input_window_resource.hpp"
 #include "input_window_event.hpp"
 #include "input_key_code_enum.hpp"
 #include "input_key_state_enum.hpp"
@@ -18,28 +18,28 @@ namespace triton
 {
 	class cContext;
 
-	class IInputBackend : public iBackend
+	class IInputBackend : public IBackend
 	{
-        TRITON_CLASS_NAME(IInputBackend)
+        TRITON_OBJECT(IInputBackend)
 
 	public:
-		explicit IInputBackend(cContext* context) : iBackend(context) {}
+		explicit IInputBackend(const SMemAlloc& mem_alloc, cContext* context) : IBackend(mem_alloc, context) {}
 		~IInputBackend() override = default;
 
-        virtual SWindowBackend CreateBackendWindow(
+        virtual SWindowResource CreateBackendWindow(
             const ::std::string& title,
             const cVector2& size,
             types::boolean fullscreen,
             EGraphicsBackendType graphicsBackend
         ) = 0;
 
-        virtual void DestroyBackendWindow(SWindowBackend& window) = 0;
+        virtual void DestroyBackendWindow(SWindowResource& window) = 0;
 
-        virtual void ResizeWindow(SWindowBackend& window, const cVector2& size) = 0;
+        virtual void ResizeWindow(SWindowResource& window, const cVector2& size) = 0;
 
         virtual std::vector<const char*> GetBackendWindowVulkanExtensions() = 0;
 
-        virtual void* CreateBackendWindowVulkanSurface(SWindowBackend& window, void* instance) = 0;
+        virtual void* CreateBackendWindowVulkanSurface(SWindowResource& window, void* instance) = 0;
 
         virtual void DestroyBackendWindowVulkanSurface(void* instance, void* surface) = 0;
 
@@ -47,13 +47,13 @@ namespace triton
 
         virtual SWindowEvent PollEvent() = 0;
 
-        virtual void ProcessEvent(const SWindowEvent& event, SWindowBackend& window) = 0;
+        virtual void ProcessEvent(const SWindowEvent& event, SWindowResource& window) = 0;
 
-        virtual void* GetWindowWin32Handle(SWindowBackend& window) = 0;
+        virtual void* GetWindowWin32Handle(SWindowResource& window) = 0;
 
         virtual EKeyState GetKey(EKeyCode key) = 0;
 
-        virtual cVector2 GetCursorPosition(SWindowBackend& window) = 0;
+        virtual cVector2 GetCursorPosition(SWindowResource& window) = 0;
 
         virtual cVector2 GetMouseDelta() = 0;
 

@@ -12,8 +12,8 @@
 
 using namespace types;
 
-triton::CDataFile::CDataFile(
-    const SMemoryAllocation& mem_alloc,
+triton::XDataFile::XDataFile(
+    const SMemAlloc& mem_alloc,
     cContext* context,
     const std::string& path,
     types::boolean is_text_file
@@ -49,34 +49,34 @@ triton::CDataFile::CDataFile(
     input_file.close();
 }
 
-triton::CDataFile::~CDataFile()
+triton::XDataFile::~XDataFile()
 {
     CMemoryAllocator::Deallocate(_data);
 }
 
-triton::CFileSystem::CFileSystem(cContext* context) : CSubsystem(context) {}
+triton::XFileSystem::XFileSystem(const SMemAlloc& mem_alloc, cContext* context) : XSubsystem(mem_alloc, context) {}
 
-std::string triton::CFileSystem::TextFileToString(const std::string& path)
+std::string triton::XFileSystem::TextFileToString(const std::string& path)
 {
-    CDataFile* file = CCreator::Create<CDataFile>(_context, path, K_TRUE);
+    XDataFile* file = CCreator::Create<XDataFile>(_context, path, K_TRUE);
 
     std::string str = "";
 
     for (usize i = 0; i < file->GetByteSize(); i++)
         str.push_back(((u8*)file->GetData())[i]);
 
-    CCreator::Destroy<CDataFile>(file);
+    CCreator::Destroy<XDataFile>(file);
     
     return str;
 }
 
-usize triton::CFileSystem::BinaryFileToArray(
+usize triton::XFileSystem::BinaryFileToArray(
     const std::string& path,
-    SMemoryAllocation& array,
+    SMemAlloc& array,
     usize offset
 )
 {
-    CDataFile* file = CCreator::Create<CDataFile>(_context, path, K_FALSE);
+    XDataFile* file = CCreator::Create<XDataFile>(_context, path, K_FALSE);
 
     const usize file_byte_size = file->GetByteSize();
 
@@ -90,17 +90,17 @@ usize triton::CFileSystem::BinaryFileToArray(
     for (usize i = offset; i < file_byte_size; i++)
         array.mem[i - offset] = file->GetData()[i];
 
-    CCreator::Destroy<CDataFile>(file);
+    CCreator::Destroy<XDataFile>(file);
 
     return array_byte_size;
 }
 
-void triton::CFileSystem::ReleaseBinaryFileArray(const SMemoryAllocation& array)
+void triton::XFileSystem::ReleaseBinaryFileArray(SMemAlloc& array)
 {
     CMemoryAllocator::Deallocate(array);
 }
 
-usize triton::CFileSystem::TellFileByteSize(const std::string& path)
+usize triton::XFileSystem::TellFileByteSize(const std::string& path)
 {
     std::ifstream input_file(path, std::ios::binary);
 

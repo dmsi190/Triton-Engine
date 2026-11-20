@@ -12,14 +12,14 @@ namespace triton
 {
     struct SGPURenderTargetResource : public SGPUResource
     {
-        std::vector<CGPUTextureResource>    color_attachments;
-        CGPUTextureResource                 depth_attachment = CGPUTextureResource::Invalid();
+        std::vector<SGPUTextureResource>    color_attachments;
+        SGPUTextureResource                 depth_attachment = SGPUTextureResource::Invalid();
 
         explicit SGPURenderTargetResource(
             types::qword instance,
             types::qword view,
-            const std::vector<CGPUTextureResource>& color_attachments,
-            const CGPUTextureResource& depth_attachment
+            const std::vector<SGPUTextureResource>& color_attachments,
+            const SGPUTextureResource& depth_attachment
         ) : SGPUResource(instance, view),
             depth_attachment(depth_attachment)
         {
@@ -32,7 +32,7 @@ namespace triton
         static SGPURenderTargetResource Invalid()
         {
             return SGPURenderTargetResource(
-                0, 0, std::vector<CGPUTextureResource>(), CGPUTextureResource::Invalid()
+                0, 0, std::vector<SGPUTextureResource>(), SGPUTextureResource::Invalid()
             );
         }
     };

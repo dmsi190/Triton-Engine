@@ -8,15 +8,13 @@ namespace triton
 {
 	class cContext;
 
-	class CSubsystem
+	class XSubsystem : public iObject
 	{
-		TRITON_CLASS_NAME(CSubsystem)
-
-	protected:
-		cContext* _context = nullptr;
+		TRITON_OBJECT(XSubsystem)
 
 	public:
-		explicit CSubsystem(cContext* context) : _context(context) {}
-		virtual ~CSubsystem() = default;
+		explicit XSubsystem(const SMemAlloc& mem_alloc, cContext* context) : iObject(mem_alloc, context) {}
+
+		~XSubsystem() = default;
 	};
 }

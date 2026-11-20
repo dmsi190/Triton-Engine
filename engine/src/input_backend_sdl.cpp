@@ -30,14 +30,14 @@ triton::CInputBackendSDL::CInputBackendSDL(cContext* context) : IInputBackend(co
     InitializeKeyMap();
 }
 
-triton::SWindowBackend triton::CInputBackendSDL::CreateBackendWindow(
+triton::SWindowResource triton::CInputBackendSDL::CreateBackendWindow(
     const std::string& title,
     const cVector2& size,
     boolean fullscreen,
     EGraphicsBackendType graphicsBackend
 )
 {
-    SWindowBackend wb = {};
+    SWindowResource wb = {};
     wb.title = title;
     wb.size = size;
     wb.fullscreen = fullscreen;
@@ -73,7 +73,7 @@ triton::SWindowBackend triton::CInputBackendSDL::CreateBackendWindow(
     return wb;
 }
 
-void triton::CInputBackendSDL::DestroyBackendWindow(SWindowBackend& window)
+void triton::CInputBackendSDL::DestroyBackendWindow(SWindowResource& window)
 {
     if (window.instance == 0)
         return;
@@ -81,7 +81,7 @@ void triton::CInputBackendSDL::DestroyBackendWindow(SWindowBackend& window)
     SDL_DestroyWindow((SDL_Window*)window.instance);
 }
 
-void triton::CInputBackendSDL::ResizeWindow(SWindowBackend& window, const cVector2& newSize)
+void triton::CInputBackendSDL::ResizeWindow(SWindowResource& window, const cVector2& newSize)
 {
     if (window.instance == 0)
         return;
@@ -101,7 +101,7 @@ std::vector<const char*> triton::CInputBackendSDL::GetBackendWindowVulkanExtensi
     return extensionsVector;
 }
 
-void* triton::CInputBackendSDL::CreateBackendWindowVulkanSurface(SWindowBackend& window, void* instance)
+void* triton::CInputBackendSDL::CreateBackendWindowVulkanSurface(SWindowResource& window, void* instance)
 {
     VkInstance sdlInstance = {};
     std::memcpy(&sdlInstance, instance, sizeof(VkInstance));
@@ -218,7 +218,7 @@ triton::SWindowEvent triton::CInputBackendSDL::PollEvent()
     return e;
 }
 
-void triton::CInputBackendSDL::ProcessEvent(const SWindowEvent& event, SWindowBackend& window)
+void triton::CInputBackendSDL::ProcessEvent(const SWindowEvent& event, SWindowResource& window)
 {
     switch (event.type)
     {
@@ -273,7 +273,7 @@ void triton::CInputBackendSDL::ProcessEvent(const SWindowEvent& event, SWindowBa
     }
 }
 
-void* triton::CInputBackendSDL::GetWindowWin32Handle(SWindowBackend& window)
+void* triton::CInputBackendSDL::GetWindowWin32Handle(SWindowResource& window)
 {
     if (window.instance == 0)
         return nullptr;
@@ -286,7 +286,7 @@ triton::EKeyState triton::CInputBackendSDL::GetKey(EKeyCode key)
     return _keyState[(usize)key];
 }
 
-triton::cVector2 triton::CInputBackendSDL::GetCursorPosition(SWindowBackend& window)
+triton::cVector2 triton::CInputBackendSDL::GetCursorPosition(SWindowResource& window)
 {
     return _cursorPosition;
 }

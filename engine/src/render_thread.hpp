@@ -19,20 +19,22 @@ namespace triton
 	class CWindow;
 	struct SRenderCommandPack;
 
-	class cRenderThread final : public cThread
+	class XRenderThread final : public XThread
 	{
-		cContext* _context = nullptr;
-		XSynchronization* _sync = nullptr;
-		CWindow* _window = nullptr;
+		TRITON_OBJECT(XRenderThread)
+
+		XSynchronization*	_sync;
+		CWindow*			_window;
 
 	public:
-		explicit cRenderThread(
+		explicit XRenderThread(
+			const SMemAlloc& mem_alloc,
 			cContext* context,
 			XSynchronization* sync,
 			CWindow* window
-		) : _context(context), _sync(sync), _window(window) {}
+		) : XThread(mem_alloc, context), _sync(sync), _window(window) {}
 
-		~cRenderThread() override = default;
+		~XRenderThread() override = default;
 
 		virtual void ThreadFunction() override;
 

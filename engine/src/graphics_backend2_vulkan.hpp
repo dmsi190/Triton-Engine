@@ -10,7 +10,7 @@
 #include "texture_formats.hpp"
 #include "render_native_command_struct.hpp"
 #include "render_pipeline_stage_bit_enum.hpp"
-#include "render_access_bit_enum.hpp"
+#include "render_resource_access_bit_enum.hpp"
 #include "render_image_aspect_bit_enum.hpp"
 #include "render_image_layout_enum.hpp"
 
@@ -18,12 +18,10 @@ namespace triton
 {
 	class BGraphicsBackend2Vulkan : public IGraphicsBackend2
 	{
-		TRITON_CLASS_NAME(BGraphicsBackend2Vulkan)
-
 		SInstance										_instance;
 		SSurface										_surface;
 		SPhysicalDevice									_physicalDevice = SPhysicalDevice(
-			EGraphicsDeviceType::Unknown, VK_NULL_HANDLE, {}, {}, {}, {}, std::vector<VkQueueFamilyProperties>(), {}
+			EGraphicsAdapterType::Unknown, VK_NULL_HANDLE, {}, {}, {}, {}, std::vector<VkQueueFamilyProperties>(), {}
 		);
 		VkFormat										_physicalDeviceDepthBufferFormat = VK_FORMAT_UNDEFINED;
 		SQueue											_graphicsQueue = SQueue(0, 0, {});
@@ -57,10 +55,10 @@ namespace triton
 
 		// Initialization/Shutdown
 		void Initialize(
-			SWindowBackend& window,
+			SWindowResource& window,
 			types::boolean bEnableDebugging,
 			const std::vector<const char*> extensions,
-			EGraphicsDeviceType deviceType,
+			EGraphicsAdapterType deviceType,
 			types::usize staging_buffer_byte_size,
 			const cVector2& swapchainSize,
 			types::usize framesInFlight
@@ -116,14 +114,14 @@ namespace triton
 			const std::optional<std::reference_wrapper<SViewport>> viewport = std::nullopt,
 			std::optional<std::reference_wrapper<SGPURenderTargetResource>> renderTarget = std::nullopt,
 			const std::optional<std::reference_wrapper<SGPURenderPassResource>> renderPass = std::nullopt,
-			EPrimitiveTopology primitiveTopology = EPrimitiveTopology::Unknown,
+			ERenderPrimitiveTopology primitiveTopology = ERenderPrimitiveTopology::Unknown,
 			EVertexBufferFormat vertexBufferFormat = EVertexBufferFormat::Unknown
 		) override final;
 
 		void DestroyPipeline(SGPUPipelineResource& pipeline) override final;
 
 		SGPUBindingGroupLayoutResource CreateBindingGroupLayout(
-			const std::vector<SBindingGroupBinding>& bindings
+			const std::vector<SRenderBindingGroupBinding>& bindings
 		) override final;
 
 		void DestroyBindingGroupLayout(SGPUBindingGroupLayoutResource& bindingGroupLayout) override final;
@@ -131,8 +129,8 @@ namespace triton
 		SGPUBindingGroupResource CreateBindingGroup(
 			types::s32 index,
 			const SGPUBindingGroupLayoutResource& bindingGroupLayout,
-			const std::vector<SBindingGroupBinding>& buffersToBind,
-			const std::vector<SBindingGroupBinding>& texturesToBind
+			const std::vector<SRenderBindingGroupBinding>& buffersToBind,
+			const std::vector<SRenderBindingGroupBinding>& texturesToBind
 		) override final;
 
 		void DestroyBindingGroup(SGPUBindingGroupResource& bindingGroup) override final;
@@ -142,8 +140,8 @@ namespace triton
 			types::boolean bClearRenderTarget,
 			const cVector4& clearColor,
 			types::f32 clearDepth,
-			const std::vector<EResourceUsage>& srcAttachmentsUsage,
-			const std::vector<EResourceUsage>& dstAttachmentsUsage
+			const std::vector<ERenderResourceUsage>& srcAttachmentsUsage,
+			const std::vector<ERenderResourceUsage>& dstAttachmentsUsage
 		) override final;
 
 		void DestroyRenderPass(SGPURenderPassResource& renderPass) override final;
@@ -161,7 +159,10 @@ namespace triton
 			const cVector3& work_group_count
 		) override final;
 
-		void ResetCommandBuffer(ECommandBuffer command_buffer, ECommandBufferReset reset_option) override final;
+		void ResetCommandBuffer(
+			ERenderCommandBufferType command_buffer,
+			ERenderCommandBufferResetOption reset_option
+		) override final;
 
 		void AddCommandToBuffer(
 			ENativeRenderCommand command,
@@ -174,37 +175,37 @@ namespace triton
 		void EndFrame() override final;
 
 		void ExecuteImageBarrier(
-			ECommandBuffer command_buffer,
+			ERenderCommandBufferType command_buffer,
 			const SGPUTextureResource& texture,
-			EPipelineStageBit src_stage_mask,
-			EPipelineStageBit dst_stage_mask,
-			EAccessBit src_access_mask,
-			EAccessBit dst_access_mask,
-			EImageAspectBit aspect_mask,
-			EImageLayout src_layout,
-			EImageLayout dst_layout
+			ERenderPipelineStageBit src_stage_mask,
+			ERenderPipelineStageBit dst_stage_mask,
+			ERenderResourceAccessBit src_access_mask,
+			ERenderResourceAccessBit dst_access_mask,
+			ERenderImageAspectBit aspect_mask,
+			ERenderImageLayout src_layout,
+			ERenderImageLayout dst_layout
 		);
 
 		void ExecuteBufferBarrier(
-			ECommandBuffer command_buffer,
+			ERenderCommandBufferType command_buffer,
 			const SGPUBufferResource& buffer,
-			EPipelineStageBit src_stage_mask,
-			EPipelineStageBit dst_stage_mask,
-			EAccessBit src_access_mask,
-			EAccessBit dst_access_mask
+			ERenderPipelineStageBit src_stage_mask,
+			ERenderPipelineStageBit dst_stage_mask,
+			ERenderResourceAccessBit src_access_mask,
+			ERenderResourceAccessBit dst_access_mask
 		);
 
 		void CopyBufferToImage(
-			ECommandBuffer command_buffer,
+			ERenderCommandBufferType command_buffer,
 			const SGPUBufferResource& buffer,
 			const SGPUTextureResource& texture,
-			EImageAspectBit aspect_mask,
+			ERenderImageAspectBit aspect_mask,
 			const cVector3& offset,
 			const cVector3& size
 		);
 
 		void CopyBufferToBuffer(
-			ECommandBuffer command_buffer,
+			ERenderCommandBufferType command_buffer,
 			const SGPUBufferResource& src_buffer,
 			const SGPUBufferResource& dst_buffer,
 			types::usize src_offset,
@@ -212,11 +213,11 @@ namespace triton
 			types::usize size
 		);
 
-		void SubmitCommands(ECommandBuffer command_buffer);
+		void SubmitCommands(ERenderCommandBufferType command_buffer);
 
-		void WaitForFence(ECommandBuffer command_buffer);
+		void WaitForFence(ERenderCommandBufferType command_buffer);
 
-		void ResetFence(ECommandBuffer command_buffer);
+		void ResetFence(ERenderCommandBufferType command_buffer);
 		
 	private:
 		void CreateInstance(types::boolean bEnableDebugging, const std::vector<const char*> extensions);
@@ -227,11 +228,11 @@ namespace triton
 
 		void DestroyDebugMessenger();
 
-		void CreateSurface(SWindowBackend& window);
+		void CreateSurface(SWindowResource& window);
 
 		void DestroySurface();
 
-		void PickPhysicalDevice(EGraphicsDeviceType deviceType);
+		void PickPhysicalDevice(EGraphicsAdapterType deviceType);
 
 		void CheckPhysicalDeviceProperties();
 
@@ -310,25 +311,25 @@ namespace triton
 
 		VkImageType TextureDimensionToNative(ETextureDimension textureDimension);
 
-		VkImageLayout AttachmentUsageToNativeLayout(EResourceUsage attachmentUsage);
+		VkImageLayout AttachmentUsageToNativeLayout(ERenderResourceUsage attachmentUsage);
 
-		VkPipelineBindPoint PipelineBindPointToNative(EPipelineBindPoint bindPoint);
+		VkPipelineBindPoint PipelineBindPointToNative(ERenderPipelineBindPoint bindPoint);
 
 		VkViewport ViewportToNative(const SViewport& viewport);
 
-		VkPrimitiveTopology PrimitiveTopologyToNative(EPrimitiveTopology primitiveTopology);
+		VkPrimitiveTopology PrimitiveTopologyToNative(ERenderPrimitiveTopology primitiveTopology);
 
 		VkBufferUsageFlags BufferTypeToNative(EGPUBufferType bufferType);
 
-		EImageAspectBit TextureFormatToAspect(ETextureFormat format);
+		ERenderImageAspectBit TextureFormatToAspect(ETextureFormat format);
 
-		VkPipelineStageFlags PipelineStageToNative(EPipelineStageBit stage_mask);
+		VkPipelineStageFlags PipelineStageToNative(ERenderPipelineStageBit stage_mask);
 
-		VkAccessFlags AccessToNative(EAccessBit access_mask);
+		VkAccessFlags AccessToNative(ERenderResourceAccessBit access_mask);
 
-		VkImageAspectFlags ImageAspectToNative(EImageAspectBit aspect_mask);
+		VkImageAspectFlags ImageAspectToNative(ERenderImageAspectBit aspect_mask);
 
-		VkImageLayout ImageLayoutToNative(EImageLayout layout);
+		VkImageLayout ImageLayoutToNative(ERenderImageLayout layout);
 
 		std::string ShaderSourceInclude(const std::string& shaderSource, const std::string& includeStr);
 	};

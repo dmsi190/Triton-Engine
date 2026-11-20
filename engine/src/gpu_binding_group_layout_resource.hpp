@@ -10,12 +10,12 @@ namespace triton
 {
     struct SGPUBindingGroupLayoutResource : public SGPUResource
     {
-        std::vector<SBindingGroupBinding> bindings;
+        std::vector<SRenderBindingGroupBinding> bindings;
 
         explicit SGPUBindingGroupLayoutResource(
             types::qword instance,
             types::qword view,
-            const std::vector<SBindingGroupBinding>& bindings
+            const std::vector<SRenderBindingGroupBinding>& bindings
         ) : SGPUResource(instance, view), bindings(bindings) {}
 
         ~SGPUBindingGroupLayoutResource() override = default;

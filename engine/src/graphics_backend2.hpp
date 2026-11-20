@@ -7,9 +7,9 @@
 #include <vector>
 #include "backend.hpp"
 #include "math.hpp"
-#include "input_window_backend.hpp"
+#include "input_window_resource.hpp"
 #include "gpu_buffer_types.hpp"
-#include "graphics_device_type_enum.hpp"
+#include "graphics_adapter_type_enum.hpp"
 #include "graphics_texture_usage_enum.hpp"
 #include "texture_dimensions.hpp"
 #include "gpu_texture_resource.hpp"
@@ -27,8 +27,8 @@
 #include "render_resource_usage_enum.hpp"
 #include "render_pass_push_constants_struct.hpp"
 #include "render_binding_group_binding_struct.hpp"
-#include "render_command_buffer_enum.hpp"
-#include "render_command_buffer_reset_enum.hpp"
+#include "render_command_buffer_type_enum.hpp"
+#include "render_command_buffer_reset_option_enum.hpp"
 #include "rasterizer_state.hpp"
 #include "vertex_buffer_format.hpp"
 
@@ -36,20 +36,20 @@ namespace triton
 {
 	class cContext;
 
-	class IGraphicsBackend2 : public iBackend
+	class IGraphicsBackend2 : public IBackend
 	{
-        TRITON_CLASS_NAME(IGraphicsBackend2)
+		TRITON_OBJECT(IGraphicsBackend2)
 
 	public:
-        explicit IGraphicsBackend2(cContext* context) : iBackend(context) {}
+        explicit IGraphicsBackend2(const SMemAlloc& mem_alloc, cContext* context) : IBackend(mem_alloc, context) {}
 		~IGraphicsBackend2() override = default;
 
 		// Initialization/Shutdown
 		virtual void Initialize(
-			SWindowBackend& window,
+			SWindowResource& window,
 			types::boolean bEnableDebugging,
 			const std::vector<const char*> extensions,
-			EGraphicsDeviceType deviceType,
+			EGraphicsAdapterType deviceType,
 			types::usize staging_buffer_byte_size,
 			const cVector2& swapchainSize,
 			types::usize framesInFlight
@@ -105,14 +105,14 @@ namespace triton
 			const std::optional<std::reference_wrapper<SViewport>> viewport = std::nullopt,
 			std::optional<std::reference_wrapper<SGPURenderTargetResource>> renderTarget = std::nullopt,
 			const std::optional<std::reference_wrapper<SGPURenderPassResource>> renderPass = std::nullopt,
-			EPrimitiveTopology primitiveTopology = EPrimitiveTopology::Unknown,
+			ERenderPrimitiveTopology primitiveTopology = ERenderPrimitiveTopology::Unknown,
 			EVertexBufferFormat vertexBufferFormat = EVertexBufferFormat::Unknown
 		) = 0;
 
 		virtual void DestroyPipeline(SGPUPipelineResource& pipeline) = 0;
 
 		virtual SGPUBindingGroupLayoutResource CreateBindingGroupLayout(
-			const std::vector<SBindingGroupBinding>& bindings
+			const std::vector<SRenderBindingGroupBinding>& bindings
 		) = 0;
 
 		virtual void DestroyBindingGroupLayout(SGPUBindingGroupLayoutResource& bindingGroupLayout) = 0;
@@ -120,8 +120,8 @@ namespace triton
 		virtual SGPUBindingGroupResource CreateBindingGroup(
 			types::s32 index,
 			const SGPUBindingGroupLayoutResource& bindingGroupLayout,
-			const std::vector<SBindingGroupBinding>& buffersToBind,
-			const std::vector<SBindingGroupBinding>& texturesToBind
+			const std::vector<SRenderBindingGroupBinding>& buffersToBind,
+			const std::vector<SRenderBindingGroupBinding>& texturesToBind
 		) = 0;
 
 		virtual void DestroyBindingGroup(SGPUBindingGroupResource& bindingGroup) = 0;
@@ -131,8 +131,8 @@ namespace triton
 			types::boolean bClearRenderTarget,
 			const cVector4& clearColor,
 			types::f32 clearDepth,
-			const std::vector<EResourceUsage>& srcAttachmentsUsage,
-			const std::vector<EResourceUsage>& dstAttachmentsUsage
+			const std::vector<ERenderResourceUsage>& srcAttachmentsUsage,
+			const std::vector<ERenderResourceUsage>& dstAttachmentsUsage
 		) = 0;
 
 		virtual void DestroyRenderPass(SGPURenderPassResource& renderPass) = 0;
@@ -150,7 +150,10 @@ namespace triton
 			const cVector3& work_group_count
 		) = 0;
 
-		virtual void ResetCommandBuffer(ECommandBuffer command_buffer, ECommandBufferReset reset_option) = 0;
+		virtual void ResetCommandBuffer(
+			ERenderCommandBufferType command_buffer,
+			ERenderCommandBufferResetOption reset_option
+		) = 0;
 
 		virtual void AddCommandToBuffer(
 			ENativeRenderCommand command,

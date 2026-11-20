@@ -25,20 +25,20 @@ namespace triton
 		explicit CInputBackendSDL(cContext* context);
 		virtual ~CInputBackendSDL() override final = default;
 
-        virtual SWindowBackend CreateBackendWindow(
+        virtual SWindowResource CreateBackendWindow(
             const std::string& title,
             const cVector2& size,
             types::boolean fullscreen,
             EGraphicsBackendType graphicsBackend
         ) override final;
 
-        virtual void DestroyBackendWindow(SWindowBackend& window) override final;
+        virtual void DestroyBackendWindow(SWindowResource& window) override final;
 
-        virtual void ResizeWindow(SWindowBackend& window, const cVector2& size) override final;
+        virtual void ResizeWindow(SWindowResource& window, const cVector2& size) override final;
 
         std::vector<const char*> GetBackendWindowVulkanExtensions() override final;
 
-        void* CreateBackendWindowVulkanSurface(SWindowBackend& window, void* instance) override final;
+        void* CreateBackendWindowVulkanSurface(SWindowResource& window, void* instance) override final;
 
         void DestroyBackendWindowVulkanSurface(void* instance, void* surface) override final;
 
@@ -46,13 +46,13 @@ namespace triton
 
         virtual SWindowEvent PollEvent() override final;
 
-        virtual void ProcessEvent(const SWindowEvent& event, SWindowBackend& window) override final;
+        virtual void ProcessEvent(const SWindowEvent& event, SWindowResource& window) override final;
 
-        virtual void* GetWindowWin32Handle(SWindowBackend& window) override final;
+        virtual void* GetWindowWin32Handle(SWindowResource& window) override final;
 
         virtual EKeyState GetKey(EKeyCode key) override final;
 
-        virtual cVector2 GetCursorPosition(SWindowBackend& window) override final;
+        virtual cVector2 GetCursorPosition(SWindowResource& window) override final;
 
         virtual cVector2 GetMouseDelta() override final;
 

@@ -81,10 +81,10 @@ boolean IsZeroTerminated(const char* str, usize maxLength)
 }
 
 void triton::BGraphicsBackend2Vulkan::Initialize(
-	SWindowBackend& window,
+	SWindowResource& window,
 	boolean bEnableDebugging,
 	const std::vector<const char*> extensions,
-	EGraphicsDeviceType deviceType,
+	EGraphicsAdapterType deviceType,
 	usize staging_buffer_byte_size,
 	const cVector2& swapchainSize,
 	usize framesInFlight
@@ -121,14 +121,14 @@ void triton::BGraphicsBackend2Vulkan::FinalizeSwapchain(const SGPUTextureResourc
 	viewport.rect = cVector4(
 		0,
 		0,
-		_swapchainRenderTargets[0].GetSize().GetX(),
-		_swapchainRenderTargets[0].GetSize().GetY()
+		_swapchainRenderTargets[0].color_attachments[0].size.GetX(),
+		_swapchainRenderTargets[0].color_attachments[0].size.GetY()
 	);
 
-	const std::vector<SBindingGroupBinding> texturesToBind = {
-		SBindingGroupBinding(
+	const std::vector<SRenderBindingGroupBinding> texturesToBind = {
+		SRenderBindingGroupBinding(
 			0,
-			EBindingGroupBindingType::TextureSampler,
+			ERenderBindingGroupBindingType::TextureSampler,
 			EShaderStageBit::Pixel,
 			(SGPUResource*)&presentTexture
 		)
@@ -153,7 +153,7 @@ void triton::BGraphicsBackend2Vulkan::FinalizeSwapchain(const SGPUTextureResourc
 				viewport,
 				_swapchainRenderTargets[i],
 				_swapchainRenderPasses[i],
-				EPrimitiveTopology::TriangleStrip,
+				ERenderPrimitiveTopology::TriangleStrip,
 				EVertexBufferFormat::Unknown
 			)
 		);
@@ -311,28 +311,28 @@ triton::SGPUTextureResource triton::BGraphicsBackend2Vulkan::CreateTexture(
 
 	*resultTexture = resultTextureInstance;
 
-	EImageAspectBit aspect_mask = TextureFormatToAspect(resultTextureInstance.format);
+	ERenderImageAspectBit aspect_mask = TextureFormatToAspect(resultTextureInstance.format);
 
 	{
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Clear);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Begin);
 
 		ExecuteImageBarrier(
-			ECommandBuffer::Staging,
+			ERenderCommandBufferType::Staging,
 			resultTextureInstance,
-			EPipelineStageBit::TopOfPipe,
-			(EPipelineStageBit)((dword)EPipelineStageBit::Pixel | (dword)EPipelineStageBit::Compute),
-			EAccessBit::None,
-			EAccessBit::ShaderRead,
+			ERenderPipelineStageBit::TopOfPipe,
+			(ERenderPipelineStageBit)((dword)ERenderPipelineStageBit::Pixel | (dword)ERenderPipelineStageBit::Compute),
+			ERenderResourceAccessBit::None,
+			ERenderResourceAccessBit::ShaderRead,
 			aspect_mask,
-			EImageLayout::Undefined,
-			EImageLayout::ShaderRead
+			ERenderImageLayout::Undefined,
+			ERenderImageLayout::ShaderRead
 		);
 
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
-		ResetFence(ECommandBuffer::Staging);
-		SubmitCommands(ECommandBuffer::Staging);
-		WaitForFence(ECommandBuffer::Staging);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::End);
+		ResetFence(ERenderCommandBufferType::Staging);
+		SubmitCommands(ERenderCommandBufferType::Staging);
+		WaitForFence(ERenderCommandBufferType::Staging);
 	}
 
 	return resultTextureInstance;
@@ -346,28 +346,28 @@ void triton::BGraphicsBackend2Vulkan::WriteTexture(
 	if (texture.IsValid() == False || !data)
 		return;
 
-	EImageAspectBit aspect_mask = TextureFormatToAspect(texture.format);
+	ERenderImageAspectBit aspect_mask = TextureFormatToAspect(texture.format);
 
 	{
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Clear);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Begin);
 
 		ExecuteImageBarrier(
-			ECommandBuffer::Staging,
+			ERenderCommandBufferType::Staging,
 			texture,
-			(EPipelineStageBit)((dword)EPipelineStageBit::Pixel | (dword)EPipelineStageBit::Compute),
-			EPipelineStageBit::Transfer,
-			EAccessBit::ShaderRead,
-			EAccessBit::TransferWrite,
+			(ERenderPipelineStageBit)((dword)ERenderPipelineStageBit::Pixel | (dword)ERenderPipelineStageBit::Compute),
+			ERenderPipelineStageBit::Transfer,
+			ERenderResourceAccessBit::ShaderRead,
+			ERenderResourceAccessBit::TransferWrite,
 			aspect_mask,
-			EImageLayout::ShaderRead,
-			EImageLayout::TransferDst
+			ERenderImageLayout::ShaderRead,
+			ERenderImageLayout::TransferDst
 		);
 
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
-		ResetFence(ECommandBuffer::Staging);
-		SubmitCommands(ECommandBuffer::Staging);
-		WaitForFence(ECommandBuffer::Staging);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::End);
+		ResetFence(ERenderCommandBufferType::Staging);
+		SubmitCommands(ERenderCommandBufferType::Staging);
+		WaitForFence(ERenderCommandBufferType::Staging);
 	}
 
 	{
@@ -434,11 +434,11 @@ void triton::BGraphicsBackend2Vulkan::WriteTexture(
 			const cVector3 image_offset = cVector3(0, cur_row, 0);
 			const cVector3 rect_size = cVector3(row_width, rows_to_write, 1);
 
-			ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
-			ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
+			ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Clear);
+			ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Begin);
 
 			CopyBufferToImage(
-				ECommandBuffer::Staging,
+				ERenderCommandBufferType::Staging,
 				_staging_buffer,
 				texture,
 				aspect_mask,
@@ -446,35 +446,35 @@ void triton::BGraphicsBackend2Vulkan::WriteTexture(
 				rect_size
 			);
 
-			ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
-			ResetFence(ECommandBuffer::Staging);
-			SubmitCommands(ECommandBuffer::Staging);
-			WaitForFence(ECommandBuffer::Staging);
+			ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::End);
+			ResetFence(ERenderCommandBufferType::Staging);
+			SubmitCommands(ERenderCommandBufferType::Staging);
+			WaitForFence(ERenderCommandBufferType::Staging);
 			
 			cur_row += rows_to_write;
 		}
 	}
 
 	{
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Clear);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Begin);
 
 		ExecuteImageBarrier(
-			ECommandBuffer::Staging,
+			ERenderCommandBufferType::Staging,
 			texture,
-			EPipelineStageBit::Transfer,
-			(EPipelineStageBit)((dword)EPipelineStageBit::Pixel | (dword)EPipelineStageBit::Compute),
-			EAccessBit::TransferWrite,
-			EAccessBit::ShaderRead,
+			ERenderPipelineStageBit::Transfer,
+			(ERenderPipelineStageBit)((dword)ERenderPipelineStageBit::Pixel | (dword)ERenderPipelineStageBit::Compute),
+			ERenderResourceAccessBit::TransferWrite,
+			ERenderResourceAccessBit::ShaderRead,
 			aspect_mask,
-			EImageLayout::TransferDst,
-			EImageLayout::ShaderRead
+			ERenderImageLayout::TransferDst,
+			ERenderImageLayout::ShaderRead
 		);
 
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
-		ResetFence(ECommandBuffer::Staging);
-		SubmitCommands(ECommandBuffer::Staging);
-		WaitForFence(ECommandBuffer::Staging);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::End);
+		ResetFence(ERenderCommandBufferType::Staging);
+		SubmitCommands(ERenderCommandBufferType::Staging);
+		WaitForFence(ERenderCommandBufferType::Staging);
 	}
 }
 
@@ -586,31 +586,31 @@ void triton::BGraphicsBackend2Vulkan::WriteBuffer(
 		return;
 
 	{
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Clear);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Begin);
 
 		ExecuteBufferBarrier(
-			ECommandBuffer::Staging,
+			ERenderCommandBufferType::Staging,
 			buffer,
-			(EPipelineStageBit)(
-				(dword)EPipelineStageBit::VertexInput |
-				(dword)EPipelineStageBit::Vertex |
-				(dword)EPipelineStageBit::Pixel |
-				(dword)EPipelineStageBit::Compute
+			(ERenderPipelineStageBit)(
+				(dword)ERenderPipelineStageBit::VertexInput |
+				(dword)ERenderPipelineStageBit::Vertex |
+				(dword)ERenderPipelineStageBit::Pixel |
+				(dword)ERenderPipelineStageBit::Compute
 			),
-			EPipelineStageBit::Transfer,
-			(EAccessBit)(
-				(dword)EAccessBit::IndexRead |
-				(dword)EAccessBit::ShaderRead |
-				(dword)EAccessBit::ShaderWrite
+			ERenderPipelineStageBit::Transfer,
+			(ERenderResourceAccessBit)(
+				(dword)ERenderResourceAccessBit::IndexRead |
+				(dword)ERenderResourceAccessBit::ShaderRead |
+				(dword)ERenderResourceAccessBit::ShaderWrite
 			),
-			EAccessBit::TransferWrite
+			ERenderResourceAccessBit::TransferWrite
 		);
 
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
-		ResetFence(ECommandBuffer::Staging);
-		SubmitCommands(ECommandBuffer::Staging);
-		WaitForFence(ECommandBuffer::Staging);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::End);
+		ResetFence(ERenderCommandBufferType::Staging);
+		SubmitCommands(ERenderCommandBufferType::Staging);
+		WaitForFence(ERenderCommandBufferType::Staging);
 	}
 
 	{
@@ -644,11 +644,11 @@ void triton::BGraphicsBackend2Vulkan::WriteBuffer(
 
 			vkUnmapMemory(_logicalDevice.device, staging_memory);
 
-			ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
-			ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
+			ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Clear);
+			ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Begin);
 
 			CopyBufferToBuffer(
-				ECommandBuffer::Staging,
+				ERenderCommandBufferType::Staging,
 				_staging_buffer,
 				buffer,
 				0,
@@ -656,41 +656,41 @@ void triton::BGraphicsBackend2Vulkan::WriteBuffer(
 				bytes_to_write
 			);
 
-			ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
-			ResetFence(ECommandBuffer::Staging);
-			SubmitCommands(ECommandBuffer::Staging);
-			WaitForFence(ECommandBuffer::Staging);
+			ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::End);
+			ResetFence(ERenderCommandBufferType::Staging);
+			SubmitCommands(ERenderCommandBufferType::Staging);
+			WaitForFence(ERenderCommandBufferType::Staging);
 
 			cur_pos += bytes_to_write;
 		}
 	}
 
 	{
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Clear);
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::Begin);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Clear);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::Begin);
 
 		ExecuteBufferBarrier(
-			ECommandBuffer::Staging,
+			ERenderCommandBufferType::Staging,
 			buffer,
-			EPipelineStageBit::Transfer,
-			(EPipelineStageBit)(
-				(dword)EPipelineStageBit::VertexInput |
-				(dword)EPipelineStageBit::Vertex |
-				(dword)EPipelineStageBit::Pixel |
-				(dword)EPipelineStageBit::Compute
+			ERenderPipelineStageBit::Transfer,
+			(ERenderPipelineStageBit)(
+				(dword)ERenderPipelineStageBit::VertexInput |
+				(dword)ERenderPipelineStageBit::Vertex |
+				(dword)ERenderPipelineStageBit::Pixel |
+				(dword)ERenderPipelineStageBit::Compute
 			),
-			EAccessBit::TransferWrite,
-			(EAccessBit)(
-				(dword)EAccessBit::IndexRead |
-				(dword)EAccessBit::ShaderRead |
-				(dword)EAccessBit::ShaderWrite
+			ERenderResourceAccessBit::TransferWrite,
+			(ERenderResourceAccessBit)(
+				(dword)ERenderResourceAccessBit::IndexRead |
+				(dword)ERenderResourceAccessBit::ShaderRead |
+				(dword)ERenderResourceAccessBit::ShaderWrite
 			)
 		);
 
-		ResetCommandBuffer(ECommandBuffer::Staging, ECommandBufferReset::End);
-		ResetFence(ECommandBuffer::Staging);
-		SubmitCommands(ECommandBuffer::Staging);
-		WaitForFence(ECommandBuffer::Staging);
+		ResetCommandBuffer(ERenderCommandBufferType::Staging, ERenderCommandBufferResetOption::End);
+		ResetFence(ERenderCommandBufferType::Staging);
+		SubmitCommands(ERenderCommandBufferType::Staging);
+		WaitForFence(ERenderCommandBufferType::Staging);
 	}
 }
 
@@ -734,7 +734,7 @@ triton::SGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 	const std::optional<std::reference_wrapper<SViewport>> viewport,
 	std::optional<std::reference_wrapper<SGPURenderTargetResource>> renderTarget,
 	const std::optional<std::reference_wrapper<SGPURenderPassResource>> renderPass,
-	EPrimitiveTopology primitiveTopology,
+	ERenderPrimitiveTopology primitiveTopology,
 	EVertexBufferFormat vertexBufferFormat
 )
 {
@@ -791,14 +791,14 @@ triton::SGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		vertexInputBinding.binding = 0;
 		vertexInputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-		if (vertexBufferFormat == EVertexBufferFormat::Rigid_48)
+		if (vertexBufferFormat == EVertexBufferFormat::Rigid)
 			vertexInputBinding.stride = sizeof(SRigidVertexGPULayout);
-		else if (vertexBufferFormat == EVertexBufferFormat::Skinned_80)
+		else if (vertexBufferFormat == EVertexBufferFormat::Skinned)
 			vertexInputBinding.stride = sizeof(SSkinnedVertexGPULayout);
 
 		std::vector<VkVertexInputAttributeDescription> vertexInputAttributes;
 
-		if (vertexBufferFormat == EVertexBufferFormat::Rigid_48)
+		if (vertexBufferFormat == EVertexBufferFormat::Rigid)
 		{
 			vertexInputAttributes.resize(4);
 			
@@ -913,7 +913,7 @@ triton::SGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		if (bUsePushConstants == True)
 		{
 			pushConstantRange.offset = 0;
-			pushConstantRange.size = sizeof(SRenderPassGPUPushConstantsLayout);
+			pushConstantRange.size = sizeof(SRenderPassPushConstantsLayout);
 			pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
 			pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
@@ -945,7 +945,7 @@ triton::SGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 
 		VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = {};
 
-		const boolean bHasDepth = renderTarget->get().GetDepthAttachment().IsValid();
+		const boolean bHasDepth = renderTarget->get().depth_attachment.IsValid();
 
 		if (bHasDepth == True)
 		{
@@ -983,7 +983,7 @@ triton::SGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 		return SGPUPipelineResource(
 			(qword)pipeline,
 			0,
-			EPipelineBindPoint::Graphics,
+			ERenderPipelineBindPoint::Graphics,
 			(qword)pipelineLayout,
 			bindingGroupLayouts
 		);
@@ -1014,7 +1014,7 @@ triton::SGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 			if (bUsePushConstants == True)
 			{
 				pushConstantRange.offset = 0;
-				pushConstantRange.size = sizeof(SRenderPassGPUPushConstantsLayout);
+				pushConstantRange.size = sizeof(SRenderPassPushConstantsLayout);
 				pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
 				pipeline_layout_create_info.pushConstantRangeCount = 1;
@@ -1051,7 +1051,7 @@ triton::SGPUPipelineResource triton::BGraphicsBackend2Vulkan::CreatePipeline(
 			return SGPUPipelineResource(
 				(qword)pipeline,
 				0,
-				EPipelineBindPoint::Compute,
+				ERenderPipelineBindPoint::Compute,
 				(qword)pipeline_layout,
 				bindingGroupLayouts
 			);
@@ -1076,7 +1076,7 @@ void triton::BGraphicsBackend2Vulkan::DestroyPipeline(SGPUPipelineResource& pipe
 }
 
 triton::SGPUBindingGroupLayoutResource triton::BGraphicsBackend2Vulkan::CreateBindingGroupLayout(
-	const std::vector<SBindingGroupBinding>& bindings
+	const std::vector<SRenderBindingGroupBinding>& bindings
 )
 {
 	const usize bindingCount = bindings.size();
@@ -1090,9 +1090,9 @@ triton::SGPUBindingGroupLayoutResource triton::BGraphicsBackend2Vulkan::CreateBi
 	{
 		nativeBindings[i].binding = bindings[i].index;
 
-		if (bindings[i].type == EBindingGroupBindingType::StorageBuffer)
+		if (bindings[i].type == ERenderBindingGroupBindingType::StorageBuffer)
 			nativeBindings[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-		else if (bindings[i].type == EBindingGroupBindingType::TextureSampler)
+		else if (bindings[i].type == ERenderBindingGroupBindingType::TextureSampler)
 			nativeBindings[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
 		nativeBindings[i].descriptorCount = 1;
@@ -1144,8 +1144,8 @@ void triton::BGraphicsBackend2Vulkan::DestroyBindingGroupLayout(SGPUBindingGroup
 triton::SGPUBindingGroupResource triton::BGraphicsBackend2Vulkan::CreateBindingGroup(
 	s32 index,
 	const SGPUBindingGroupLayoutResource& bindingGroupLayout,
-	const std::vector<SBindingGroupBinding>& buffersToBind,
-	const std::vector<SBindingGroupBinding>& texturesToBind
+	const std::vector<SRenderBindingGroupBinding>& buffersToBind,
+	const std::vector<SRenderBindingGroupBinding>& texturesToBind
 )
 {
 	const auto& bindingGroupBindings = bindingGroupLayout.bindings;
@@ -1179,9 +1179,9 @@ triton::SGPUBindingGroupResource triton::BGraphicsBackend2Vulkan::CreateBindingG
 
 	for (usize i = 0; i < bindingCount; ++i)
 	{
-		const SBindingGroupBinding& bindingGroupBinding = bindingGroupBindings[i];
+		const SRenderBindingGroupBinding& bindingGroupBinding = bindingGroupBindings[i];
 
-		if (bindingGroupBinding.type == EBindingGroupBindingType::StorageBuffer)
+		if (bindingGroupBinding.type == ERenderBindingGroupBindingType::StorageBuffer)
 		{
 			const SGPUBufferResource* bufferToBind = nullptr;
 			
@@ -1204,7 +1204,7 @@ triton::SGPUBindingGroupResource triton::BGraphicsBackend2Vulkan::CreateBindingG
 
 			nativeWriteDescriptorSetElements[i] = writeDescriptorSet;
 		}
-		else if (bindingGroupBinding.type == EBindingGroupBindingType::TextureSampler)
+		else if (bindingGroupBinding.type == ERenderBindingGroupBindingType::TextureSampler)
 		{
 			const SGPUTextureResource* textureToBind = nullptr;
 
@@ -1272,12 +1272,12 @@ triton::SGPURenderPassResource triton::BGraphicsBackend2Vulkan::CreateRenderPass
 	boolean bClearRenderTarget,
 	const cVector4& clearColor,
 	types::f32 clearDepth,
-	const std::vector<EResourceUsage>& srcAttachmentsUsage,
-	const std::vector<EResourceUsage>& dstAttachmentsUsage
+	const std::vector<ERenderResourceUsage>& srcAttachmentsUsage,
+	const std::vector<ERenderResourceUsage>& dstAttachmentsUsage
 )
 {
-	const usize colorAttachmentCount = renderTarget.GetColorAttachmentCount();
-	const boolean hasDepth = renderTarget.GetDepthAttachment().IsValid();
+	const usize colorAttachmentCount = renderTarget.color_attachments.size();
+	const boolean hasDepth = renderTarget.depth_attachment.IsValid();
 	const usize depthAttachmentCount = hasDepth == True ? 1 : 0;
 
 	const usize attachmentCount =  colorAttachmentCount + depthAttachmentCount;
@@ -1296,7 +1296,7 @@ triton::SGPURenderPassResource triton::BGraphicsBackend2Vulkan::CreateRenderPass
 	for (usize i = 0; i < colorAttachmentCount; ++i)
 	{
 		attachments[i].format = TextureFormatToNative(
-			renderTarget.GetColorAttachments()[i].GetFormat()
+			renderTarget.color_attachments[i].format
 		);
 		attachments[i].samples = VK_SAMPLE_COUNT_1_BIT;
 		attachments[i].loadOp = loadOp;
@@ -1317,7 +1317,7 @@ triton::SGPURenderPassResource triton::BGraphicsBackend2Vulkan::CreateRenderPass
 	if (hasDepth)
 	{
 		attachments[colorAttachmentCount].format = TextureFormatToNative(
-			renderTarget.GetDepthAttachment().GetFormat()
+			renderTarget.depth_attachment.format
 		);
 		attachments[colorAttachmentCount].samples = VK_SAMPLE_COUNT_1_BIT;
 		attachments[colorAttachmentCount].loadOp = loadOp;
@@ -1359,42 +1359,42 @@ triton::SGPURenderPassResource triton::BGraphicsBackend2Vulkan::CreateRenderPass
 
 		boolean bUseOutDependency = True;
 
-		if (srcAttachmentsUsage[i] == EResourceUsage::Unknown)
+		if (srcAttachmentsUsage[i] == ERenderResourceUsage::Unknown)
 		{
-			if (dstAttachmentsUsage[i] == EResourceUsage::PixelShaderRead)
+			if (dstAttachmentsUsage[i] == ERenderResourceUsage::PixelShaderRead)
 			{
 				inDependency.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 				inDependency.srcAccessMask = VK_ACCESS_NONE;
 			}
-			else if (dstAttachmentsUsage[i] == EResourceUsage::Present)
+			else if (dstAttachmentsUsage[i] == ERenderResourceUsage::Present)
 			{
 				inDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 				inDependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 			}
 		}
-		else if (srcAttachmentsUsage[i] == EResourceUsage::ColorAttachment)
+		else if (srcAttachmentsUsage[i] == ERenderResourceUsage::ColorAttachment)
 		{
 		}
-		else if (srcAttachmentsUsage[i] == EResourceUsage::DepthAttachment)
+		else if (srcAttachmentsUsage[i] == ERenderResourceUsage::DepthAttachment)
 		{
 		}
-		else if (srcAttachmentsUsage[i] == EResourceUsage::VertexShaderRead)
+		else if (srcAttachmentsUsage[i] == ERenderResourceUsage::VertexShaderRead)
 		{
 		}
-		else if (srcAttachmentsUsage[i] == EResourceUsage::PixelShaderRead)
+		else if (srcAttachmentsUsage[i] == ERenderResourceUsage::PixelShaderRead)
 		{
 		}
-		else if (srcAttachmentsUsage[i] == EResourceUsage::Present)
+		else if (srcAttachmentsUsage[i] == ERenderResourceUsage::Present)
 		{
 		}
 
-		if (dstAttachmentsUsage[i] == EResourceUsage::Unknown)
+		if (dstAttachmentsUsage[i] == ERenderResourceUsage::Unknown)
 		{
 		}
-		else if (dstAttachmentsUsage[i] == EResourceUsage::ColorAttachment)
+		else if (dstAttachmentsUsage[i] == ERenderResourceUsage::ColorAttachment)
 		{
 		}
-		else if (dstAttachmentsUsage[i] == EResourceUsage::DepthAttachment)
+		else if (dstAttachmentsUsage[i] == ERenderResourceUsage::DepthAttachment)
 		{
 			inDependency.dstStageMask =
 				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
@@ -1412,10 +1412,10 @@ triton::SGPURenderPassResource triton::BGraphicsBackend2Vulkan::CreateRenderPass
 			outDependency.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 			outDependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 		}
-		else if (dstAttachmentsUsage[i] == EResourceUsage::VertexShaderRead)
+		else if (dstAttachmentsUsage[i] == ERenderResourceUsage::VertexShaderRead)
 		{
 		}
-		else if (dstAttachmentsUsage[i] == EResourceUsage::PixelShaderRead)
+		else if (dstAttachmentsUsage[i] == ERenderResourceUsage::PixelShaderRead)
 		{
 			inDependency.dstStageMask =
 				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -1431,7 +1431,7 @@ triton::SGPURenderPassResource triton::BGraphicsBackend2Vulkan::CreateRenderPass
 			outDependency.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 			outDependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 		}
-		else if (dstAttachmentsUsage[i] == EResourceUsage::Present)
+		else if (dstAttachmentsUsage[i] == ERenderResourceUsage::Present)
 		{
 			inDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 			inDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -1444,7 +1444,7 @@ triton::SGPURenderPassResource triton::BGraphicsBackend2Vulkan::CreateRenderPass
 			dependencies.push_back(outDependency);
 	}
 
-	/*if (dstAttachmentsUsage[0] == EResourceUsage::PixelShaderRead)
+	/*if (dstAttachmentsUsage[0] == ERenderResourceUsage::PixelShaderRead)
 	{
 		dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
 		dependencies[0].dstSubpass = 0;
@@ -1476,7 +1476,7 @@ triton::SGPURenderPassResource triton::BGraphicsBackend2Vulkan::CreateRenderPass
 		dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 		dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 	}
-	else if (dstAttachmentsUsage[0] == EResourceUsage::Present)
+	else if (dstAttachmentsUsage[0] == ERenderResourceUsage::Present)
 	{
 		dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
 		dependencies[0].dstSubpass = 0;
@@ -1509,18 +1509,18 @@ triton::SGPURenderPassResource triton::BGraphicsBackend2Vulkan::CreateRenderPass
 
 	std::vector<VkImageView> framebufferAttachments(colorAttachmentCount + depthAttachmentCount);
 	for (usize i = 0; i < colorAttachmentCount; i++)
-		framebufferAttachments[i] = (VkImageView)renderTarget.GetColorAttachments()[i].GetView();
+		framebufferAttachments[i] = (VkImageView)renderTarget.color_attachments[i].view;
 	
 	if (hasDepth == True)
-		framebufferAttachments[colorAttachmentCount] = (VkImageView)renderTarget.GetDepthAttachment().GetView();
+		framebufferAttachments[colorAttachmentCount] = (VkImageView)renderTarget.depth_attachment.view;
 
 	VkFramebufferCreateInfo framebufferCreateInfo = {};
 	framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	framebufferCreateInfo.renderPass = renderPass;
 	framebufferCreateInfo.attachmentCount = (uint32_t)attachments.size();
 	framebufferCreateInfo.pAttachments = framebufferAttachments.data();
-	framebufferCreateInfo.width = renderTarget.GetSize().GetX();
-	framebufferCreateInfo.height = renderTarget.GetSize().GetY();
+	framebufferCreateInfo.width = renderTarget.color_attachments[0].size.GetX();
+	framebufferCreateInfo.height = renderTarget.color_attachments[0].size.GetY();
 	framebufferCreateInfo.layers = 1;
 
 	VkFramebuffer framebuffer = VK_NULL_HANDLE;
@@ -1577,15 +1577,15 @@ triton::SGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 		bytecodeFiles.vertexFilePath.has_value() &&
 		bytecodeFiles.pixelFilePath.has_value())
 	{
-		SMemoryAllocation vertexShaderByteCode;
-		const usize vertexShaderByteCodeSize = _context->GetSubsystem<CFileSystem>()->BinaryFileToArray(
+		SMemAlloc vertexShaderByteCode;
+		const usize vertexShaderByteCodeSize = _context->GetSubsystem<XFileSystem>()->BinaryFileToArray(
 			bytecodeFiles.vertexFilePath.value().string(),
 			vertexShaderByteCode,
 			0
 		);
 
-		SMemoryAllocation pixelShaderByteCode;
-		const usize pixelShaderByteCodeSize = _context->GetSubsystem<CFileSystem>()->BinaryFileToArray(
+		SMemAlloc pixelShaderByteCode;
+		const usize pixelShaderByteCodeSize = _context->GetSubsystem<XFileSystem>()->BinaryFileToArray(
 			bytecodeFiles.pixelFilePath.value().string(),
 			pixelShaderByteCode,
 			0
@@ -1627,8 +1627,8 @@ triton::SGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 		if (result != VK_SUCCESS)
 			Print("[Vulkan]: Error: failed to create pixel shader");
 
-		_context->GetSubsystem<CFileSystem>()->ReleaseBinaryFileArray(vertexShaderByteCode);
-		_context->GetSubsystem<CFileSystem>()->ReleaseBinaryFileArray(pixelShaderByteCode);
+		_context->GetSubsystem<XFileSystem>()->ReleaseBinaryFileArray(vertexShaderByteCode);
+		_context->GetSubsystem<XFileSystem>()->ReleaseBinaryFileArray(pixelShaderByteCode);
 
 		std::vector<qword> modules(2);
 		modules[0] = (qword)vertexShaderModule;
@@ -1643,9 +1643,9 @@ triton::SGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 	}
 	else if (stageMask & (dword)EShaderStageBit::Compute && bytecodeFiles.computeFilePath.has_value())
 	{
-		SMemoryAllocation compute_shader_bytecode;
+		SMemAlloc compute_shader_bytecode;
 
-		const usize compute_shader_bytecode_size = _context->GetSubsystem<CFileSystem>()->BinaryFileToArray(
+		const usize compute_shader_bytecode_size = _context->GetSubsystem<XFileSystem>()->BinaryFileToArray(
 			bytecodeFiles.computeFilePath.value().string(),
 			compute_shader_bytecode,
 			0
@@ -1670,7 +1670,7 @@ triton::SGPUShaderResource triton::BGraphicsBackend2Vulkan::CreateShader(
 		if (result != VK_SUCCESS)
 			Print("[Vulkan]: Error: failed to create compute shader");
 
-		_context->GetSubsystem<CFileSystem>()->ReleaseBinaryFileArray(compute_shader_bytecode);
+		_context->GetSubsystem<XFileSystem>()->ReleaseBinaryFileArray(compute_shader_bytecode);
 
 		std::vector<qword> modules(1);
 		modules[0] = (qword)compute_shader_module;
@@ -1740,25 +1740,25 @@ void triton::BGraphicsBackend2Vulkan::Dispatch(
 }
 
 void triton::BGraphicsBackend2Vulkan::ResetCommandBuffer(
-	ECommandBuffer command_buffer,
-	ECommandBufferReset reset_option
+	ERenderCommandBufferType command_buffer,
+	ERenderCommandBufferResetOption reset_option
 )
 {
 	VkCommandBuffer cmd_buff = VK_NULL_HANDLE;
 
-	if (command_buffer == ECommandBuffer::Frame)
+	if (command_buffer == ERenderCommandBufferType::Frame)
 		cmd_buff = _frameCommandBuffers[_currentFrame];
-	else if (command_buffer == ECommandBuffer::Staging)
+	else if (command_buffer == ERenderCommandBufferType::Staging)
 		cmd_buff = _stagingCommandBuffers[_currentFrame];
 
-	if (reset_option == ECommandBufferReset::Clear)
+	if (reset_option == ERenderCommandBufferResetOption::Clear)
 	{
 		vkResetCommandBuffer(
 			cmd_buff,
 			0
 		);
 	}
-	else if (reset_option == ECommandBufferReset::Begin)
+	else if (reset_option == ERenderCommandBufferResetOption::Begin)
 	{
 		VkCommandBufferBeginInfo beginInfo = {};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1768,7 +1768,7 @@ void triton::BGraphicsBackend2Vulkan::ResetCommandBuffer(
 			&beginInfo
 		);
 	}
-	else if (reset_option == ECommandBufferReset::End)
+	else if (reset_option == ERenderCommandBufferResetOption::End)
 	{
 		vkEndCommandBuffer(cmd_buff);
 	}
@@ -1794,8 +1794,8 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 		renderPassBeginInfo.framebuffer = (VkFramebuffer)renderPass.framebuffer;
 		renderPassBeginInfo.renderArea.offset.x = 0;
 		renderPassBeginInfo.renderArea.offset.y = 0;
-		renderPassBeginInfo.renderArea.extent.width = (uint32_t)renderTarget.GetSize().GetX();
-		renderPassBeginInfo.renderArea.extent.height = (uint32_t)renderTarget.GetSize().GetY();
+		renderPassBeginInfo.renderArea.extent.width = (uint32_t)renderTarget.color_attachments[0].size.GetX();
+		renderPassBeginInfo.renderArea.extent.height = (uint32_t)renderTarget.color_attachments[0].size.GetY();
 		
 		VkClearValue clearValues[2] = {};
 		clearValues[0].color = {
@@ -1812,7 +1812,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 
 		if (True)
 		{
-			if (renderTarget.GetDepthAttachment().IsValid() == True)
+			if (renderTarget.depth_attachment.IsValid() == True)
 				renderPassBeginInfo.clearValueCount = 2;
 			else
 				renderPassBeginInfo.clearValueCount = 1;
@@ -1842,7 +1842,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 			_frameCommandBuffers[_currentFrame],
 			(VkPipelineLayout)pipeline.layout,
 			VK_SHADER_STAGE_VERTEX_BIT,
-			offsetof(SRenderPassGPUPushConstantsLayout, instanceMotionType),
+			offsetof(SRenderPassPushConstantsLayout, instanceMotionType),
 			4,
 			&drawInfo.instanceMotionType
 		);
@@ -1908,7 +1908,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 	}
 	else if (command == ENativeRenderCommand::PushConstants)
 	{
-		SRenderPassGPUPushConstantsLayout& pushConstants = *(SRenderPassGPUPushConstantsLayout*)commandArgA;
+		SRenderPassPushConstantsLayout& pushConstants = *(SRenderPassPushConstantsLayout*)commandArgA;
 		SGPUPipelineResource& pipeline = *(SGPUPipelineResource*)commandArgB;
 
 		vkCmdPushConstants(
@@ -1916,7 +1916,7 @@ void triton::BGraphicsBackend2Vulkan::AddCommandToBuffer(
 			(VkPipelineLayout)pipeline.layout,
 			VK_SHADER_STAGE_VERTEX_BIT,
 			0,
-			sizeof(SRenderPassGPUPushConstantsLayout),
+			sizeof(SRenderPassPushConstantsLayout),
 			&pushConstants
 		);
 	}
@@ -1959,8 +1959,8 @@ void triton::BGraphicsBackend2Vulkan::BeginFrame()
 		UINT64_MAX
 	);
 
-	ResetCommandBuffer(ECommandBuffer::Frame, ECommandBufferReset::Clear);
-	ResetCommandBuffer(ECommandBuffer::Frame, ECommandBufferReset::Begin);
+	ResetCommandBuffer(ERenderCommandBufferType::Frame, ERenderCommandBufferResetOption::Clear);
+	ResetCommandBuffer(ERenderCommandBufferType::Frame, ERenderCommandBufferResetOption::Begin);
 }
 
 void triton::BGraphicsBackend2Vulkan::EndFrame()
@@ -2043,7 +2043,7 @@ void triton::BGraphicsBackend2Vulkan::EndFrame()
 		_frameCommandBuffers[_currentFrame]
 	);
 
-	ResetCommandBuffer(ECommandBuffer::Frame, ECommandBufferReset::End);
+	ResetCommandBuffer(ERenderCommandBufferType::Frame, ERenderCommandBufferResetOption::End);
 
 	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
@@ -2087,15 +2087,15 @@ void triton::BGraphicsBackend2Vulkan::EndFrame()
 }
 
 void triton::BGraphicsBackend2Vulkan::ExecuteImageBarrier(
-	ECommandBuffer command_buffer,
+	ERenderCommandBufferType command_buffer,
 	const SGPUTextureResource& texture,
-	EPipelineStageBit src_stage_mask,
-	EPipelineStageBit dst_stage_mask,
-	EAccessBit src_access_mask,
-	EAccessBit dst_access_mask,
-	EImageAspectBit aspect_mask,
-	EImageLayout src_layout,
-	EImageLayout dst_layout
+	ERenderPipelineStageBit src_stage_mask,
+	ERenderPipelineStageBit dst_stage_mask,
+	ERenderResourceAccessBit src_access_mask,
+	ERenderResourceAccessBit dst_access_mask,
+	ERenderImageAspectBit aspect_mask,
+	ERenderImageLayout src_layout,
+	ERenderImageLayout dst_layout
 )
 {
 	VkPipelineStageFlags native_src_stage_mask = PipelineStageToNative(src_stage_mask);
@@ -2126,9 +2126,9 @@ void triton::BGraphicsBackend2Vulkan::ExecuteImageBarrier(
 
 	VkCommandBuffer cmd_buff = VK_NULL_HANDLE;
 
-	if (command_buffer == ECommandBuffer::Frame)
+	if (command_buffer == ERenderCommandBufferType::Frame)
 		cmd_buff = _frameCommandBuffers[_currentFrame];
-	else if (command_buffer == ECommandBuffer::Staging)
+	else if (command_buffer == ERenderCommandBufferType::Staging)
 		cmd_buff = _stagingCommandBuffers[_currentFrame];
 
 	vkCmdPipelineBarrier(
@@ -2146,12 +2146,12 @@ void triton::BGraphicsBackend2Vulkan::ExecuteImageBarrier(
 }
 
 void triton::BGraphicsBackend2Vulkan::ExecuteBufferBarrier(
-	ECommandBuffer command_buffer,
+	ERenderCommandBufferType command_buffer,
 	const SGPUBufferResource& buffer,
-	EPipelineStageBit src_stage_mask,
-	EPipelineStageBit dst_stage_mask,
-	EAccessBit src_access_mask,
-	EAccessBit dst_access_mask
+	ERenderPipelineStageBit src_stage_mask,
+	ERenderPipelineStageBit dst_stage_mask,
+	ERenderResourceAccessBit src_access_mask,
+	ERenderResourceAccessBit dst_access_mask
 )
 {
 	VkPipelineStageFlags native_src_stage_mask = PipelineStageToNative(src_stage_mask);
@@ -2171,9 +2171,9 @@ void triton::BGraphicsBackend2Vulkan::ExecuteBufferBarrier(
 
 	VkCommandBuffer cmd_buff = VK_NULL_HANDLE;
 
-	if (command_buffer == ECommandBuffer::Frame)
+	if (command_buffer == ERenderCommandBufferType::Frame)
 		cmd_buff = _frameCommandBuffers[_currentFrame];
-	else if (command_buffer == ECommandBuffer::Staging)
+	else if (command_buffer == ERenderCommandBufferType::Staging)
 		cmd_buff = _stagingCommandBuffers[_currentFrame];
 
 	vkCmdPipelineBarrier(
@@ -2191,19 +2191,19 @@ void triton::BGraphicsBackend2Vulkan::ExecuteBufferBarrier(
 }
 
 void triton::BGraphicsBackend2Vulkan::CopyBufferToImage(
-	ECommandBuffer command_buffer,
+	ERenderCommandBufferType command_buffer,
 	const SGPUBufferResource& buffer,
 	const SGPUTextureResource& texture,
-	EImageAspectBit aspect_mask,
+	ERenderImageAspectBit aspect_mask,
 	const cVector3& offset,
 	const cVector3& size
 )
 {
 	VkAccessFlags native_aspect_mask = 0;
 
-	if ((dword)aspect_mask & (dword)EImageAspectBit::Color)
+	if ((dword)aspect_mask & (dword)ERenderImageAspectBit::Color)
 		native_aspect_mask |= VK_IMAGE_ASPECT_COLOR_BIT;
-	if ((dword)aspect_mask & (dword)EImageAspectBit::Depth)
+	if ((dword)aspect_mask & (dword)ERenderImageAspectBit::Depth)
 		native_aspect_mask |= VK_IMAGE_ASPECT_DEPTH_BIT;
 
 	VkImageSubresourceLayers imageSubresourceLayers = {};
@@ -2226,9 +2226,9 @@ void triton::BGraphicsBackend2Vulkan::CopyBufferToImage(
 
 	VkCommandBuffer cmd_buff = VK_NULL_HANDLE;
 
-	if (command_buffer == ECommandBuffer::Frame)
+	if (command_buffer == ERenderCommandBufferType::Frame)
 		cmd_buff = _frameCommandBuffers[_currentFrame];
-	else if (command_buffer == ECommandBuffer::Staging)
+	else if (command_buffer == ERenderCommandBufferType::Staging)
 		cmd_buff = _stagingCommandBuffers[_currentFrame];
 
 	vkCmdCopyBufferToImage(
@@ -2242,7 +2242,7 @@ void triton::BGraphicsBackend2Vulkan::CopyBufferToImage(
 }
 
 void triton::BGraphicsBackend2Vulkan::CopyBufferToBuffer(
-	ECommandBuffer command_buffer,
+	ERenderCommandBufferType command_buffer,
 	const SGPUBufferResource& src_buffer,
 	const SGPUBufferResource& dst_buffer,
 	usize src_offset,
@@ -2257,9 +2257,9 @@ void triton::BGraphicsBackend2Vulkan::CopyBufferToBuffer(
 
 	VkCommandBuffer cmd_buff = VK_NULL_HANDLE;
 
-	if (command_buffer == ECommandBuffer::Frame)
+	if (command_buffer == ERenderCommandBufferType::Frame)
 		cmd_buff = _frameCommandBuffers[_currentFrame];
-	else if (command_buffer == ECommandBuffer::Staging)
+	else if (command_buffer == ERenderCommandBufferType::Staging)
 		cmd_buff = _stagingCommandBuffers[_currentFrame];
 
 	vkCmdCopyBuffer(
@@ -2271,17 +2271,17 @@ void triton::BGraphicsBackend2Vulkan::CopyBufferToBuffer(
 	);
 }
 
-void triton::BGraphicsBackend2Vulkan::SubmitCommands(ECommandBuffer command_buffer)
+void triton::BGraphicsBackend2Vulkan::SubmitCommands(ERenderCommandBufferType command_buffer)
 {
 	VkCommandBuffer cmd_buff = VK_NULL_HANDLE;
 	VkFence fence = VK_NULL_HANDLE;
 
-	if (command_buffer == ECommandBuffer::Frame)
+	if (command_buffer == ERenderCommandBufferType::Frame)
 	{
 		cmd_buff = _frameCommandBuffers[_currentFrame];
 		fence = _swapchainFences[_currentFrame].fence;
 	}
-	else if (command_buffer == ECommandBuffer::Staging)
+	else if (command_buffer == ERenderCommandBufferType::Staging)
 	{
 		cmd_buff = _stagingCommandBuffers[_currentFrame];
 		fence = _stagingFences[_currentFrame].fence;
@@ -2310,13 +2310,13 @@ void triton::BGraphicsBackend2Vulkan::SubmitCommands(ECommandBuffer command_buff
 		Print("[Vulkan]: Error: failed to submit commands to the queue");
 }
 
-void triton::BGraphicsBackend2Vulkan::WaitForFence(ECommandBuffer command_buffer)
+void triton::BGraphicsBackend2Vulkan::WaitForFence(ERenderCommandBufferType command_buffer)
 {
 	VkFence fence = VK_NULL_HANDLE;
 
-	if (command_buffer == ECommandBuffer::Frame)
+	if (command_buffer == ERenderCommandBufferType::Frame)
 		fence = _swapchainFences[_currentFrame].fence;
-	else if (command_buffer == ECommandBuffer::Staging)
+	else if (command_buffer == ERenderCommandBufferType::Staging)
 		fence = _stagingFences[_currentFrame].fence;
 
 	vkWaitForFences(
@@ -2328,13 +2328,13 @@ void triton::BGraphicsBackend2Vulkan::WaitForFence(ECommandBuffer command_buffer
 	);
 }
 
-void triton::BGraphicsBackend2Vulkan::ResetFence(ECommandBuffer command_buffer)
+void triton::BGraphicsBackend2Vulkan::ResetFence(ERenderCommandBufferType command_buffer)
 {
 	VkFence fence = VK_NULL_HANDLE;
 
-	if (command_buffer == ECommandBuffer::Frame)
+	if (command_buffer == ERenderCommandBufferType::Frame)
 		fence = _swapchainFences[_currentFrame].fence;
-	else if (command_buffer == ECommandBuffer::Staging)
+	else if (command_buffer == ERenderCommandBufferType::Staging)
 		fence = _stagingFences[_currentFrame].fence;
 
 	vkResetFences(
@@ -2482,7 +2482,7 @@ void triton::BGraphicsBackend2Vulkan::DestroyDebugMessenger()
 	}
 }
 
-void triton::BGraphicsBackend2Vulkan::CreateSurface(SWindowBackend& window)
+void triton::BGraphicsBackend2Vulkan::CreateSurface(SWindowResource& window)
 {
 	void* surfaceRaw = _context->GetBackend<IInputBackend>()->CreateBackendWindowVulkanSurface(
 		window,
@@ -2506,7 +2506,7 @@ void triton::BGraphicsBackend2Vulkan::DestroySurface()
 	);
 }
 
-void triton::BGraphicsBackend2Vulkan::PickPhysicalDevice(EGraphicsDeviceType deviceType)
+void triton::BGraphicsBackend2Vulkan::PickPhysicalDevice(EGraphicsAdapterType deviceType)
 {
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
@@ -2544,14 +2544,14 @@ void triton::BGraphicsBackend2Vulkan::PickPhysicalDevice(EGraphicsDeviceType dev
 			&properties
 		);
 
-		if (deviceType == EGraphicsDeviceType::Discrete &&
+		if (deviceType == EGraphicsAdapterType::Discrete &&
 			properties.deviceType ==
 			VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 		{
 			physicalDevice = device;
 			break;
 		}
-		else if (deviceType == EGraphicsDeviceType::Integrated &&
+		else if (deviceType == EGraphicsAdapterType::Integrated &&
 			properties.deviceType ==
 			VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
 		{
@@ -2582,12 +2582,12 @@ void triton::BGraphicsBackend2Vulkan::PickPhysicalDevice(EGraphicsDeviceType dev
 		std::to_string(patch)
 	);
 
-	EGraphicsDeviceType finalDeviceType = EGraphicsDeviceType::Unknown;
+	EGraphicsAdapterType finalDeviceType = EGraphicsAdapterType::Unknown;
 
 	if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-		finalDeviceType = EGraphicsDeviceType::Discrete;
+		finalDeviceType = EGraphicsAdapterType::Discrete;
 	else if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
-		finalDeviceType = EGraphicsDeviceType::Integrated;
+		finalDeviceType = EGraphicsAdapterType::Integrated;
 	
 	VkPhysicalDeviceFeatures features = {};
 	vkGetPhysicalDeviceFeatures(
@@ -3188,9 +3188,9 @@ void triton::BGraphicsBackend2Vulkan::CreateSwapchain(const cVector2& size, usiz
 
 	_swapchainBindingGroupLayout = CreateBindingGroupLayout(
 		{
-			SBindingGroupBinding(
+			SRenderBindingGroupBinding(
 				0,
-				EBindingGroupBindingType::TextureSampler,
+				ERenderBindingGroupBindingType::TextureSampler,
 				EShaderStageBit::Pixel,
 				nullptr
 			)
@@ -3456,8 +3456,8 @@ void triton::BGraphicsBackend2Vulkan::CreateSwapchainRenderPasses()
 				True,
 				cVector4(1.0f),
 				1.0f,
-				{ EResourceUsage::Unknown },
-				{ EResourceUsage::Present }
+				{ ERenderResourceUsage::Unknown },
+				{ ERenderResourceUsage::Present }
 			)
 		);
 }
@@ -3722,25 +3722,25 @@ VkImageType triton::BGraphicsBackend2Vulkan::TextureDimensionToNative(ETextureDi
 	return type;
 }
 
-VkImageLayout triton::BGraphicsBackend2Vulkan::AttachmentUsageToNativeLayout(EResourceUsage attachmentUsage)
+VkImageLayout triton::BGraphicsBackend2Vulkan::AttachmentUsageToNativeLayout(ERenderResourceUsage attachmentUsage)
 {
-	if (attachmentUsage == EResourceUsage::Unknown)
+	if (attachmentUsage == ERenderResourceUsage::Unknown)
 		return VK_IMAGE_LAYOUT_UNDEFINED;
-	else if (attachmentUsage == EResourceUsage::ColorAttachment)
+	else if (attachmentUsage == ERenderResourceUsage::ColorAttachment)
 		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	else if (attachmentUsage == EResourceUsage::DepthAttachment)
+	else if (attachmentUsage == ERenderResourceUsage::DepthAttachment)
 		return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-	else if (attachmentUsage == EResourceUsage::VertexShaderRead)
+	else if (attachmentUsage == ERenderResourceUsage::VertexShaderRead)
 		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	else if (attachmentUsage == EResourceUsage::PixelShaderRead)
+	else if (attachmentUsage == ERenderResourceUsage::PixelShaderRead)
 		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	else if (attachmentUsage == EResourceUsage::Present)
+	else if (attachmentUsage == ERenderResourceUsage::Present)
 		return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 	return VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
-VkPipelineBindPoint triton::BGraphicsBackend2Vulkan::PipelineBindPointToNative(EPipelineBindPoint bindPoint)
+VkPipelineBindPoint triton::BGraphicsBackend2Vulkan::PipelineBindPointToNative(ERenderPipelineBindPoint bindPoint)
 {
 	return VK_PIPELINE_BIND_POINT_GRAPHICS;
 }
@@ -3758,9 +3758,9 @@ VkViewport triton::BGraphicsBackend2Vulkan::ViewportToNative(const SViewport& vi
 	return nativeViewport;
 }
 
-VkPrimitiveTopology triton::BGraphicsBackend2Vulkan::PrimitiveTopologyToNative(EPrimitiveTopology primitiveTopology)
+VkPrimitiveTopology triton::BGraphicsBackend2Vulkan::PrimitiveTopologyToNative(ERenderPrimitiveTopology primitiveTopology)
 {
-	if (primitiveTopology == EPrimitiveTopology::TriangleStrip)
+	if (primitiveTopology == ERenderPrimitiveTopology::TriangleStrip)
 		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 
 	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -3782,75 +3782,75 @@ VkBufferUsageFlags triton::BGraphicsBackend2Vulkan::BufferTypeToNative(EGPUBuffe
 	return 0;
 }
 
-triton::EImageAspectBit triton::BGraphicsBackend2Vulkan::TextureFormatToAspect(ETextureFormat format)
+triton::ERenderImageAspectBit triton::BGraphicsBackend2Vulkan::TextureFormatToAspect(ETextureFormat format)
 {
-	EImageAspectBit aspect_mask = EImageAspectBit::Unknown;
+	ERenderImageAspectBit aspect_mask = ERenderImageAspectBit::Unknown;
 
 	if (format == ETextureFormat::DepthStencil)
-		aspect_mask = EImageAspectBit::Depth;
+		aspect_mask = ERenderImageAspectBit::Depth;
 	else
-		aspect_mask = EImageAspectBit::Color;
+		aspect_mask = ERenderImageAspectBit::Color;
 
 	return aspect_mask;
 }
 
-VkPipelineStageFlags triton::BGraphicsBackend2Vulkan::PipelineStageToNative(EPipelineStageBit stage_mask)
+VkPipelineStageFlags triton::BGraphicsBackend2Vulkan::PipelineStageToNative(ERenderPipelineStageBit stage_mask)
 {
 	VkPipelineStageFlags native_stage_mask = VK_PIPELINE_STAGE_NONE;
 
-	if ((dword)stage_mask & (dword)EPipelineStageBit::TopOfPipe)
+	if ((dword)stage_mask & (dword)ERenderPipelineStageBit::TopOfPipe)
 		native_stage_mask |= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-	if ((dword)stage_mask & (dword)EPipelineStageBit::Vertex)
+	if ((dword)stage_mask & (dword)ERenderPipelineStageBit::Vertex)
 		native_stage_mask |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-	if ((dword)stage_mask & (dword)EPipelineStageBit::VertexInput)
+	if ((dword)stage_mask & (dword)ERenderPipelineStageBit::VertexInput)
 		native_stage_mask |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
-	if ((dword)stage_mask & (dword)EPipelineStageBit::Pixel)
+	if ((dword)stage_mask & (dword)ERenderPipelineStageBit::Pixel)
 		native_stage_mask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	if ((dword)stage_mask & (dword)EPipelineStageBit::Compute)
+	if ((dword)stage_mask & (dword)ERenderPipelineStageBit::Compute)
 		native_stage_mask |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	if ((dword)stage_mask & (dword)EPipelineStageBit::Transfer)
+	if ((dword)stage_mask & (dword)ERenderPipelineStageBit::Transfer)
 		native_stage_mask |= VK_PIPELINE_STAGE_TRANSFER_BIT;
 
 	return native_stage_mask;
 }
 
-VkAccessFlags triton::BGraphicsBackend2Vulkan::AccessToNative(EAccessBit access_mask)
+VkAccessFlags triton::BGraphicsBackend2Vulkan::AccessToNative(ERenderResourceAccessBit access_mask)
 {
 	VkAccessFlags native_access_mask = 0;
 
-	if ((dword)access_mask & (dword)EAccessBit::None)
+	if ((dword)access_mask & (dword)ERenderResourceAccessBit::None)
 		native_access_mask |= VK_ACCESS_NONE;
-	if ((dword)access_mask & (dword)EAccessBit::IndexRead)
+	if ((dword)access_mask & (dword)ERenderResourceAccessBit::IndexRead)
 		native_access_mask |= VK_ACCESS_INDEX_READ_BIT;
-	if ((dword)access_mask & (dword)EAccessBit::ShaderRead)
+	if ((dword)access_mask & (dword)ERenderResourceAccessBit::ShaderRead)
 		native_access_mask |= VK_ACCESS_SHADER_READ_BIT;
-	if ((dword)access_mask & (dword)EAccessBit::ShaderWrite)
+	if ((dword)access_mask & (dword)ERenderResourceAccessBit::ShaderWrite)
 		native_access_mask |= VK_ACCESS_SHADER_WRITE_BIT;
-	if ((dword)access_mask & (dword)EAccessBit::TransferWrite)
+	if ((dword)access_mask & (dword)ERenderResourceAccessBit::TransferWrite)
 		native_access_mask |= VK_ACCESS_TRANSFER_WRITE_BIT;
 
 	return native_access_mask;
 }
 
-VkImageAspectFlags triton::BGraphicsBackend2Vulkan::ImageAspectToNative(EImageAspectBit aspect_mask)
+VkImageAspectFlags triton::BGraphicsBackend2Vulkan::ImageAspectToNative(ERenderImageAspectBit aspect_mask)
 {
 	VkImageAspectFlags native_aspect_mask = 0;
 
-	if ((dword)aspect_mask & (dword)EImageAspectBit::Color)
+	if ((dword)aspect_mask & (dword)ERenderImageAspectBit::Color)
 		native_aspect_mask |= VK_IMAGE_ASPECT_COLOR_BIT;
-	if ((dword)aspect_mask & (dword)EImageAspectBit::Depth)
+	if ((dword)aspect_mask & (dword)ERenderImageAspectBit::Depth)
 		native_aspect_mask |= VK_IMAGE_ASPECT_DEPTH_BIT;
 
 	return native_aspect_mask;
 }
 
-VkImageLayout triton::BGraphicsBackend2Vulkan::ImageLayoutToNative(EImageLayout layout)
+VkImageLayout triton::BGraphicsBackend2Vulkan::ImageLayoutToNative(ERenderImageLayout layout)
 {
 	VkImageLayout native_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-	if (layout == EImageLayout::ShaderRead)
+	if (layout == ERenderImageLayout::ShaderRead)
 		native_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	else if (layout == EImageLayout::TransferDst)
+	else if (layout == ERenderImageLayout::TransferDst)
 		native_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
 	return native_layout;

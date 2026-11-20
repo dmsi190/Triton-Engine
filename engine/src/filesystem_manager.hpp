@@ -10,22 +10,24 @@ namespace triton
 {
     class cContext;
 
-    class CDataFile : public iObject
+    class XDataFile : public iObject
     {
+        TRITON_OBJECT(XDataFile)
+
         cContext* _context = nullptr;
         types::boolean _is_existing = types::K_FALSE;
-        SMemoryAllocation _data;
+        SMemAlloc _data;
         types::usize _byte_size;
 
     public:
-        explicit CDataFile(
-            const SMemoryAllocation& mem_alloc,
+        explicit XDataFile(
+            const SMemAlloc& mem_alloc,
             cContext* context,
             const std::string& path,
             types::boolean is_text_file
         );
 
-        ~CDataFile() override;
+        ~XDataFile() override;
 
         inline const types::u8* GetData() const { return _data.mem; }
 
@@ -34,24 +36,24 @@ namespace triton
         inline types::boolean Exists() const { return _is_existing; }
     };
 
-    class CFileSystem : public CSubsystem
+    class XFileSystem : public XSubsystem
     {
-        TRITON_CLASS_NAME(CFileSystem)
+        TRITON_OBJECT(XFileSystem)
 
     public:
-        explicit CFileSystem(cContext* context);
+        explicit XFileSystem(const SMemAlloc& mem_alloc, cContext* context);
 
-        ~CFileSystem() override = default;
+        ~XFileSystem() override = default;
 
         std::string TextFileToString(const std::string& path);
 
         types::usize BinaryFileToArray(
             const std::string& path,
-            SMemoryAllocation& array,
+            SMemAlloc& array,
             types::usize offset
         );
 
-        void ReleaseBinaryFileArray(const SMemoryAllocation& array);
+        void ReleaseBinaryFileArray(SMemAlloc& array);
         
         types::usize TellFileByteSize(const std::string& path);
     };

@@ -48,17 +48,21 @@ namespace triton
         void ProcessWorkItems();
     };
 
-    class cThread
+    class XThread : public iObject
     {
+        TRITON_OBJECT(XThread)
+
         std::thread _handle;
 
     public:
-        explicit cThread();
-        virtual ~cThread();
+        explicit XThread(const SMemAlloc& mem_alloc, cContext* context) : iObject(mem_alloc, context) {}
+
+        ~XThread() override;
 
         virtual void ThreadFunction() = 0;
 
         types::boolean Run();
+
         void Stop();
     };
 

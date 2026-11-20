@@ -14,7 +14,7 @@
 
 using namespace types;
 
-void triton::cRenderThread::ThreadFunction()
+void triton::XRenderThread::ThreadFunction()
 {
 	std::mutex mtx;
 	CThreadGuard::CaptureRenderThreadId();
@@ -26,9 +26,9 @@ void triton::cRenderThread::ThreadFunction()
 	// Create graphics contexts for windows
 	IApplication* app = _context->GetSubsystem<CEngine>()->GetApplication();
 	CWindow* window = app->GetWindow();
-	//gfxBackend->CreateGraphicsContext(window->GetBackendWindow());
-	//gfxBackend->MakeWindowGraphicsContextCurrent(window->GetBackendWindow());
-	const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+	
+	const SCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+
 	gfxBackend->Initialize(
 		window->GetBackendWindow(),
 		True,
