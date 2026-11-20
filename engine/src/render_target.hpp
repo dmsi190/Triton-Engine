@@ -4,7 +4,6 @@
 
 #include <vector>
 #include "object.hpp"
-#include "handle.hpp"
 #include "gpu_render_target_resource.hpp"
 #include "texture.hpp"
 #include "context.hpp"
@@ -18,21 +17,21 @@ namespace triton
 	{
 		TRITON_OBJECT(XRenderTarget)
 
-		std::vector<SHandle> _colorAttachments;
-		SHandle _depthAttachment;
-		CGPURenderTargetResource _gpuRenderTarget = CGPURenderTargetResource::Invalid();
+		std::vector<XTexture*>		_colorAttachments;
+		XTexture*					_depthAttachment;
+		SGPURenderTargetResource	_gpuRenderTarget = SGPURenderTargetResource::Invalid();
 
 	public:
 		explicit XRenderTarget(
+			const SMemAlloc& mem_alloc,
 			cContext* context,
-			types::s32 poolIndex,
 			const std::vector<XTexture*>& colorAttachments,
 			XTexture* depthAttachment
 		);
 
 		~XRenderTarget() override;
 
-		inline const CGPURenderTargetResource& GetGPUResource() const { return _gpuRenderTarget; }
+		inline const SGPURenderTargetResource& GetGPUResource() const { return _gpuRenderTarget; }
 
 		inline const std::vector<XTexture*>& GetColorAttachments() const { return _colorAttachments; }
 
@@ -40,9 +39,7 @@ namespace triton
 
 		inline const cVector3 GetColorAttachmentSize(types::usize attachmentIndex)
 		{
-			XTexture& attachment = *_context->GetPool<PTexturePool>()->Get(_colorAttachments.at(attachmentIndex));
-
-			return attachment.GetSize();
+			return _colorAttachments.at(attachmentIndex)->GetSize();
 		}
 
 		struct TGPULayout {};

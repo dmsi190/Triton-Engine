@@ -6,7 +6,7 @@
 
 namespace triton
 {
-	enum class EImageLayout : types::dword
+	enum class ERenderImageLayout : types::dword
 	{
 		Undefined,
 		ShaderRead,

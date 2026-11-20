@@ -1,4 +1,4 @@
-// render_command_buffer_enum.hpp
+// render_command_buffer_type_enum.hpp
 
 #pragma once
 
@@ -6,7 +6,7 @@
 
 namespace triton
 {
-	enum class ECommandBuffer : types::dword
+	enum class ERenderCommandBufferType : types::dword
 	{
 		Unknown,
 		Frame,

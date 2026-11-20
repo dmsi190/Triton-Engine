@@ -9,47 +9,42 @@
 #include "rasterizer_state.hpp"
 #include "render_target.hpp"
 #include "gpu_buffer_resource.hpp"
-#include "input_layout.hpp"
 #include "types.hpp"
 
 namespace triton
 {
     class XRenderPassProcessing : public IRenderPass
     {
-        TRITON_CLASS_NAME(XRenderPassProcessing)
+        TRITON_OBJECT(XRenderPassProcessing)
 
-        SHandle                                     _inputLayout;
-        std::vector<CGPUBufferResource>             _inputBuffers = {};
+        std::vector<SGPUBufferResource>             _inputBuffers = {};
         std::vector<SShaderTextureBinding>          _inputTextures = {};
         SDepthState                                 _depthState = SDepthState(0, 0);
         SBlendState                                 _blendState = {};
         SViewport                                   _viewport = {};
-        SHandle                                     _renderTarget;
-        SHandle                                     _shader;
+        XRenderTarget*                              _renderTarget;
+        XShader*                                    _shader;
 
     public:
         explicit XRenderPassProcessing(
+            const SMemAlloc& mem_alloc,
             cContext* context,
-            types::s32 poolIndex,
-            const SHandle& inputLayout,
-            const std::vector<CGPUBufferResource>& inputBuffers,
+            const std::vector<SGPUBufferResource>& inputBuffers,
             const std::vector<SShaderTextureBinding>& inputTextures,
             const SViewport& viewport,
             const SBlendState& blendState,
             const SDepthState& depthState,
-            const SHandle& renderTarget,
-            const SHandle& shader
+            XRenderTarget* renderTarget,
+            XShader* shader
         );
         ~XRenderPassProcessing() override = default;
 
         void Render() override;
 
-        inline const std::vector<CGPUBufferResource>& GetInputBuffers() const { return _inputBuffers; }
+        inline const std::vector<SGPUBufferResource>& GetInputBuffers() const { return _inputBuffers; }
 
         inline const std::vector<SShaderTextureBinding>& GetInputTextures() const { return _inputTextures; }
 
-        inline const SHandle& GetShader() const { return _shader; }
-
-        struct TGPULayout {};
+        inline XShader* GetShader() const { return _shader; }
     };
 }

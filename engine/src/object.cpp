@@ -6,18 +6,6 @@
 
 using namespace types;
 
-triton::cTag triton::cIdentifier::Generate(const std::string& seed)
-{
-    static usize counter = 0;
-
-    cTag tag;
-
-    const std::string& idStr = seed + std::to_string(counter++);
-    tag.CopyChars((const u8*)idStr.c_str(), idStr.size());
-
-    return tag;
-}
-
 void triton::iObject::Subscribe(eEventType type, EventFunction&& function)
 {
     cEventDispatcher* dispatcher = _context->GetSubsystem<cEventDispatcher>();

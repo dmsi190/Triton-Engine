@@ -15,6 +15,7 @@
 #include "gpu_render_pass_resource.hpp"
 #include "rasterizer_state.hpp"
 #include "render_primitive_topology_enum.hpp"
+#include "render_resource_usage_enum.hpp"
 #include "vertex_buffer_format.hpp"
 #include "object.hpp"
 
@@ -24,59 +25,75 @@ namespace triton
 	
 	class CRenderCommandProxy final
 	{
-		TRITON_CLASS_NAME(CRenderCommandProxy)
-
 		inline static cContext* _context;
 
 	public:
 		static void SetContext(cContext* context);
 
-		static CGPUBufferResource CreateBuffer(EGPUBufferType type, types::usize byte_size);
+		static SGPUBufferResource CreateBuffer(EGPUBufferType type, types::usize byte_size);
 
 		static void WriteBuffer(
-			const CGPUBufferResource& buffer,
+			const SGPUBufferResource& buffer,
 			types::usize offset,
 			const types::u8* data,
 			types::usize byte_size
 		);
 
-		static void DestroyBuffer(CGPUBufferResource& buffer);
+		static void DestroyBuffer(SGPUBufferResource& buffer);
 
-		static CGPUShaderResource CreateShader(EShaderStageBit stage_mask, const SShaderBytecodeFiles& files);
+		static SGPUShaderResource CreateShader(EShaderStageBit stage_mask, const SShaderBytecodeFiles& files);
 
-		static void DestroyShader(CGPUShaderResource& shader);
+		static void DestroyShader(SGPUShaderResource& shader);
 
-		static CGPUBindingGroupLayoutResource CreateBindingGroupLayout(
-			const std::vector<SBindingGroupBinding>& bindings
+		static SGPUBindingGroupLayoutResource CreateBindingGroupLayout(
+			const std::vector<SRenderBindingGroupBinding>& bindings
 		);
 
-		static void DestroyBindingGroupLayout(CGPUBindingGroupLayoutResource& binding_group_layout);
+		static void DestroyBindingGroupLayout(SGPUBindingGroupLayoutResource& binding_group_layout);
 
-		static CGPUBindingGroupResource CreateBindingGroup(
+		static SGPUBindingGroupResource CreateBindingGroup(
 			types::u32 index,
-			const CGPUBindingGroupLayoutResource& layout,
-			const std::vector<SBindingGroupBinding>& buffers_to_bind,
-			const std::vector<SBindingGroupBinding>& textures_to_bind
+			const SGPUBindingGroupLayoutResource& layout,
+			const std::vector<SRenderBindingGroupBinding>& buffers_to_bind,
+			const std::vector<SRenderBindingGroupBinding>& textures_to_bind
 		);
 
-		static void DestroyBindingGroup(CGPUBindingGroupResource& binding_group);
+		static void DestroyBindingGroup(SGPUBindingGroupResource& binding_group);
 
-		static CGPUPipelineResource CreatePipeline(
-			const CGPUShaderResource& shader,
-			const std::vector<CGPUBindingGroupLayoutResource>& bindingGroupLayouts,
+		static SGPUPipelineResource CreatePipeline(
+			const SGPUShaderResource& shader,
+			const std::vector<SGPUBindingGroupLayoutResource>& bindingGroupLayouts,
 			types::boolean bUsePushConstants,
 			const std::optional<std::reference_wrapper<SViewport>> viewport = std::nullopt,
-			std::optional<std::reference_wrapper<CGPURenderTargetResource>> renderTarget = std::nullopt,
-			const std::optional<std::reference_wrapper<CGPURenderPassResource>> renderPass = std::nullopt,
-			EPrimitiveTopology primitiveTopology = EPrimitiveTopology::Unknown,
+			std::optional<std::reference_wrapper<SGPURenderTargetResource>> renderTarget = std::nullopt,
+			const std::optional<std::reference_wrapper<SGPURenderPassResource>> renderPass = std::nullopt,
+			ERenderPrimitiveTopology primitiveTopology = ERenderPrimitiveTopology::Unknown,
 			EVertexBufferFormat vertexBufferFormat = EVertexBufferFormat::Unknown
 		);
 
-		static void DestroyPipeline(CGPUPipelineResource& pipeline);
+		static void DestroyPipeline(SGPUPipelineResource& pipeline);
+
+		static SGPURenderPassResource CreateRenderPass(
+			const SGPURenderTargetResource& render_target_resource,
+			boolean clear_render_target,
+			const cVector4 clear_color,
+			const f32 clear_depth,
+			const std::vector<ERenderResourceUsage>& src_render_target_attachments_usage,
+			const std::vector<ERenderResourceUsage>& dst_render_target_attachments_usage
+		);
+
+		static void DestroyRenderPass(const SGPURenderPassResource& render_pass);
+
+		static SGPURenderTargetResource CreateRenderTarget(
+			const std::vector<std::reference_wrapper<SGPUTextureResource>>& color_attachments,
+			const SGPUTextureResource& depth_attachment
+		);
+
+		static void DestroyRenderTarget(const SGPURenderTargetResource& render_target);
 
 		static void Dispatch(
-			const CGPUPipelineResource& pipeline,
-			const std::vector<CGPUBindingGroupResource>& binding_groups,
+			const SGPUPipelineResource& pipeline,
+			const std::vector<SGPUBindingGroupResource>& binding_groups,
 			const cVector3& work_group_count
 		);
 

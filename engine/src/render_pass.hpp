@@ -13,18 +13,19 @@ namespace triton
 
 	struct IRenderPass : public iObject
 	{
-        TRITON_CLASS_NAME(IRenderPass)
+        TRITON_OBJECT(IRenderPass)
 
     protected:
-        CGPURenderPassResource _gpuRenderPass = CGPURenderPassResource::Invalid();
-        ERenderPassDispatch _dispatch = ERenderPassDispatch::None;
+        SGPURenderPassResource _gpuRenderPass = SGPURenderPassResource::Invalid();
+        ERenderPassDispatch _dispatch;
         
     public:
         explicit IRenderPass(
+            const SMemAlloc& mem_alloc,
             cContext* context,
-            types::s32 poolIndex,
             ERenderPassDispatch dispatch
-        ) : iObject(context, poolIndex), _dispatch(dispatch) {}
+        ) : iObject(mem_alloc, context), _dispatch(dispatch) {}
+
         ~IRenderPass() override = default;
 
         virtual void Render() = 0;

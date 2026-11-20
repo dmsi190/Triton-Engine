@@ -14,50 +14,51 @@
 #include "render_resource_usage_enum.hpp"
 #include "render_pass_push_constants_struct.hpp"
 #include "gpu_pipeline_resource.hpp"
-#include "input_layout.hpp"
 #include "shader.hpp"
 #include "camera.hpp"
+#include "rasterizer_state.hpp"
 #include "types.hpp"
 
 namespace triton
 {
+    class XRenderDomain;
+
     class XRenderPassGeometry : public IRenderPass
     {
-        TRITON_CLASS_NAME(XRenderPassGeometry)
+        TRITON_OBJECT(XRenderPassGeometry)
 
-        SHandle                                         _renderDomain;
+        XRenderDomain*                                  _renderDomain;
         std::optional<SClearState>                      _clearState = std::nullopt;
-        SHandle                                         _inputLayout;
-        std::vector<CGPUBufferResource>                 _inputBuffers = {};
+        std::vector<SGPUBufferResource>                 _inputBuffers = {};
         std::vector<SShaderTextureBinding>              _inputTextures = {};
         SDepthState                                     _depthState;
         SBlendState                                     _blendState;
         EPrimitiveTopology                              _primitiveTopology = EPrimitiveTopology::Unknown;
         SViewport                                       _viewport = {};
         types::boolean                                  _bClearRenderTarget = types::False;
-        SHandle                                         _renderTarget;
-        SHandle                                         _shader;
-        CGPUPipelineResource                            _gpuPipeline = CGPUPipelineResource::Invalid();
+        XRenderTarget*                                  _renderTarget;
+        XShader*                                        _shader;
+        SGPUPipelineResource                            _gpuPipeline = SGPUPipelineResource::Invalid();
         SNativeCommandDrawInfo                          _nativeCommandDrawInfoArrays[2];
         SRenderPassGPUPushConstantsLayout               _pushConstantArrays[2];
-        std::vector<CGPUBindingGroupLayoutResource>     _gpuBindingGroupLayouts;
-        std::vector<CGPUBindingGroupResource>           _gpuBindingGroupBuffersArrays[2];
+        std::vector<SGPUBindingGroupLayoutResource>     _gpuBindingGroupLayouts;
+        std::vector<SGPUBindingGroupResource>           _gpuBindingGroupBuffersArrays[2];
 
     public:
         explicit XRenderPassGeometry(
+            const SMemAlloc& mem_alloc,
             cContext* context,
-            types::s32 poolIndex,
-            const SHandle& renderDomain,
-            const SHandle& renderTargetHandle,
+            XRenderDomain* renderDomain,
+            XRenderTarget* render_target,
             types::boolean bClearRenderTarget,
             const cVector4& clearColor,
             types::f32 clearDepth,
-            const std::vector<EResourceUsage>& srcAttachmentsUsage,
-            const std::vector<EResourceUsage>& dstAttachmentsUsage,
-            const SHandle& shaderHandle,
+            const std::vector<ERenderResourceUsage>& srcAttachmentsUsage,
+            const std::vector<ERenderResourceUsage>& dstAttachmentsUsage,
+            XShader* shader,
             EPrimitiveTopology primitiveTopology,
             const SViewport& viewport,
-            const std::vector<CGPUBufferResource>& inputBuffers,
+            const std::vector<SGPUBufferResource>& inputBuffers,
             const std::vector<SShaderTextureBinding>& inputTextures
         );
         ~XRenderPassGeometry() override;
@@ -66,11 +67,9 @@ namespace triton
 
         inline types::boolean IsRenderTargetClearRequired() const { return _bClearRenderTarget; }
 
-        inline const SHandle& GetRenderDomain() { return _renderDomain; }
+        inline XRenderDomain* GetRenderDomain() { return _renderDomain; }
 
-        inline const SHandle& GetShader() { return _shader; }
-
-        struct TGPULayout {};
+        inline XShader* GetShader() { return _shader; }
 
     private:
         void Bind();

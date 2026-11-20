@@ -6,9 +6,9 @@
 
 namespace triton
 {
-	enum class EImageAspectBit : types::dword
+	enum class ERenderImageAspectBit : types::dword
 	{
-		Unknown,
+		Unknown = 0,
 		Color = 1,
 		Depth = 2
 	};

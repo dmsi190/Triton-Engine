@@ -8,25 +8,25 @@
 
 namespace triton
 {
-	enum class EBindingGroupBindingType : types::dword
+	enum class ERenderBindingGroupBindingType : types::dword
 	{
 		Unknown,
 		StorageBuffer,
 		TextureSampler
 	};
 
-	struct SBindingGroupBinding final
+	struct SRenderBindingGroupBinding final
 	{
 		types::usize index;
-		EBindingGroupBindingType type;
+		ERenderBindingGroupBindingType type;
 		EShaderStageBit shaderStageMask;
-		CGPUResource* resource;
+		SGPUResource* resource;
 
-		SBindingGroupBinding(
+		SRenderBindingGroupBinding(
 			types::usize index,
-			EBindingGroupBindingType type,
+			ERenderBindingGroupBindingType type,
 			EShaderStageBit shader_stage_mask,
-			CGPUResource* resource
+			SGPUResource* resource
 		) : index(index), type(type), shaderStageMask(shader_stage_mask), resource(resource) {}
 	};
 }

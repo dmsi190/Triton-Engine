@@ -6,7 +6,7 @@
 
 namespace triton
 {
-	enum class EPipelineBindPoint : types::dword
+	enum class ERenderPipelineBindPoint : types::dword
 	{
 		Unknown,
 		Graphics,

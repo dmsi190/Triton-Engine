@@ -3,24 +3,21 @@
 #include "render_pass_processing.hpp"
 #include "shader_pool.hpp"
 #include "render_target_pool.hpp"
-#include "input_layout_pool.hpp"
 
 using namespace types;
 
 triton::XRenderPassProcessing::XRenderPassProcessing(
+    const SMemAlloc& mem_alloc,
     cContext* context,
-    s32 poolIndex,
-    const SHandle& inputLayout,
-    const std::vector<CGPUBufferResource>& inputBuffers,
+    const std::vector<SGPUBufferResource>& inputBuffers,
     const std::vector<SShaderTextureBinding>& inputTextures,
     const SViewport& viewport,
     const SBlendState& blendState,
     const SDepthState& depthState,
-    const SHandle& renderTarget,
-    const SHandle& shader
+    XRenderTarget* renderTarget,
+    XShader* shader
 ) :
-    IRenderPass(context, poolIndex, ERenderPassDispatch::Processing),
-    _inputLayout(inputLayout),
+    IRenderPass(mem_alloc, context, ERenderPassDispatch::Processing),
     _inputBuffers(inputBuffers),
     _inputTextures(inputTextures),
     _viewport(viewport),
@@ -31,7 +28,7 @@ triton::XRenderPassProcessing::XRenderPassProcessing(
 
 void triton::XRenderPassProcessing::Render()
 {
-    CThreadGuard::AssertRender();
+    //CThreadGuard::AssertRender();
 
     // TODO: [Vulkan backend] This must be done using render command queue on main thread
     // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

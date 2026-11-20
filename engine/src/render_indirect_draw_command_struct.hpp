@@ -6,7 +6,7 @@
 
 namespace triton
 {
-    struct SIndirectDrawCommand final
+    struct SRenderIndirectDrawCommand final
     {
         types::u32 indexCount;
         types::u32 instanceCount;

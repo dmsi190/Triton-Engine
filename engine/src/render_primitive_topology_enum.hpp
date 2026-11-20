@@ -6,7 +6,7 @@
 
 namespace triton
 {
-	enum class EPrimitiveTopology : types::dword
+	enum class ERenderPrimitiveTopology : types::dword
 	{
 		Unknown,
 		TriangleList,

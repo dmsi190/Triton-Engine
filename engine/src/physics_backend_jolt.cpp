@@ -18,6 +18,7 @@
 #include "engine.hpp"
 #include "capabilities.hpp"
 #include "application.hpp"
+#include "creator.hpp"
 
 using namespace JPH;
 using namespace types;
@@ -189,7 +190,7 @@ triton::XPhysicsBackendJolt::~XPhysicsBackendJolt()
 
 triton::SPhysicsWorldBackendData triton::XPhysicsBackendJolt::CreateWorld()
 {
-	const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+	const SCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
 
 	TempAllocatorImpl* tempAllocator = new TempAllocatorImpl(caps.maxPhysicsTempBufferByteSize);
 	JobSystemThreadPool* jobSystem = new JobSystemThreadPool(
@@ -269,7 +270,7 @@ triton::SPhysicsShapeBackendData triton::XPhysicsBackendJolt::CreateBoxShape(
 	));
 	shapeSettings.SetEmbedded();
 	ShapeSettings::ShapeResult shapeResult = shapeSettings.Create();
-	ShapeRefC* shape = _context->Create<ShapeRefC>(shapeResult.Get());
+	ShapeRefC* shape = CCreator::Create<ShapeRefC>(shapeResult.Get());
 
 	SPhysicsShapeBackendData psbd;
 	psbd.shape = (void*)shape;
@@ -310,7 +311,7 @@ triton::SPhysicsShapeBackendData triton::XPhysicsBackendJolt::CreateHeightFieldS
 void triton::XPhysicsBackendJolt::DestroyShape(const SPhysicsShapeBackendData& shape)
 {
 	if (shape.shape)
-		_context->Destroy<ShapeRefC>((ShapeRefC*)shape.shape);
+		CCreator::Destroy<ShapeRefC>((ShapeRefC*)shape.shape);
 }
 
 triton::SPhysicsRigidBodyBackendData triton::XPhysicsBackendJolt::CreateRigidBody(
@@ -339,7 +340,7 @@ triton::SPhysicsRigidBodyBackendData triton::XPhysicsBackendJolt::CreateRigidBod
 	);
 	Body* rb = bi.CreateBody(rbSettings);
 	bi.AddBody(rb->GetID(), (EActivation)desc.properties[(int)ERigidBodyPropertyIndices::ActivationMode]);
-	BodyID* rbid = _context->Create<BodyID>(rb->GetID());
+	BodyID* rbid = CCreator::Create<BodyID>(rb->GetID());
 
 	SPhysicsRigidBodyBackendData prbbd;
 	prbbd.body = (void*)rbid;
@@ -359,7 +360,7 @@ void triton::XPhysicsBackendJolt::DestroyRigidBody(
 		BodyID& bid = *(BodyID*)body.body;
 		bi.RemoveBody(bid);
 		bi.DestroyBody(bid);
-		_context->Destroy<BodyID>((BodyID*)body.body);
+		CCreator::Destroy<BodyID>((BodyID*)body.body);
 	}
 }
 

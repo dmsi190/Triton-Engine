@@ -2,125 +2,91 @@
 
 #include "render_pass_geometry.hpp"
 #include "thread_guard.hpp"
-#include "shader_pool.hpp"
-#include "render_instance_static_pool.hpp"
-#include "render_instance_dynamic_pool.hpp"
-#include "material_pool.hpp"
-#include "input_layout_pool.hpp"
-#include "camera_pool.hpp"
-#include "render_target_pool.hpp"
-#include "skinned_bones_pool.hpp"
 #include "render_binding_group_binding_struct.hpp"
 #include "shader_stage_bit_enum.hpp"
-#include "gpu_buffer_pool.hpp"
 #include "input_backend.hpp"
 #include "geometry_storage.hpp"
 #include "gpu_buffer.hpp"
 #include "world_render_domain.hpp"
-#include "world_render_domain_pool.hpp"
-#include "world_render_group_pool.hpp"
 #include "graphics.hpp"
 #include "render_pass_culling.hpp"
 #include "render_pass_pools.hpp"
 #include "graphics_buffers.hpp"
+#include "render_command_proxy.hpp"
+#include "creator.hpp"
 
 using namespace types;
 
 triton::XRenderPassGeometry::XRenderPassGeometry(
+    const SMemAlloc& mem_alloc,
     cContext* context,
-    s32 poolIndex,
-    const SHandle& renderDomain,
-    const SHandle& renderTargetHandle,
+    XRenderDomain* renderDomain,
+    XRenderTarget* render_target,
     boolean bClearRenderTarget,
     const cVector4& clearColor,
     f32 clearDepth,
-    const std::vector<EResourceUsage>& srcAttachmentsUsage,
-    const std::vector<EResourceUsage>& dstAttachmentsUsage,
-    const SHandle& shaderHandle,
+    const std::vector<ERenderResourceUsage>& srcAttachmentsUsage,
+    const std::vector<ERenderResourceUsage>& dstAttachmentsUsage,
+    XShader* shader,
     EPrimitiveTopology primitiveTopology,
     const SViewport& viewport,
-    const std::vector<CGPUBufferResource>& inputBuffers,
+    const std::vector<SGPUBufferResource>& inputBuffers,
     const std::vector<SShaderTextureBinding>& inputTextures
 ) :
-    IRenderPass(context, poolIndex, ERenderPassDispatch::Geometry),
+    IRenderPass(mem_alloc, context, ERenderPassDispatch::Geometry),
     _renderDomain(renderDomain),
     _bClearRenderTarget(bClearRenderTarget),
-    _renderTarget(renderTargetHandle),
-    _shader(shaderHandle),
+    _renderTarget(render_target),
+    _shader(shader),
     _primitiveTopology(primitiveTopology),
     _viewport(viewport)
 {
-    XRenderTarget& renderTarget = *_context->GetPool<CRenderTargetPool>()->Get(_renderTarget);
-    
-    const CGPURenderTargetResource& gpuRenderTarget = renderTarget.GetGPUResource();
+    const SGPURenderTargetResource& render_target_resource = render_target->GetGPUResource();
 
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-        ERenderCommand::CREATE_RENDER_PASS,
-        (cpuword)&gpuRenderTarget,
-        (cpuword)bClearRenderTarget,
-        (cpuword)&clearColor,
-        (cpuword)&clearDepth,
-        (cpuword)&srcAttachmentsUsage,
-        (cpuword)&dstAttachmentsUsage
-    ));
-
-    _gpuRenderPass = _context->GetSubsystem<CEngine>()->
-        GetSynchronization()->
-        WaitForRenderCommandResult<CGPURenderPassResource>();
-
-    std::vector<SBindingGroupBinding>* bufferBindingGroupBindings =
-        CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
-
-    bufferBindingGroupBindings->push_back({ 0, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
-    bufferBindingGroupBindings->push_back({ 1, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
-    bufferBindingGroupBindings->push_back({ 2, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
-    bufferBindingGroupBindings->push_back({ 3, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
-    bufferBindingGroupBindings->push_back({ 4, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
-
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-        ERenderCommand::CreateBindingGroupLayout,
-        (cpuword)bufferBindingGroupBindings
-    ));
-
-    _gpuBindingGroupLayouts.push_back(
-        _context->GetSubsystem<CEngine>()->
-        GetSynchronization()->
-        WaitForRenderCommandResult<CGPUBindingGroupLayoutResource>()
+    _gpuRenderPass = CRenderCommandProxy::CreateRenderPass(
+        render_target_resource,
+        bClearRenderTarget,
+        clearColor,
+        clearDepth,
+        srcAttachmentsUsage,
+        dstAttachmentsUsage
     );
 
-    CObjectAllocator::Destroy<std::vector<SBindingGroupBinding>>(bufferBindingGroupBindings);
+    std::vector<SRenderBindingGroupBinding>* bufferBindingGroupBindings =
+        CCreator::Create<std::vector<SRenderBindingGroupBinding>>();
 
-    std::vector<SBindingGroupBinding>* textureBindingGroupBindings =
-        CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
+    bufferBindingGroupBindings->push_back({ 0, ERenderBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
+    bufferBindingGroupBindings->push_back({ 1, ERenderBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
+    bufferBindingGroupBindings->push_back({ 2, ERenderBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
+    bufferBindingGroupBindings->push_back({ 3, ERenderBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
+    bufferBindingGroupBindings->push_back({ 4, ERenderBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
 
-    textureBindingGroupBindings->push_back({ 0, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
-    textureBindingGroupBindings->push_back({ 1, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
-    textureBindingGroupBindings->push_back({ 2, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
-    textureBindingGroupBindings->push_back({ 3, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    _gpuBindingGroupLayouts.push_back(CRenderCommandProxy::CreateBindingGroupLayout(*bufferBindingGroupBindings));
 
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-        ERenderCommand::CreateBindingGroupLayout,
-        (cpuword)textureBindingGroupBindings
-    ));
+    CCreator::Destroy<std::vector<SRenderBindingGroupBinding>>(bufferBindingGroupBindings);
 
-    _gpuBindingGroupLayouts.push_back(
-        _context->GetSubsystem<CEngine>()->
-        GetSynchronization()->
-        WaitForRenderCommandResult<CGPUBindingGroupLayoutResource>()
-    );
+    std::vector<SRenderBindingGroupBinding>* textureBindingGroupBindings =
+        CCreator::Create<std::vector<SRenderBindingGroupBinding>>();
 
-    CObjectAllocator::Destroy<std::vector<SBindingGroupBinding>>(textureBindingGroupBindings);
+    textureBindingGroupBindings->push_back({ 0, ERenderBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    textureBindingGroupBindings->push_back({ 1, ERenderBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    textureBindingGroupBindings->push_back({ 2, ERenderBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    textureBindingGroupBindings->push_back({ 3, ERenderBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
 
-    std::vector<SBindingGroupBinding>* bufferBindingGroupBufferBindings =
-        CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
-    std::vector<SBindingGroupBinding>* bufferBindingGroupTextureBindings =
-        CObjectAllocator::Create<std::vector<SBindingGroupBinding>>(64);
+    _gpuBindingGroupLayouts.push_back(CRenderCommandProxy::CreateBindingGroupLayout(*textureBindingGroupBindings));
 
-    const CGPUBufferResource& instanceRigidBuffer = _context->GetPool<CRenderInstanceStaticPool>()->GetGPUBuffer();
-    const CGPUBufferResource& instanceDynamicBuffer = _context->GetPool<CRenderInstanceDynamicPool>()->GetGPUBuffer();
-    const CGPUBufferResource& materialBuffer = _context->GetPool<CMaterialPool>()->GetGPUBuffer();
-    const CGPUBufferResource& skinnedBoneBuffer = _context->GetPool<CSkinnedBonesPool>()->GetGPUBuffer();
-    const CGPUBufferResource& main_command_render_group_indices_buffer = CGraphicsBuffers::GetMainCommandRenderGroupIndicesBuffer();
+    CCreator::Destroy<std::vector<SRenderBindingGroupBinding>>(textureBindingGroupBindings);
+
+    std::vector<SRenderBindingGroupBinding>* bufferBindingGroupBufferBindings =
+        CCreator::Create<std::vector<SRenderBindingGroupBinding>>();
+    std::vector<SRenderBindingGroupBinding>* bufferBindingGroupTextureBindings =
+        CCreator::Create<std::vector<SRenderBindingGroupBinding>>();
+
+    const SGPUBufferResource& instanceRigidBuffer = _context->GetPool<CRenderInstanceStaticPool>()->GetGPUBuffer();
+    const SGPUBufferResource& instanceDynamicBuffer = _context->GetPool<CRenderInstanceDynamicPool>()->GetGPUBuffer();
+    const SGPUBufferResource& materialBuffer = _context->GetPool<CMaterialPool>()->GetGPUBuffer();
+    const SGPUBufferResource& skinnedBoneBuffer = _context->GetPool<CSkinnedBonesPool>()->GetGPUBuffer();
+    const SGPUBufferResource& main_command_render_group_indices_buffer = CGraphicsBuffers::GetMainCommandRenderGroupIndicesBuffer();
     
     bufferBindingGroupBufferBindings->push_back({ 0, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, (CGPUResource*)&instanceRigidBuffer });
     bufferBindingGroupBufferBindings->push_back({ 1, EBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, (CGPUResource*)&instanceDynamicBuffer });

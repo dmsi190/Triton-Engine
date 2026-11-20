@@ -6,7 +6,7 @@
 
 namespace triton
 {
-	enum class EResourceUsage : types::dword
+	enum class ERenderResourceUsage : types::dword
 	{
 		Unknown,
 		ColorAttachment,

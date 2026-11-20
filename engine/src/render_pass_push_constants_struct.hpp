@@ -7,7 +7,7 @@
 
 namespace triton
 {
-	struct SRenderPassGPUPushConstantsLayout
+	struct SRenderPassPushConstantsLayout
 	{
 		cVector3 cameraWorldPosition = cVector3(0.0f);
 		types::dword instanceMotionType = 0;

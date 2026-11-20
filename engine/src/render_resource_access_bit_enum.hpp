@@ -1,4 +1,4 @@
-// render_access_bit_enum.hpp
+// render_resource_access_bit_enum.hpp
 
 #pragma once
 
@@ -6,7 +6,7 @@
 
 namespace triton
 {
-	enum class EAccessBit : types::dword
+	enum class ERenderResourceAccessBit : types::dword
 	{
 		None = 0,
 		IndexRead = 1,

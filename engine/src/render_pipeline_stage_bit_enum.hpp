@@ -6,9 +6,9 @@
 
 namespace triton
 {
-	enum class EPipelineStageBit : types::dword
+	enum class ERenderPipelineStageBit : types::dword
 	{
-		Unknown,
+		Unknown = 0,
 		TopOfPipe = 1,
 		VertexInput = 2,
 		Vertex = 4,

@@ -21,39 +21,18 @@ namespace triton
 		public: \
 			static ClassType GetTypeStatic() { return #typeName; } \
 			virtual ClassType GetType() const override { return GetTypeStatic(); } \
-
-	#define TRITON_CLASS_NAME(className) \
-		public: \
-			static std::string GetTypeStatic() { return #className; } \
-			virtual ClassType GetType() const { return GetTypeStatic(); } \
 		private: \
-
-	class cIdentifier
-	{
-	public:
-		static cTag Generate(const ::std::string& seed);
-	};
-
-	class iObject;
-	class cObjectPtr
-	{
-	public:
-		iObject* object = nullptr;
-	};
 
 	class iObject
 	{
 		friend class CCreator;
 
 	protected:
-		SMemoryAllocation _mem_alloc;
+		SMemAlloc _mem_alloc;
 		cContext* _context;
 
 	public:
-
-		iObject() = default; // TODO: remove this <<<<<-----
-
-		explicit iObject(const SMemoryAllocation& mem_alloc, cContext* context)
+		explicit iObject(const SMemAlloc& mem_alloc, cContext* context)
 			: _mem_alloc(mem_alloc), _context(context) {}
 		
 		virtual ~iObject() = default;

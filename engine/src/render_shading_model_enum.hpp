@@ -4,7 +4,7 @@
 
 namespace triton
 {
-	enum class EShadingModel
+	enum class ERenderShadingModel
 	{
 		BlinnPhong,
 		PBR
