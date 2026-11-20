@@ -1,4 +1,4 @@
-// model3d_backend_assimp.hpp
+// model_backend_assimp.hpp
 
 #pragma once
 
@@ -9,7 +9,7 @@
 #include <assimp/postprocess.h>
 #include <vector>
 #include <unordered_map>
-#include "model3d_backend.hpp"
+#include "model_backend.hpp"
 #include "vertex.hpp"
 #include "material.hpp"
 #include "skeleton.hpp"
@@ -23,7 +23,7 @@ namespace triton
     struct SAnimation;
     struct SSkeletonData;
 
-    struct SModel3DMaterialData final
+    struct SModelMaterialData final
     {
         types::s32 absoluteMaterialIndex = -1;
         std::string diffuseTextureFilePath = {};
@@ -42,25 +42,25 @@ namespace triton
         types::f32 weight = 0.0f;
     };
 
-    class XModel3DBackendAssimp final : public IModel3DBackend
+    class XModelBackendAssimp final : public IModelBackend
     {
     public:
-        explicit XModel3DBackendAssimp(cContext* context) : IModel3DBackend(context) {}
-        ~XModel3DBackendAssimp() override = default;
+        explicit XModelBackendAssimp(cContext* context) : IModelBackend(context) {}
+        ~XModelBackendAssimp() override = default;
 
-        std::optional<SModel3DData> CreateModel(
+        std::optional<SModelData> CreateModel(
             const std::string& modelFolderPath,
             const std::string& modelLocalPath,
             EVertexBufferFormat vertexDataFormat
         ) override final;
 
-        std::optional<SModel3DData> CreateModel(
+        std::optional<SModelData> CreateModel(
             const types::u8* byteData,
             types::usize byteSize,
             EVertexBufferFormat vertexDataFormat
         ) override final;
 
-        void DestroyModel(SModel3DData& model) override final;
+        void DestroyModel(SModelData& model) override final;
 
     private:
         void ImportScene(
@@ -76,7 +76,7 @@ namespace triton
             types::usize byteSize
         );
         
-        std::optional<SModel3DData> ParseImportedScene(
+        std::optional<SModelData> ParseImportedScene(
             cContext* context,
             const Assimp::Importer& importer,
             const aiScene* scene,
@@ -93,61 +93,60 @@ namespace triton
         
         void AllocateVertexIndexBuffers(
             EVertexBufferFormat vertexDataFormat,
-            SRigidVertexGPULayout*& rigidVertexData,
-            SSkinnedVertexGPULayout*& skinnedVertexData,
-            types::u32*& indices,
-            types::usize vertexCount,
-            types::usize indexCount
+            SMemAlloc<SRigidVertexGPULayout>& rigidVertexData,
+            SMemAlloc<SSkinnedVertexGPULayout>& skinnedVertexData,
+            SMemAlloc<u32>& indices,
+            usize vertexCount,
+            usize indexCount
         );
         
-        void AllocateTempBitangentBuffer(cVector3*& bitangents, types::usize vertexCount);
+        void AllocateTempBitangentBuffer(SMemAlloc<cVector3>& bitangents, usize vertexCount);
         
         void ParseVertexData(
             const aiScene* scene,
             EVertexBufferFormat vertexDataFormat,
-            SRigidVertexGPULayout*& rigidVertexData,
-            SSkinnedVertexGPULayout*& skinnedVertexData,
-            cVector3* bitangents
+            const SMemAlloc<SRigidVertexGPULayout>& rigidVertexData,
+            const SMemAlloc<SSkinnedVertexGPULayout>& skinnedVertexData,
+            const SMemAlloc<cVector3>& bitangents
         );
         
         void CalculateHandedness(
             EVertexBufferFormat vertexDataFormat,
-            SRigidVertexGPULayout*& rigidVertexData,
-            SSkinnedVertexGPULayout*& skinnedVertexData,
-            cVector3* bitangents,
-            types::usize vertexCount
+            const SMemAlloc<SRigidVertexGPULayout>& rigidVertexData,
+            const SMemAlloc<SSkinnedVertexGPULayout>& skinnedVertexData,
+            const SMemAlloc<cVector3>& bitangents,
+            usize vertexCount
         );
         
         void ParseIndexData(
             const aiScene* scene,
-            types::u32* indexData,
+            const SMemAlloc<types::u32>& indexData,
             const std::vector<types::usize>& indexOffsets
         );
         
-        void ParseMaterialData(const aiScene* scene, std::vector<SModel3DMaterialData>& materials);
+        void ParseMaterialData(const aiScene* scene, std::vector<SModelMaterialData>& materials);
         
         void CreateMaterials(
             cContext* context,
             const std::string& modelFolderPath,
-            const std::vector<SModel3DMaterialData>& materials,
-            std::vector<SHandle>& modelMaterials,
+            const std::vector<SModelMaterialData>& materials,
+            std::vector<XMaterial*>& modelMaterials,
             const aiScene* scene
         );
 
-        void DeallocateTempBitangentBuffer(cVector3* bitangents);
+        void DeallocateTempBitangentBuffer(SMemAlloc<cVector3>& bitangents);
         
         void CreateBones(
             const aiScene* scene,
-            SSkinnedVertexGPULayout* skinnedVertexData,
-            types::usize vertexCount,
-            std::unordered_map<std::string, types::usize>& boneIndices,
+            usize vertexCount,
+            std::unordered_map<std::string, usize>& boneIndices,
             std::vector<SSkeletonBone>& bones,
             std::vector<std::vector<SBoneWeight>>& vertexWeights
         );
 
         void FinalizeBoneWeights(
             cContext* context,
-            SSkinnedVertexGPULayout* skinnedVertexData,
+            const SMemAlloc<SSkinnedVertexGPULayout>& vertexData,
             types::usize vertexCount,
             std::vector<std::vector<SBoneWeight>>& vertexWeights
         );
@@ -169,7 +168,7 @@ namespace triton
 
         void CreateSkeleton(
             cContext* context,
-            SHandle& modelSkeleton,
+            XSkeleton*& modelSkeleton,
             const std::vector<SSkeletonBone>& bones,
             const aiMatrix4x4& accumulatedRootTransform
         );
@@ -177,11 +176,11 @@ namespace triton
         void CreateAnimations(
             cContext* context,
             const aiScene* scene,
-            const std::unordered_map<std::string, types::usize>& boneIndices,
-            std::vector<SHandle>& modelAnimations
+            const std::unordered_map<std::string, usize>& boneIndices,
+            std::vector<XAnimation*>& modelAnimations
         );
         
-        std::optional<SHandle> CreateTexture(
+        std::optional<XTexture*> CreateTexture(
             cContext* context,
             ETextureFormat dataFormat,
             const std::string& modelFolderPath,
@@ -190,30 +189,30 @@ namespace triton
             const aiTexture* texture
         );
         
-        std::optional<SHandle> CreateTextureFromModelData(
+        std::optional<XTexture*> CreateTextureFromModelData(
             cContext* context,
             ETextureFormat dataFormat,
             const std::string& textureFilePath,
             const aiTexture* texture
         );
         
-        std::optional<SHandle> CreateTextureFromFile(
+        std::optional<XTexture*> CreateTextureFromFile(
             cContext* context,
             ETextureFormat dataFormat,
             const std::string& modelFolderPath,
             const std::string& textureFilePath
         );
         
-        SModel3DData PrepareResult(
+        SModelData PrepareResult(
             EVertexBufferFormat vertexDataFormat,
-            const SRigidVertexGPULayout* rigidVertexData,
-            const SSkinnedVertexGPULayout* skinnedVertexData,
-            const types::u32* indexData,
+            const SMemAlloc<SRigidVertexGPULayout>& rigidVertexData,
+            const SMemAlloc<SSkinnedVertexGPULayout>& skinnedVertexData,
+            const SMemAlloc<types::u32>& indexData,
             types::usize vertexCount,
             types::usize indexCount,
-            const std::vector<SHandle>& modelMaterials,
-            const SHandle& modelSkeleton,
-            const std::vector<SHandle>& modelAnimations
+            const std::vector<XMaterial*>& modelMaterials,
+            XSkeleton* modelSkeleton,
+            const std::vector<XAnimation*>& modelAnimations
         );
 
         cMatrix4 ConvertMatrix(const aiMatrix4x4& mat);

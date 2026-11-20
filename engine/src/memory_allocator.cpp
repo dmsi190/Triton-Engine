@@ -8,22 +8,6 @@
 
 using namespace types;
 
-triton::SMemoryAllocation triton::SMemoryAllocation::Invalid()
-{
-	SMemoryAllocation invalid_mem_alloc;
-	invalid_mem_alloc.mem = nullptr;
-
-	return invalid_mem_alloc;
-}
-
-types::boolean triton::SMemoryAllocation::IsValid() const
-{
-	if (this->mem)
-		return True;
-	else
-		return False;
-}
-
 void triton::CMemoryAllocator::Initialize(usize bin_count, usize bin_capacity, usize bin_mem_step)
 {
 	if (_bin_count)
@@ -84,65 +68,4 @@ void triton::CMemoryAllocator::Release()
 	}
 
 	_max_object_byte_size = _bin_mem_step = _bin_capacity = _bin_count = 0;
-}
-
-triton::SMemoryAllocation triton::CMemoryAllocator::Allocate(usize byte_size)
-{
-	if (!_bin_count || !byte_size)
-		return SMemoryAllocation::Invalid();
-
-	if (byte_size > _max_object_byte_size)
-	{
-		SMemoryAllocation mem_alloc;
-		mem_alloc.bin_index = k_max_size;
-		mem_alloc.block_index = k_max_size;
-		mem_alloc.mem = (u8*)std::malloc(byte_size);
-
-		return mem_alloc;
-	}
-
-	const usize bin_index = (byte_size - 1) / _bin_mem_step;
-
-	const SMemoryAllocatorBin& bin = _bins[bin_index];
-
-	for (usize block_index = 0, block_byte_cursor = 0, occupancy_byte_cursor = 0;
-		block_index < _bin_capacity;
-		++block_index, block_byte_cursor += bin.max_block_byte_size, ++occupancy_byte_cursor)
-	{
-		u8* mem = (u8*)bin.blocks + block_byte_cursor;
-		u8* is_occupied_ptr = (u8*)bin.occupancy + occupancy_byte_cursor;
-
-		if (*is_occupied_ptr == 0)
-		{
-			*is_occupied_ptr = 1;
-
-			SMemoryAllocation mem_alloc;
-			mem_alloc.bin_index = bin_index;
-			mem_alloc.block_index = block_index;
-			mem_alloc.mem = mem;
-
-			return mem_alloc;
-		}
-	}
-
-	return SMemoryAllocation::Invalid();
-}
-
-void triton::CMemoryAllocator::Deallocate(const SMemoryAllocation& mem_alloc)
-{
-	if (!_bin_count || !mem_alloc.IsValid())
-		return;
-
-	if (mem_alloc.bin_index == k_max_size &&
-		mem_alloc.block_index == k_max_size)
-	{
-		std::free(mem_alloc.mem);
-		return;
-	}
-
-	const SMemoryAllocatorBin& bin = _bins[mem_alloc.bin_index];
-
-	u8* is_occupied_ptr = (u8*)bin.occupancy + mem_alloc.block_index;
-
-	*is_occupied_ptr = 0;
 }

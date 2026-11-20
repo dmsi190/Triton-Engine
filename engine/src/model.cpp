@@ -3,13 +3,11 @@
 #include "model.hpp"
 #include "context.hpp"
 #include "tasset.hpp"
-#include "material_pool.hpp"
 #include "skeleton_pool.hpp"
-#include "animation_pool.hpp"
-#include "object_allocator.hpp"
 #include "texture.hpp"
 #include "image_decoder.hpp"
 #include "graphics_texture_usage_enum.hpp"
+#include "creator.hpp"
 
 using namespace types;
 
@@ -42,7 +40,7 @@ triton::XModel::XModel(
     {
 		std::filesystem::path assetFolderPath = filePath.parent_path();
 
-		_asset = CObjectAllocator::Create<asset::CModel3DAsset>(64);
+		_asset = CCreator::Create<asset::CModel3DAsset>();
 		_asset->LoadAssetFile(filePath);
 
 		// TODO: rewrite TAsset tools to rigid/skinned models support
@@ -61,13 +59,13 @@ triton::XModel::XModel(
 				const std::filesystem::path& assetTexturePath,
 				const asset::STextureData& assetTextureData,
 				ETextureFormat textureFormat,
-				SHandle& outHandle
+				XTexture* outHandle
 				) {
 					std::filesystem::path texturePath = assetTexturePath;
 					if (!assetTexturePath.is_absolute())
 						texturePath = assetFolderPath / assetTexturePath;
 					if (std::filesystem::exists(texturePath))
-						outHandle = *_context->GetPool<PTexturePool>()->Create(
+						outHandle = CCreator::Create<XTexture>(
 							types::K_FALSE,
 							textureFormat,
 							(dword)ETextureUsageBit::Sampled,
@@ -77,7 +75,7 @@ triton::XModel::XModel(
 							texturePath.generic_string()
 						);
 					else
-						outHandle = *_context->GetPool<PTexturePool>()->Create(
+						outHandle = CCreator::Create<XTexture>(
 							types::K_FALSE,
 							textureFormat,
 							(dword)ETextureUsageBit::Sampled,
@@ -88,10 +86,10 @@ triton::XModel::XModel(
 						);
 				};
 
-			SHandle diffuseTexture;
-			SHandle normalTexture;
-			SHandle roughnessTexture;
-			SHandle metallicTexture;
+			XTexture* diffuseTexture;
+			XTexture* normalTexture;
+			XTexture* roughnessTexture;
+			XTexture* metallicTexture;
 
 			ProcessTexture(
 				assetFolderPath,
@@ -122,7 +120,7 @@ triton::XModel::XModel(
 				metallicTexture
 			);
 
-			SHandle material = *_context->GetPool<CMaterialPool>()->Create(
+			XMaterial* material = CCreator::Create<XMaterial>(
 				diffuseTexture,
 				normalTexture,
 				roughnessTexture,
@@ -148,7 +146,7 @@ triton::XModel::XModel(
 
 		if (bones.size() > 0)
 		{
-			_data.skeleton = *_context->GetPool<CSkeletonPool>()->Create(
+			_data.skeleton = CCreator::Create<XSkeleton>(
 				bones,
 				cMatrix4(_asset->rootBoneAccumulatedTransform)
 			);
@@ -160,28 +158,28 @@ triton::XModel::XModel(
 			keys.resize(_asset->animationData[i].keys.size());
 			for (usize j = 0; j < _asset->animationData[i].keys.size(); j++)
 			{
-				keys[j].localBoneIndex = _asset->animationData[i].keys[j].localBoneIndex;
-				keys[j].positionKeys.resize(_asset->animationData[i].keys[j].positionKeys.size());
+				keys[j].local_bone_index = _asset->animationData[i].keys[j].localBoneIndex;
+				keys[j].position_keys.resize(_asset->animationData[i].keys[j].positionKeys.size());
 				for (usize k = 0; k < _asset->animationData[i].keys[j].positionKeys.size(); k++)
 				{
-					keys[j].positionKeys[k].position = cVector3(_asset->animationData[i].keys[j].positionKeys[k].position);
-					keys[j].positionKeys[k].time = _asset->animationData[i].keys[j].positionKeys[k].time;
+					keys[j].position_keys[k].position = cVector3(_asset->animationData[i].keys[j].positionKeys[k].position);
+					keys[j].position_keys[k].time = _asset->animationData[i].keys[j].positionKeys[k].time;
 				}
-				keys[j].rotationKeys.resize(_asset->animationData[i].keys[j].rotationKeys.size());
+				keys[j].rotation_keys.resize(_asset->animationData[i].keys[j].rotationKeys.size());
 				for (usize k = 0; k < _asset->animationData[i].keys[j].rotationKeys.size(); k++)
 				{
-					keys[j].rotationKeys[k].rotation = cQuaternion(_asset->animationData[i].keys[j].rotationKeys[k].rotation);
-					keys[j].rotationKeys[k].time = _asset->animationData[i].keys[j].rotationKeys[k].time;
+					keys[j].rotation_keys[k].rotation = cQuaternion(_asset->animationData[i].keys[j].rotationKeys[k].rotation);
+					keys[j].rotation_keys[k].time = _asset->animationData[i].keys[j].rotationKeys[k].time;
 				}
-				keys[j].scaleKeys.resize(_asset->animationData[i].keys[j].scaleKeys.size());
+				keys[j].scale_keys.resize(_asset->animationData[i].keys[j].scaleKeys.size());
 				for (usize k = 0; k < _asset->animationData[i].keys[j].scaleKeys.size(); k++)
 				{
-					keys[j].scaleKeys[k].scale = cVector3(_asset->animationData[i].keys[j].scaleKeys[k].scale);
-					keys[j].scaleKeys[k].time = _asset->animationData[i].keys[j].scaleKeys[k].time;
+					keys[j].scale_keys[k].scale = cVector3(_asset->animationData[i].keys[j].scaleKeys[k].scale);
+					keys[j].scale_keys[k].time = _asset->animationData[i].keys[j].scaleKeys[k].time;
 				}
 			}
 
-			SHandle animHandle = *_context->GetPool<CAnimationPool>()->Create(
+			XAnimation* animHandle = CCreator::Create<XAnimation>(
 				_asset->animationData[i].name,
 				_asset->animationData[i].duration,
 				_asset->animationData[i].ticksPerSecond,
@@ -193,15 +191,15 @@ triton::XModel::XModel(
     }
 }
 
-triton::XModel3D::~XModel3D()
+triton::XModel::~XModel()
 {
-	if (_fileType == EModel3DFileType::Raw)
+	if (_fileType == EModelFileType::Raw)
 	{
 		_context->GetBackend<IModel3DBackend>()->DestroyModel(_data);
 	}
-	else if (_fileType == EModel3DFileType::Asset)
+	else if (_fileType == EModelFileType::Asset)
 	{
 		_asset->Destroy();
-		CObjectAllocator::Destroy<asset::CModel3DAsset>(_asset);
+		CCreator::Destroy<asset::CModel3DAsset>(_asset);
 	}
 }
