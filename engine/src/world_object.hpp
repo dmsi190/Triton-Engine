@@ -13,20 +13,20 @@ namespace triton
 {
 	class XWorldObject : public iObject
 	{
-		TRITON_CLASS_NAME(XWorldObject)
+		TRITON_OBJECT(XWorldObject)
 
 		ERenderInstanceMotionType			_motion_type = ERenderInstanceMotionType::Unknown;
-		SHandle								_render_group;
+		XRenderGroup*						_render_group;
 		SHandle								_render_instance;
-		SHandle								_skeleton;
-		SHandle								_skin;
-		std::vector<SHandle>				_animations = {};
+		XSkeleton*							_skeleton;
+		XSkin*								_skin;
+		std::vector<XAnimation*>			_animations = {};
 
 	public:
 		explicit XWorldObject(
+			const SMemAlloc& mem_alloc,
 			cContext* context,
-			types::s32 pool_index,
-			const SHandle& render_group_handle,
+			XRenderGroup* render_group,
 			const cVector3& world_position = cVector3(0.0f)
 		);
 
@@ -35,7 +35,5 @@ namespace triton
 		void SetWorldPosition(const cVector3& world_position);
 
 		void PlayAnimation(types::usize index);
-
-		struct TGPULayout {};
 	};
 }

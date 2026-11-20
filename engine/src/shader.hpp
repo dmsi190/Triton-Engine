@@ -5,10 +5,10 @@
 #include <string>
 #include <vector>
 #include "object.hpp"
-#include "handle.hpp"
 #include "gpu_shader_resource.hpp"
 #include "shader_define.hpp"
 #include "shader_bytecode_files_struct.hpp"
+#include "shader_stage_bit_enum.hpp"
 #include "types.hpp"
 
 namespace triton
@@ -17,20 +17,18 @@ namespace triton
 	{
 		TRITON_OBJECT(XShader)
 
-		CGPUShaderResource _gpuShader = CGPUShaderResource::Invalid();
+		SGPUShaderResource _gpu_shader = SGPUShaderResource::Invalid();
 
 	public:
 		explicit XShader(
+			const SMemAlloc& mem_alloc,
 			cContext* context,
-			types::s32 poolIndex,
-			types::dword stageMask,
+			EShaderStageBit stageMask,
 			const SShaderBytecodeFiles& bytecodeFiles
 		);
 
 		~XShader() override;
 
-		inline const CGPUShaderResource& GetGPUResource() const { return _gpuShader; }
-
-		struct TGPULayout {};
+		inline const SGPUShaderResource& GetGPUResource() const { return _gpu_shader; }
 	};
 }

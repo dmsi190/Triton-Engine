@@ -183,7 +183,7 @@ namespace triton
 
 	struct SResultBuffer final
 	{
-		types::u8* data = nullptr;
+		SMemAlloc data;
 	};
 
 	class XSynchronization

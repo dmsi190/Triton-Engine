@@ -1,10 +1,12 @@
-// texture_formats.hpp
+// texture_format.hpp
 
 #pragma once
 
+#include "types.hpp"
+
 namespace triton
 {
-	enum class ETextureFormat
+	enum class ETextureFormat : types::dword
 	{
 		Unknown,
 		R8,

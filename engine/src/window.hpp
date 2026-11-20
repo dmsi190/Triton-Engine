@@ -4,8 +4,8 @@
 
 #include <string>
 #include "math.hpp"
-#include "input_window_backend.hpp"
-#include "graphics_available_backends_enum.hpp"
+#include "input_window_resource.hpp"
+#include "graphics_backend_type_enum.hpp"
 #include "types.hpp"
 
 namespace triton
@@ -15,7 +15,7 @@ namespace triton
     class CWindow
     {
         cContext* _context = nullptr;
-        SWindowBackend _backendWindow;
+        SWindowResource _window;
 
     public:
         explicit CWindow(
@@ -23,12 +23,12 @@ namespace triton
             const std::string& title,
             const cVector2& size,
             types::boolean fullscreen,
-            EAvailableGraphicsBackend graphicsBackend
+            EGraphicsBackendType graphicsBackend
         );
         ~CWindow();
 
-        inline const cVector2& GetSize() const { return _backendWindow.size; }
+        inline const cVector2& GetSize() const { return _window.size; }
 
-        inline SWindowBackend& GetBackendWindow() { return _backendWindow; }
+        inline SWindowResource& GetBackendWindow() { return _window; }
     };
 }

@@ -1,7 +1,6 @@
 // types.hpp
 
-#ifndef _DIMON2201_TYPES_H_
-#define _DIMON2201_TYPES_H_
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -43,5 +42,3 @@ namespace types
     constexpr boolean True = 1;
     constexpr boolean False = 0;
 }
-
-#endif

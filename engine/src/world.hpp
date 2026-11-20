@@ -7,12 +7,12 @@
 
 namespace triton
 {
-	class UWorld : public CSubsystem
+	class UWorld : public XSubsystem
 	{
-		TRITON_CLASS_NAME(UWorld)
+		TRITON_OBJECT(UWorld)
 
 	public:
-		explicit UWorld(cContext* context) : CSubsystem(context) {}
+		explicit UWorld(const SMemAlloc& mem_alloc, cContext* context) : XSubsystem(mem_alloc, context) {}
 		
 		~UWorld() override = default;
 	};

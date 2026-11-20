@@ -13,6 +13,7 @@
 #include "gpu_pipeline_resource.hpp"
 #include "gpu_render_target_resource.hpp"
 #include "gpu_render_pass_resource.hpp"
+#include "graphics_texture_usage_bit_enum.hpp"
 #include "rasterizer_state.hpp"
 #include "render_primitive_topology_enum.hpp"
 #include "render_resource_usage_enum.hpp"
@@ -90,6 +91,20 @@ namespace triton
 		);
 
 		static void DestroyRenderTarget(const SGPURenderTargetResource& render_target);
+
+		static SGPUTextureResource CreateTexture(
+			types::boolean create_sampler,
+			ETextureFormat format,
+			ETextureUsageBit usage_mask,
+			ETextureDimension dimension,
+			const cVector3& size
+		);
+
+		static void WriteTexture(const SGPUTextureResource& texture, const void* data);
+
+		static void GenerateTextureMips(const SGPUTextureResource& texture);
+
+		static void DestroyTexture(const SGPUTextureResource& texture);
 
 		static void Dispatch(
 			const SGPUPipelineResource& pipeline,

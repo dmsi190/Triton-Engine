@@ -4,6 +4,7 @@
 #include "context.hpp"
 #include "engine.hpp"
 #include "synchronization.hpp"
+#include "creator.hpp"
 
 using namespace types;
 
@@ -244,6 +245,69 @@ void triton::CRenderCommandProxy::DestroyRenderTarget(const SGPURenderTargetReso
     _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::DESTROY_RENDER_TARGET,
         (cpuword)&render_target
+    ));
+
+    _context->GetSubsystem<CEngine>()->
+        GetSynchronization()->
+        WaitForRenderCommandResult<void*>();
+}
+
+triton::SGPUTextureResource triton::CRenderCommandProxy::CreateTexture(
+    boolean create_sampler,
+    ETextureFormat format,
+    ETextureUsageBit usage_mask,
+    ETextureDimension dimension,
+    const cVector3& size
+)
+{
+    cVector3* size_ptr = CCreator::Create<cVector3>(size);
+
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::CREATE_TEXTURE,
+        (cpuword)create_sampler,
+        (cpuword)format,
+        (cpuword)usage_mask,
+        (cpuword)ETextureDimension::Texture2D,
+        (cpuword)size_ptr
+    ));
+
+    SGPUTextureResource result = _context->GetSubsystem<CEngine>()->
+        GetSynchronization()->
+        WaitForRenderCommandResult<SGPUTextureResource>();
+
+    CCreator::Destroy<cVector3>(size_ptr);
+}
+
+void triton::CRenderCommandProxy::WriteTexture(const SGPUTextureResource& texture, const void* data)
+{
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::WRITE_TEXTURE,
+        (cpuword)&texture,
+        (cpuword)data
+    ));
+
+    _context->GetSubsystem<CEngine>()->
+        GetSynchronization()->
+        WaitForRenderCommandResult<void*>();
+}
+
+void triton::CRenderCommandProxy::GenerateTextureMips(const SGPUTextureResource& texture)
+{
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::GENERATE_TEXTURE_MIPS,
+        (cpuword)&texture
+    ));
+
+    _context->GetSubsystem<CEngine>()->
+        GetSynchronization()->
+        WaitForRenderCommandResult<void*>();
+}
+
+void triton::CRenderCommandProxy::DestroyTexture(const SGPUTextureResource& texture)
+{
+    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        ERenderCommand::DESTROY_TEXTURE,
+        (cpuword)&texture
     ));
 
     _context->GetSubsystem<CEngine>()->

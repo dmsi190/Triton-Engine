@@ -13,9 +13,9 @@ namespace triton
 {
 	class cContext;
 
-	class cTime : public CSubsystem
+	class cTime : public XSubsystem
 	{
-		TRITON_CLASS_NAME(cTime)
+		TRITON_OBJECT(cTime)
 
 		std::chrono::steady_clock::time_point _timepointLast;
 		types::f32 _deltaTime = 0.0f;

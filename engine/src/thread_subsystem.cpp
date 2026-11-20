@@ -6,7 +6,6 @@
 #include "application.hpp"
 #include "context.hpp"
 #include "thread_subsystem.hpp"
-#include "data_buffer.hpp"
 
 using namespace types;
 
@@ -52,16 +51,12 @@ void triton::cWorkQueue::ProcessWorkItems()
     }
 }
 
-triton::cThread::cThread()
-{
-}
-
-triton::cThread::~cThread()
+triton::XThread::~XThread()
 {
     Stop();
 }
 
-types::boolean triton::cThread::Run()
+types::boolean triton::XThread::Run()
 {
     if (_handle.joinable())
         return K_FALSE;
@@ -73,13 +68,17 @@ types::boolean triton::cThread::Run()
         return K_FALSE;
 }
 
-void triton::cThread::Stop()
+void triton::XThread::Stop()
 {
     if (_handle.joinable())
         _handle.join();
 }
 
-triton::cWorkerThread::cWorkerThread(cWorkQueue* owner) : _owner(owner)
+triton::cWorkerThread::cWorkerThread(
+    const SMemAlloc& mem_alloc,
+    cContext* context,
+    cWorkQueue* owner
+) : XThread(mem_alloc, context), _owner(owner)
 {
 }
 

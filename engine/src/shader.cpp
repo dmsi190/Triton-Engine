@@ -6,39 +6,28 @@
 #include "synchronization.hpp"
 #include "graphics_backend.hpp"
 #include "thread_guard.hpp"
+#include "render_command_proxy.hpp"
 
 using namespace types;
 
 triton::XShader::XShader(
+	const SMemAlloc& mem_alloc,
 	cContext* context,
-	s32 poolIndex,
-	types::dword stageMask,
+	EShaderStageBit stageMask,
 	const SShaderBytecodeFiles& bytecodeFiles
-) : iObject(context, poolIndex)
+) : iObject(mem_alloc, context)
 {
 	CThreadGuard::AssertMain();
 
-	_context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-		ERenderCommand::CREATE_SHADER,
-		(cpuword)stageMask,
-		(cpuword)&bytecodeFiles
-	));
-
-	_gpuShader = _context->GetSubsystem<CEngine>()->
-		GetSynchronization()->
-		WaitForRenderCommandResult<CGPUShaderResource>();
+	_gpu_shader = CRenderCommandProxy::CreateShader(
+		stageMask,
+		bytecodeFiles
+	);
 }
 
 triton::XShader::~XShader()
 {
 	CThreadGuard::AssertMain();
 
-	_context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-		ERenderCommand::DESTROY_SHADER,
-		(cpuword)&_gpuShader
-	));
-
-	_context->GetSubsystem<CEngine>()->
-		GetSynchronization()->
-		WaitForRenderCommandResult<void*>();
+	CRenderCommandProxy::DestroyShader(_gpu_shader);
 }

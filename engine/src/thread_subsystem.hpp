@@ -66,12 +66,12 @@ namespace triton
         void Stop();
     };
 
-    class cWorkerThread : public cThread
+    class cWorkerThread : public XThread
     {
         cWorkQueue* _owner = nullptr;
 
     public:
-        explicit cWorkerThread(cWorkQueue* owner);
+        explicit cWorkerThread(const SMemAlloc& mem_alloc, cContext* context, cWorkQueue* owner);
 
         virtual void ThreadFunction() override;
     };

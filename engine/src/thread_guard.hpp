@@ -10,8 +10,8 @@ namespace triton
 {
 	class CThreadGuard final
 	{
-		static std::atomic<std::thread::id> _mainThreadId;
-		static std::atomic<std::thread::id> _renderThreadId;
+		inline static std::atomic<std::thread::id> _mainThreadId;
+		inline static std::atomic<std::thread::id> _renderThreadId;
 
 	public:
 		static void CaptureMainThreadId()

@@ -2,45 +2,36 @@
 
 #include "skin.hpp"
 #include "context.hpp"
-#include "skeleton_pool.hpp"
-#include "skinned_bones_pool.hpp"
 
 using namespace types;
 
 triton::XSkin::XSkin(
-	cContext* context,
-	types::s32 poolIndex,
-	const SHandle& skeleton
-) : iObject(context, poolIndex)
+    const SMemAlloc& mem_alloc,
+    cContext* context,
+    const XSkeleton* skeleton
+) : iObject(mem_alloc, context)
 {
-    XSkeleton& sd = *_context->GetPool<CSkeletonPool>()->Get(skeleton);
+    /*std::vector<CSkinnedBone> skinnedBones = {};
 
-    CSkinnedBonesPool* skinnedBonesPool = _context->GetPool<CSkinnedBonesPool>();
-
-    std::vector<SHandle> skinnedBones = {};
-    for (usize i = 0; i < sd.GetBones().size(); i++)
-    {
-        auto handle = skinnedBonesPool->Create();
-        if (handle)
-            skinnedBones.push_back(*handle);
-    }
+    for (usize i = 0; i < skeleton->GetBones().size(); i++)
+        skinnedBones.push_back(CCreator::Create<CSkinnedBone>());
 
     const usize globSkinnedBoneBufferOffset = skinnedBonesPool->GetPackedIndex(skinnedBones[0]);
 
     _skeleton = skeleton;
     _globSkinnedBoneBufferOffset = globSkinnedBoneBufferOffset;
-    _skinnedBones = skinnedBones;
+    _skinnedBones = skinnedBones;*/
 }
 
 triton::XSkin::~XSkin()
 {
-    for (auto& sbd : _skinnedBones)
-        _context->GetPool<CSkinnedBonesPool>()->Destroy(sbd);
+    //for (auto& sbd : _skinnedBones)
+    //    _context->GetPool<CSkinnedBonesPool>()->Destroy(sbd);
 }
 
 void triton::XSkin::Skin(const SAnimationFrame& frame)
 {
-    XSkeleton& skeleton = *_context->GetPool<CSkeletonPool>()->Get(_skeleton);
+    /*XSkeleton& skeleton = *_context->GetPool<CSkeletonPool>()->Get(_skeleton);
 
     const auto& skeletonBones = skeleton.GetBones();
     const usize skeletonBoneCount = skeletonBones.size();
@@ -67,7 +58,7 @@ void triton::XSkin::Skin(const SAnimationFrame& frame)
             _globSkinnedBoneBufferOffset + boneIndex,
             skb
         );
-    }
+    }*/
 }
 
 void triton::XSkin::CalculateBone(
@@ -77,12 +68,12 @@ void triton::XSkin::CalculateBone(
     std::vector<cMatrix4>& totalTransform
 )
 {
-    if (bones[boneIndex].localParentBoneIndex == -1)
+    /*if (bones[boneIndex].localParentBoneIndex == -1)
         totalTransform[boneIndex] = frame.frameBones[boneIndex].transformMatrix;
     else
         totalTransform[boneIndex] =
         totalTransform[bones[boneIndex].localParentBoneIndex] *
         frame.frameBones[boneIndex].transformMatrix;
     for (usize i : bones[boneIndex].localChildBoneIndices)
-        CalculateBone(bones, i, frame, totalTransform);
+        CalculateBone(bones, i, frame, totalTransform);*/
 }

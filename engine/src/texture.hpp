@@ -10,7 +10,7 @@
 #include "texture_dimensions.hpp"
 #include "image_format_enum.hpp"
 #include "image_file_format_enum.hpp"
-#include "handle.hpp"
+#include "graphics_texture_usage_bit_enum.hpp"
 
 namespace triton
 {
@@ -18,14 +18,14 @@ namespace triton
 
 	class XTexture : public iObject
 	{
-		TRITON_CLASS_NAME(XTexture)
+		TRITON_OBJECT(XTexture)
 
-		CGPUTextureResource _gpuTexture = CGPUTextureResource::Invalid();
+		SGPUTextureResource _gpuTexture = SGPUTextureResource::Invalid();
 
 	public:
 		explicit XTexture(
+			const SMemAlloc& mem_alloc,
 			cContext* context,
-			types::s32 poolIndex,
 			types::boolean bCreateSampler,
 			ETextureFormat textureFormat,
 			types::dword usageMask,
@@ -36,8 +36,8 @@ namespace triton
 		);
 
 		explicit XTexture(
+			const SMemAlloc& mem_alloc,
 			cContext* context,
-			types::s32 poolIndex,
 			types::boolean bCreateSampler,
 			ETextureFormat textureFormat,
 			types::dword usageMask,
@@ -50,8 +50,8 @@ namespace triton
 		);
 
 		explicit XTexture(
+			const SMemAlloc& mem_alloc,
 			cContext* context,
-			types::s32 poolIndex,
 			types::boolean bCreateSampler,
 			ETextureFormat textureFormat,
 			types::dword usageMask,
@@ -63,23 +63,21 @@ namespace triton
 
 		~XTexture() override;
 
-		inline const CGPUTextureResource& GetGPUResource() const { return _gpuTexture; }
+		inline const SGPUTextureResource& GetGPUResource() const { return _gpuTexture; }
 
-		inline const cVector3& GetSize() const { return cVector3(_gpuTexture.GetWidth(), _gpuTexture.GetHeight(), _gpuTexture.GetDepth()); }
+		inline const cVector3& GetSize() const { return _gpuTexture.size; }
 
-		inline ETextureFormat GetFormat() const { return _gpuTexture.GetFormat(); }
+		inline ETextureFormat GetFormat() const { return _gpuTexture.format; }
 
-		inline types::s32 GetSlot() const { return _gpuTexture.GetSlot(); }
+		inline types::s32 GetSlot() const { return _gpuTexture.slot; }
 
 		static types::usize TextureFormatToChannelCount(ETextureFormat textureFormat);
-
-		struct TGPULayout {};
 		
 	private:
 		void CreateOnGpu(
 			types::boolean bCreateSampler,
 			ETextureFormat format,
-			types::dword usageMask,
+			ETextureUsageBit usageMask,
 			ETextureDimension dimension,
 			const cVector3& size,
 			const types::u8* data,

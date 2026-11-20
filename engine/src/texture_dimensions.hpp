@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include "types.hpp"
+
 namespace triton
 {
-	enum class ETextureDimension
+	enum class ETextureDimension : types::dword
 	{
 		Unknown,
 		Texture2D,

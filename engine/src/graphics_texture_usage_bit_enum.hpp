@@ -1,4 +1,4 @@
-// graphics_texture_usage_enum.hpp
+// graphics_texture_usage_bit_enum.hpp
 
 #pragma once
 

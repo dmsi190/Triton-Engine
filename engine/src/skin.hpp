@@ -3,11 +3,9 @@
 #pragma once
 
 #include <vector>
-#include "handle.hpp"
 #include "skeleton.hpp"
 #include "math.hpp"
 #include "animation_frame.hpp"
-#include "skinned_bone.hpp"
 
 namespace triton
 {
@@ -15,22 +13,18 @@ namespace triton
 	{
 		TRITON_OBJECT(XSkin)
 
-		SHandle									_skeleton;
+		XSkeleton*								_skeleton;
 		types::usize							_globSkinnedBoneBufferOffset = 0;
-		std::vector<SHandle>					_skinnedBones;
+		std::vector<void*>						_skinnedBones;
 	
 	public:
-		explicit XSkin(cContext* context, types::s32 poolIndex) : iObject(context, poolIndex) {}
-
-		explicit XSkin(cContext* context, types::s32 poolIndex, const SHandle& skeleton);
+		explicit XSkin(const SMemAlloc& mem_alloc, cContext* context, const XSkeleton* skeleton);
 
 		~XSkin() override;
 
 		void Skin(const SAnimationFrame& frame);
 
 		inline types::usize GetSkinnedBoneBufferOffset() const { return _globSkinnedBoneBufferOffset; }
-
-		struct TGPULayout {};
 
 	private:
 		void CalculateBone(

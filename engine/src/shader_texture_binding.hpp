@@ -11,10 +11,10 @@ namespace triton
     {
         SShaderTextureBinding(
             const std::string& name,
-            const CGPUTextureResource& texture
+            const SGPUTextureResource& texture
         ) : name(name), texture(texture) {}
 
-        std::string name = "";
-        CGPUTextureResource texture;
+        std::string name;
+        SGPUTextureResource texture;
     };
 }

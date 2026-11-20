@@ -6,7 +6,6 @@
 #include "object.hpp"
 #include "skeleton_bone.hpp"
 #include "math.hpp"
-#include "handle.hpp"
 #include "types.hpp"
 
 namespace triton
@@ -21,11 +20,9 @@ namespace triton
 		std::vector<SSkeletonBone>	_bones = {};
 
 	public:
-		explicit XSkeleton(cContext* context, types::s32 poolIndex) : iObject(context, poolIndex) {}
-
 		explicit XSkeleton(
+			const SMemAlloc& mem_alloc,
 			cContext* context,
-			types::s32 poolIndex,
 			const std::vector<SSkeletonBone>& bones,
 			const cMatrix4& accumulatedRootTransform = cMatrix4()
 		);

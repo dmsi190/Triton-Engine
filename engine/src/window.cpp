@@ -11,10 +11,10 @@ triton::CWindow::CWindow(
 	const std::string& title,
 	const cVector2& size,
 	boolean fullscreen,
-	EAvailableGraphicsBackend graphicsBackend
+	EGraphicsBackendType graphicsBackend
 ) : _context(context)
 {
-	_backendWindow = _context->GetBackend<IInputBackend>()->CreateBackendWindow(
+	_window = _context->GetBackend<IInputBackend>()->CreateBackendWindow(
 		title,
 		size,
 		fullscreen,
@@ -24,5 +24,5 @@ triton::CWindow::CWindow(
 
 triton::CWindow::~CWindow()
 {
-	_context->GetBackend<IInputBackend>()->DestroyBackendWindow(_backendWindow);
+	_context->GetBackend<IInputBackend>()->DestroyBackendWindow(_window);
 }

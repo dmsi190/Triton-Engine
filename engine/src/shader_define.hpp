@@ -7,12 +7,12 @@
 
 namespace triton
 {
-    class SShaderDefine final
+    struct SShaderDefine final
     {
-    public:
-        SShaderDefine(const std::string& name_, types::usize index_) : name(name_), index(index_) {}
+        SShaderDefine(const std::string& name, types::usize index)
+            : name(name), index(index) {}
 
-        std::string name = "";
-        types::usize index = 0;
+        std::string name;
+        types::usize index;
     };
 }

@@ -4,7 +4,6 @@
 #include "thread_guard.hpp"
 #include "render_thread.hpp"
 #include "context.hpp"
-#include "object_allocator.hpp"
 
 using namespace types;
 
@@ -14,12 +13,12 @@ triton::XSynchronization::XSynchronization(
 	usize resultBufferByteSize
 ) : _context(context), _cmdRecorder(cmdRecorder)
 {
-	_resultBuffer.data = (u8*)CObjectAllocator::Allocate(resultBufferByteSize, 64);
+	_resultBuffer.data = CMemoryAllocator::Allocate(resultBufferByteSize);
 }
 
 triton::XSynchronization::~XSynchronization()
 {
-	CObjectAllocator::Deallocate(_resultBuffer.data);
+	CMemoryAllocator::Deallocate(_resultBuffer.data);
 }
 
 void triton::XSynchronization::WaitForRenderThreadToInit()

@@ -4,14 +4,14 @@
 #include "context.hpp"
 #include "synchronization.hpp"
 #include "image_decoder.hpp"
-#include "graphics_texture_usage_enum.hpp"
-#include "object_allocator.hpp"
+#include "render_command_proxy.hpp"
+#include "creator.hpp"
 
 using namespace types;
 
 triton::XTexture::XTexture(
+	const SMemAlloc& mem_alloc,
 	cContext* context,
-	s32 poolIndex,
 	types::boolean bCreateSampler,
 	ETextureFormat textureFormat,
 	dword usageMask,
@@ -19,9 +19,9 @@ triton::XTexture::XTexture(
 	s32 textureSlot,
 	EImageFormat expectedDataFormat,
 	const std::filesystem::path& filePath
-) : iObject(context, poolIndex)
+) : iObject(mem_alloc, context)
 {
-	SImageBackend tex = _context->GetBackend<IImageDecoder>()->Decode(
+	SImageResource tex = _context->GetBackend<IImageDecoder>()->Decode(
 		expectedDataFormat,
 		filePath
 	);
@@ -40,8 +40,8 @@ triton::XTexture::XTexture(
 }
 
 triton::XTexture::XTexture(
+	const SMemAlloc& mem_alloc,
 	cContext* context,
-	s32 poolIndex,
 	types::boolean bCreateSampler,
 	ETextureFormat textureFormat,
 	dword usageMask,
@@ -51,9 +51,9 @@ triton::XTexture::XTexture(
 	EImageFormat expectedDataFormat,
 	const u8* data,
 	usize dataByteSize
-) : iObject(context, poolIndex)
+) : iObject(mem_alloc, context)
 {
-	SImageBackend tex = _context->GetBackend<IImageDecoder>()->Decode(
+	SImageResource tex = _context->GetBackend<IImageDecoder>()->Decode(
 		containerFormat,
 		expectedDataFormat,
 		data,
@@ -74,8 +74,8 @@ triton::XTexture::XTexture(
 }
 
 triton::XTexture::XTexture(
+	const SMemAlloc& mem_alloc,
 	cContext* context,
-	s32 poolIndex,
 	types::boolean bCreateSampler,
 	ETextureFormat textureFormat,
 	dword usageMask,
@@ -83,7 +83,7 @@ triton::XTexture::XTexture(
 	const cVector3& size,
 	const types::u8* data,
 	s32 textureSlot
-) : iObject(context, poolIndex)
+) : iObject(mem_alloc, context)
 {
 	CreateOnGpu(
 		bCreateSampler,
@@ -100,84 +100,43 @@ triton::XTexture::XTexture(
 
 triton::XTexture::~XTexture()
 {
-	if (_gpuTexture.GetFormat() == ETextureFormat::Unknown)
+	if (_gpuTexture.format == ETextureFormat::Unknown)
 		return;
 
-	_context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-		ERenderCommand::DESTROY_TEXTURE,
-		(cpuword)&_gpuTexture
-	));
-
-	_context->GetSubsystem<CEngine>()->
-		GetSynchronization()->
-		WaitForRenderCommandResult<void*>();
+	CRenderCommandProxy::DestroyTexture(_gpuTexture);
 }
 
 void triton::XTexture::CreateOnGpu(
 	boolean bCreateSampler,
 	ETextureFormat format,
-	dword usageMask,
+	ETextureUsageBit usageMask,
 	ETextureDimension dimension,
 	const cVector3& size,
 	const u8* data,
 	s32 slot
 )
 {
-	cVector3* textureSize = CObjectAllocator::Create<cVector3>(64, size);
-
-	_context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-		ERenderCommand::CREATE_TEXTURE,
-		(cpuword)bCreateSampler,
-		(cpuword)format,
-		(cpuword)usageMask,
-		(cpuword)ETextureDimension::Texture2D,
-		(cpuword)textureSize,
-		(cpuword)&_gpuTexture
-	));
-
-	_gpuTexture =
-		_context->GetSubsystem<CEngine>()->
-		GetSynchronization()->
-		WaitForRenderCommandResult<CGPUTextureResource>();
+	_gpuTexture = CRenderCommandProxy::CreateTexture(
+		bCreateSampler,
+		format,
+		usageMask,
+		dimension,
+		size
+	);
 
 	const usize dataByteSize =
-		textureSize->GetX() *
-		textureSize->GetY() *
-		textureSize->GetZ() *
+		size.GetX() *
+		size.GetY() *
+		size.GetZ() *
 		TextureFormatToChannelCount(format);
 
-	textureSize->SetX(0.0f);
-	textureSize->SetY(0.0f);
-	textureSize->SetZ(0.0f);
-
-	const cVector3* writeOffset = textureSize;
-
-	_context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-		ERenderCommand::WRITE_TEXTURE,
-		(cpuword)&_gpuTexture,
-		(cpuword)data
-	));
-
-	_context->GetSubsystem<CEngine>()->
-		GetSynchronization()->
-		WaitForRenderCommandResult<void*>();
-
-	CObjectAllocator::Destroy<cVector3>((cVector3*)textureSize);
+	CRenderCommandProxy::WriteTexture(_gpuTexture, data);
 }
 
 void triton::XTexture::GenerateMips()
 {
-	if (_gpuTexture.GetFormat() == ETextureFormat::RGBA8_SRGB_Mips)
-	{
-		_context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
-			ERenderCommand::GENERATE_TEXTURE_MIPS,
-			(cpuword)&_gpuTexture
-		));
-
-		_context->GetSubsystem<CEngine>()->
-			GetSynchronization()->
-			WaitForRenderCommandResult<void*>();
-	}
+	if (_gpuTexture.format == ETextureFormat::RGBA8_SRGB_Mips)
+		CRenderCommandProxy::GenerateTextureMips(_gpuTexture);
 }
 
 usize triton::XTexture::TextureFormatToChannelCount(ETextureFormat textureFormat)
