@@ -56,7 +56,7 @@ namespace triton
 
 		const SRenderInstance* AddInstance();
 
-		void RemoveInstance(const SRenderInstance* instance);
+		void RemoveInstance(SRenderInstance* instance);
 
 		inline XRenderDomain* GetRenderDomain() const { return _render_domain; }
 

@@ -92,9 +92,12 @@ const triton::SRenderInstance* triton::XRenderGroup::AddInstance()
 	return &_instances[free_index];
 }
 
-void triton::XRenderGroup::RemoveInstance(const SRenderInstance* instance)
+void triton::XRenderGroup::RemoveInstance(SRenderInstance* instance)
 {
-	if (!instance || _free_list_capacity >= _max_instance_count || instance < _instances)
+	if (!instance ||
+		instance->active == False ||
+		_free_list_capacity >= _max_instance_count ||
+		instance < _instances)
 		return;
 
 	const s32 index_to_free = instance - _instances;
@@ -144,4 +147,6 @@ void triton::XRenderGroup::RemoveInstance(const SRenderInstance* instance)
 
 	_instances[index_to_free].prev_node_index = -1;
 	_instances[index_to_free].next_node_index = -1;
+
+	instance->active = False;
 }

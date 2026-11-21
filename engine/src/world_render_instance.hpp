@@ -25,6 +25,7 @@ namespace triton
         types::s32                  prev_node_index;
         types::s32                  next_node_index;
         types::u32                  instance_buffer_index;
+        types::boolean              active;
 
         explicit SRenderInstance(
             types::s32 prev_node_index,
@@ -32,7 +33,8 @@ namespace triton
             types::u32 instance_buffer_index
         ) : prev_node_index(prev_node_index),
             next_node_index(next_node_index),
-            instance_buffer_index(instance_buffer_index) {}
+            instance_buffer_index(instance_buffer_index),
+            active(types::True) {}
 
         ~SRenderInstance() = default;
 
