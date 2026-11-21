@@ -17,7 +17,9 @@ namespace triton
 
 		ERenderInstanceMotionType			_motion_type = ERenderInstanceMotionType::Unknown;
 		XRenderGroup*						_render_group;
-		SHandle								_render_instance;
+		SRenderInstance*					_render_instance;
+		cTransform							_transform;
+		XMaterial*							_material;
 		XSkeleton*							_skeleton;
 		XSkin*								_skin;
 		std::vector<XAnimation*>			_animations = {};
@@ -35,5 +37,20 @@ namespace triton
 		void SetWorldPosition(const cVector3& world_position);
 
 		void PlayAnimation(types::usize index);
+
+		inline ERenderInstanceMotionType GetMotionType() const
+		{
+			return _motion_type;
+		}
+
+		inline types::usize GetMaterialIndex() const
+		{
+			return 0;
+		}
+
+		inline const cMatrix4& GetWorldMatrix() const
+		{
+			return _transform.GetWorld();
+		}
 	};
 }

@@ -10,7 +10,7 @@ using namespace types;
 void triton::SRenderInstance::SetMaterialIndex(
 	ERenderInstanceMotionType motion_type,
 	types::s32 index
-)
+) const
 {
 	WriteStaging(
 		motion_type,
@@ -23,7 +23,7 @@ void triton::SRenderInstance::SetMaterialIndex(
 void triton::SRenderInstance::SetWorldMatrix(
 	ERenderInstanceMotionType motion_type,
 	const cMatrix4& world_matrix
-)
+) const
 {
 	WriteStaging(
 		motion_type,
@@ -38,7 +38,7 @@ void triton::SRenderInstance::WriteStaging(
 	usize element_local_byte_offset,
 	const void* data,
 	usize byte_size
-)
+) const
 {
 	XGPUBuffer* buffer = nullptr;
 

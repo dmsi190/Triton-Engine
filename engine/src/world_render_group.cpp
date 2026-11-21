@@ -2,6 +2,7 @@
 
 #include "world_render_group.hpp"
 #include "graphics_buffers.hpp"
+#include "world_object.hpp"
 
 using namespace types;
 
@@ -58,7 +59,7 @@ triton::XRenderGroup::~XRenderGroup()
 		CGraphicsBuffers::GetDynamicInstanceBuffer()->ReleaseStagingFrame(_instance_buffer_frame);
 }
 
-const triton::SRenderInstance* triton::XRenderGroup::AddInstance()
+const triton::SRenderInstance* triton::XRenderGroup::AddInstance(XWorldObject* connected_object)
 {
 	if (!_free_list_capacity)
 		return nullptr;
@@ -73,7 +74,8 @@ const triton::SRenderInstance* triton::XRenderGroup::AddInstance()
 		_instances[free_index] = SRenderInstance(
 			-1,
 			-1,
-			0
+			0,
+			connected_object
 		);
 	}
 	else
@@ -83,7 +85,8 @@ const triton::SRenderInstance* triton::XRenderGroup::AddInstance()
 		_instances[free_index] = SRenderInstance(
 			_tail,
 			-1,
-			_instances[_tail].instance_buffer_index + 1
+			_instances[_tail].instance_buffer_index + 1,
+			connected_object
 		);
 
 		_tail = free_index;
@@ -130,6 +133,17 @@ void triton::XRenderGroup::RemoveInstance(SRenderInstance* instance)
 		_tail = right == tail_index ? tail_index : tail_prev;
 
 		tail.instance_buffer_index = removed.instance_buffer_index;
+
+		const SRenderInstance* updated_instance = &tail;
+
+		instance->SetMaterialIndex(
+			updated_instance->connected_object->GetMotionType(),
+			updated_instance->connected_object->GetMaterialIndex()
+		);
+		instance->SetWorldMatrix(
+			updated_instance->connected_object->GetMotionType(),
+			updated_instance->connected_object->GetWorldMatrix()
+		);
 	}
 	else
 	{
