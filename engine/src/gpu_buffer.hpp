@@ -9,14 +9,20 @@ namespace triton
 {
 	class cContext;
 
+	struct SGPUBufferFrame
+	{
+		types::usize begin_index;
+		types::usize count;
+	};
+
 	class XGPUBuffer : public iObject
 	{
-		TRITON_CLASS_NAME(XGPUBuffer)
+		TRITON_OBJECT(XGPUBuffer)
 
 		types::usize		_element_byte_size;
 		types::usize		_element_count;
 		types::usize		_reserve_capacity;
-		CGPUBufferResource	_gpu_buffer = CGPUBufferResource::Invalid();
+		SGPUBufferResource	_gpu_buffer = SGPUBufferResource::Invalid();
 		types::usize		_staging_element_count;
 		void*				_staging_buffer;
 		types::u8*			_occupancy_buffer;
@@ -25,7 +31,7 @@ namespace triton
 
 	public:
 		explicit XGPUBuffer(
-			const SMemoryAllocation& mem_alloc,
+			const SMemAlloc& mem_alloc,
 			cContext* context,
 			EGPUBufferType type,
 			types::usize element_byte_size,
@@ -39,13 +45,17 @@ namespace triton
 
 		types::usize AcquireFreeStagingIndex();
 
+		SGPUBufferFrame AcquireFreeStagingFrame(types::usize count);
+
 		void ReleaseStagingIndex(types::usize index);
+
+		void ReleaseStagingFrame(const SGPUBufferFrame& frame);
 
 		void WriteStaging(types::usize index, const void* element);
 
 		void Flush();
 
-		inline const CGPUBufferResource& GetGPUResource() const { return _gpu_buffer; }
+		inline const SGPUBufferResource& GetGPUResource() const { return _gpu_buffer; }
 
 	private:
 		void ResizeBuffers(types::usize new_size);

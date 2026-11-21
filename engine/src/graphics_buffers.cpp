@@ -7,6 +7,8 @@
 #include "engine.hpp"
 #include "application.hpp"
 #include "world_render_instance.hpp"
+#include "creator.hpp"
+#include "gpu_buffer.hpp"
 
 using namespace types;
 
@@ -16,24 +18,28 @@ void triton::CGraphicsBuffers::Initialize(cContext* context)
 
     const SCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
 
-    _static_instance_buffer = CRenderCommandProxy::CreateBuffer(
+    _static_instance_buffer = CCreator::Create<XGPUBuffer>(
         EGPUBufferType::Storage,
-        caps.maxRenderStaticInstanceCount * sizeof(XRenderInstance::TGPULayout)
+        sizeof(SRenderInstanceGPULayout),
+        caps.maxRenderStaticInstanceCount * sizeof(SRenderInstanceGPULayout),
+        0
     );
 
-    _dynamic_instance_buffer = CRenderCommandProxy::CreateBuffer(
+    _dynamic_instance_buffer = CCreator::Create<XGPUBuffer>(
         EGPUBufferType::Storage,
-        caps.maxRenderDynamicInstanceCount * sizeof(XRenderInstance::TGPULayout)
+        sizeof(SRenderInstanceGPULayout),
+        caps.maxRenderDynamicInstanceCount * sizeof(SRenderInstanceGPULayout),
+        1
     );
 
     _main_indirect_draw_commands_buffer = CRenderCommandProxy::CreateBuffer(
         EGPUBufferType::Storage,
-        sizeof(u32) + caps.render_group_count * sizeof(SIndirectDrawCommand)
+        sizeof(u32) + caps.render_group_count * sizeof(SRenderIndirectDrawCommand)
     );
 
     _shadow_indirect_draw_commands_buffer = CRenderCommandProxy::CreateBuffer(
         EGPUBufferType::Storage,
-        sizeof(u32) + caps.render_group_count * sizeof(SIndirectDrawCommand)
+        sizeof(u32) + caps.render_group_count * sizeof(SRenderIndirectDrawCommand)
     );
 
     _main_command_render_group_indices_buffer = CRenderCommandProxy::CreateBuffer(
@@ -48,12 +54,12 @@ void triton::CGraphicsBuffers::Initialize(cContext* context)
 
     _visible_render_static_indices_buffer = CRenderCommandProxy::CreateBuffer(
         EGPUBufferType::Storage,
-        caps.maxRenderStaticInstanceCount * sizeof(XRenderInstance::TGPULayout)
+        caps.maxRenderStaticInstanceCount * sizeof(u32)
     );
 
     _visible_render_dynamic_indices_buffer = CRenderCommandProxy::CreateBuffer(
         EGPUBufferType::Storage,
-        caps.maxRenderDynamicInstanceCount * sizeof(XRenderInstance::TGPULayout)
+        caps.maxRenderDynamicInstanceCount * sizeof(u32)
     );
 }
 

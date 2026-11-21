@@ -11,7 +11,7 @@
 using namespace types;
 
 triton::XGPUBuffer::XGPUBuffer(
-    const SMemoryAllocation& mem_alloc,
+    const SMemAlloc& mem_alloc,
     cContext* context,
     EGPUBufferType type,
     usize element_byte_size,
@@ -70,6 +70,58 @@ types::usize triton::XGPUBuffer::AcquireFreeStagingIndex()
     return old_staging_element_count;
 }
 
+triton::SGPUBufferFrame triton::XGPUBuffer::AcquireFreeStagingFrame(usize count)
+{
+    if (!count)
+        return {};
+
+    for (usize i = 0; i < _staging_element_count; ++i)
+    {
+        usize begin_index = i;
+
+        boolean is_free = True;
+
+        usize check_count = 0;
+
+        for (usize j = begin_index; j < _staging_element_count; ++j)
+        {
+            if (_occupancy_buffer[j] == 1)
+            {
+                is_free = False;
+                break;
+            }
+
+            ++check_count;
+            
+            if (check_count == count)
+                break;
+        }
+
+        if (is_free == True && check_count == count)
+        {
+            std::memset(&_occupancy_buffer[begin_index], 1, count);
+
+            SGPUBufferFrame frame;
+            frame.begin_index = begin_index;
+            frame.count = count;
+
+            return frame;
+        }
+    }
+
+    const usize old_staging_element_count = _staging_element_count;
+
+    ResizeBuffers(old_staging_element_count + count + _reserve_capacity);
+
+    std::memset(&_occupancy_buffer[old_staging_element_count], 1, count);
+
+    SGPUBufferFrame frame;
+    frame.begin_index = old_staging_element_count;
+    frame.count = count;
+
+    return frame;
+}
+
 void triton::XGPUBuffer::ReleaseStagingIndex(types::usize index)
 {
     _occupancy_buffer[index] = 0;
@@ -78,7 +130,25 @@ void triton::XGPUBuffer::ReleaseStagingIndex(types::usize index)
     
     for (usize i = _staging_element_count; i > 0; --i)
     {
-        if (_occupancy_buffer[i - 1] == 1)
+        if (_occupancy_buffer[i - 1] == 0)
+            break;
+
+        ++cut_count;
+    }
+
+    if (cut_count >= _reserve_capacity)
+        ResizeBuffers(_staging_element_count - cut_count);
+}
+
+void triton::XGPUBuffer::ReleaseStagingFrame(const SGPUBufferFrame& frame)
+{
+    std::memset(&_occupancy_buffer[frame.begin_index], 0, frame.count);
+
+    usize cut_count = 0;
+
+    for (usize i = _staging_element_count; i > 0; --i)
+    {
+        if (_occupancy_buffer[i - 1] == 0)
             break;
 
         ++cut_count;

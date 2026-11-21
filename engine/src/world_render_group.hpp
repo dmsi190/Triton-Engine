@@ -9,61 +9,63 @@
 #include "render_instance_motion_type.hpp"
 #include "geometry_view.hpp"
 #include "material.hpp"
+#include "gpu_buffer.hpp"
 
 namespace triton
 {
+	class XRenderDomain;
+
+	struct SRenderGroupGPULayout final
+	{
+		types::s32			camera_index;
+		types::dword		motion_type;
+		types::u32			instance_buffer_offset;
+		SGeometryDrawInfo	geometry_draw_info;
+	};
+
 	class XRenderGroup : public iObject
 	{
-		TRITON_CLASS_NAME(XRenderGroup)
+		TRITON_OBJECT(XRenderGroup)
 		
-		SHandle _render_domain;
-		ERenderInstanceMotionType _motion_type;
-		SGeometryView _shared_geometry;
-		SHandle _shared_material;
-		types::usize _max_instance_count;
-		types::usize _instance_count;
-		types::usize _instance_buffer_offset;
-		SObjectFrame _instances;
+		XRenderDomain*					_render_domain;
+		ERenderInstanceMotionType		_motion_type;
+		SGeometryView					_shared_geometry;
+		types::usize					_max_instance_count;
+		types::usize					_instance_count;
+		types::usize					_instance_buffer_start_offset;
+		SGPUBufferFrame					_instance_buffer_frame;
+		SMemAlloc						_instances_memory;
+		SRenderInstance*				_instances;
+		SMemAlloc						_free_list_memory;
+		types::usize*					_free_list;
+		types::usize					_free_list_capacity;
+		types::s32						_head;
+		types::s32						_tail;
 
 	public:
 		explicit XRenderGroup(
+			const SMemAlloc& mem_alloc,
 			cContext* context,
-			types::s32 pool_index,
 			ERenderInstanceMotionType motion_type,
-			const SHandle& render_domain,
+			XRenderDomain* render_domain,
 			const SGeometryView& shared_geometry,
-			const SHandle& shared_material,
 			types::usize max_instance_count
 		);
 
 		~XRenderGroup() override;
 
-		const SHandle& AddInstance();
+		const SRenderInstance* AddInstance();
 
-		void RemoveInstance(const SHandle& instance);
+		void RemoveInstance(const SRenderInstance* instance);
 
-		inline types::boolean IsFull() const { return _instance_count >= _max_instance_count ? types::True : types::False; }
-
-		inline const SHandle& GetRenderDomain() const { return _render_domain; }
+		inline XRenderDomain* GetRenderDomain() const { return _render_domain; }
 
 		inline ERenderInstanceMotionType GetMotionType() const { return _motion_type; }
 
 		inline const SGeometryView& GetSharedGeometry() const { return _shared_geometry; }
 
-		inline const SHandle& GetSharedMaterial() const { return _shared_material; }
-
-		inline const SObjectFrame& GetInstances() const { return _instances; }
-
 		inline types::usize GetInstanceCount() const { return _instance_count; }
 
-		inline types::usize GetInstanceBufferOffset() const { return _instance_buffer_offset; }
-
-		struct TGPULayout
-		{
-			types::s32 camera_index;
-			types::dword motion_type;
-			types::u32 instance_buffer_offset;
-			SGeometryDrawInfo geometry_draw_info;
-		};
+		inline types::usize GetInstanceBufferStartOffset() const { return _instance_buffer_start_offset; }
 	};
 }

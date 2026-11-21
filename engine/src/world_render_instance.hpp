@@ -6,76 +6,35 @@
 #include "material.hpp"
 #include "math.hpp"
 #include "skin.hpp"
-#include "skin_pool.hpp"
 #include "render_instance_motion_type.hpp"
 #include "types.hpp"
 
 namespace triton
 {
-	class XRenderInstance : public iObject
+    struct SRenderInstanceGPULayout final
+    {
+        types::f32 use2D = 0.0f;
+        types::s32 materialIndex = -1;
+        types::s32 skinnedBoneBufferOffset = -1;
+        types::dword propertyBits = 0;
+        cMatrix4 world = cMatrix4(1.0f);
+    };
+
+	struct SRenderInstance
 	{
-        TRITON_CLASS_NAME(XRenderInstance)
+        types::s32                  prev_node_index;
+        types::s32                  next_node_index;
+        types::u32                  instance_buffer_index;
 
-        types::s32                  _indexInGroup = -1;
-        ERenderInstanceMotionType   _motionType = ERenderInstanceMotionType::Unknown;
-        SHandle                     _material;
-        types::s32                  _skinnedBoneBufferOffset = -1;
-        cTransform                  _transform;
+        explicit SRenderInstance(
+            types::s32 prev_node_index,
+            types::s32 next_node_index,
+            types::u32 instance_buffer_index
+        ) : prev_node_index(prev_node_index),
+            next_node_index(next_node_index),
+            instance_buffer_index(instance_buffer_index) {}
 
-	public:
-		explicit XRenderInstance(cContext* context, types::s32 poolIndex) : iObject(context, poolIndex) {}
-
-        explicit XRenderInstance(
-            cContext* context,
-            types::s32 poolIndex,
-            types::s32 indexInGroup,
-            ERenderInstanceMotionType motionType,
-            const SHandle& material,
-            types::s32 skinned_bone_buffer_offset,
-            const cTransform& transform
-        ) : iObject(context, poolIndex),
-            _indexInGroup(indexInGroup),
-            _motionType(motionType),
-            _skinnedBoneBufferOffset(skinned_bone_buffer_offset),
-            _transform(transform)
-        {
-            SetMaterial(material);
-        }
-
-        XRenderInstance& operator=(const XRenderInstance& other)
-        {
-            _material = other._material;
-            _skinnedBoneBufferOffset = other._skinnedBoneBufferOffset;
-            _transform = other._transform;
-
-            return *this;
-        }
-
-        ~XRenderInstance() override = default;
-
-        inline void Transform()
-        {
-            _transform.Transform();
-            WriteToStaging();
-        }
-
-        inline types::s32 GetIndexInGroup() const { return _indexInGroup; }
-
-        inline ERenderInstanceMotionType GetMotionType() const { return _motionType; }
-
-        inline const SHandle& GetMaterial() const { return _material; }
-
-        inline types::s32 GetSkinnedBoneBufferOffset() const { return _skinnedBoneBufferOffset; }
-
-        inline const cTransform& GetTransform() const { return _transform; }
-
-        inline const cVector3& GetWorldPosition() const { return _transform.GetPosition(); }
-
-        inline const cVector3& GetRotation() const { return _transform.GetRotation(); }
-
-        inline const cVector3& GetScale() const { return _transform.GetScale(); }
-
-        inline const cMatrix4& GetWorldMatrix() const { return _transform.GetWorld(); }
+        ~SRenderInstance() = default;
 
         inline void SetMaterial(const SHandle& material)
         {
@@ -97,14 +56,5 @@ namespace triton
         inline void SetScale(const cVector3& scale) { _transform.SetScale(scale); }
         
         void WriteToStaging();
-
-        struct TGPULayout
-        {
-            types::f32 _use2D = 0.0f;
-            types::s32 _materialIndex = -1;
-            types::s32 _skinnedBoneBufferOffset = -1;
-            types::dword _propertyBits = 0;
-            cMatrix4 _world = cMatrix4(1.0f);
-        };
 	};
 }
