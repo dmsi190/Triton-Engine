@@ -3247,7 +3247,7 @@ void triton::BGraphicsBackend2Vulkan::DestroyStagingBuffer()
 
 void triton::BGraphicsBackend2Vulkan::CreateDescriptorPool()
 {
-	const SCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+	const SCapabilities& caps = _context->GetSubsystem<XEngine>()->GetApplication()->GetCapabilities();
 
 	VkDescriptorPoolSize sizes[] =
 	{

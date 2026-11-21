@@ -18,7 +18,7 @@ namespace triton
 
         inline types::boolean IsValid() const
         {
-            return instance ? True : False;
+            return instance ? types::True : types::False;
         }
 
         inline void Invalidate()

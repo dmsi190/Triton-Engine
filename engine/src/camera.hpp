@@ -4,7 +4,6 @@
 
 #include "math.hpp"
 #include "object.hpp"
-#include "handle.hpp"
 #include "types.hpp"
 
 namespace triton
@@ -13,7 +12,7 @@ namespace triton
 
     class XCamera : public iObject
     {
-        TRITON_CLASS_NAME(XCamera)
+        TRITON_OBJECT(XCamera)
 
         types::f32 _fov = 0.0f;
         types::f32 _zNear = 0.0f;
@@ -35,7 +34,7 @@ namespace triton
 
     public:
         explicit XCamera(
-            const SMemoryAllocation& mem_alloc,
+            const SMemAlloc& mem_alloc,
             cContext* context,
             types::f32 fov,
             types::f32 zNear,
@@ -45,15 +44,20 @@ namespace triton
         ~XCamera() override = default;
 
         void Bind(XRenderPassGeometry* pass);
+
         void Update(
             const cVector2& mouseDelta,
             types::usize screenWidth,
             types::usize screenHeight,
             types::f32 mouseSensitivity
         );
-        void AddEuler(cMath::EEulerAngle angle, types::f32 value);
+
+        void AddEuler(CMath::EEulerAngle angle, types::f32 value);
+
         void Move(types::f32 value);
+
         void Strafe(types::f32 value);
+
         void Lift(types::f32 value);
 
         inline const cVector3& GetWorldPosition() const { return _worldPosition; }

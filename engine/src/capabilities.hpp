@@ -4,8 +4,8 @@
 
 #include <string>
 #include "math.hpp"
-#include "graphics_available_backends_enum.hpp"
-#include "graphics_device_type_enum.hpp"
+#include "graphics_backend_type_enum.hpp"
+#include "graphics_adapter_type_enum.hpp"
 #include "types.hpp"
 
 namespace triton
@@ -55,8 +55,8 @@ namespace triton
         types::usize maxRenderBatchCount = 4 * 1024;
         types::usize maxRenderInstanceCount = 4 * 1024;
         types::usize maxBoneCountPerVertex = 4;
-        EAvailableGraphicsBackend graphicsBackend = EAvailableGraphicsBackend::Vulkan;
-        EGraphicsDeviceType preferredGraphicsDevice = EGraphicsDeviceType::Discrete;
+        EGraphicsBackendType graphicsBackend = EGraphicsBackendType::Vulkan;
+        EGraphicsAdapterType preferredGraphicsDevice = EGraphicsAdapterType::Discrete;
         types::usize framesInFlight = 2;
         types::usize maxBindingGroupCount = 1024;
         types::usize maxStorageBufferBindingCount = maxBindingGroupCount * 16;

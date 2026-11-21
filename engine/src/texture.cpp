@@ -14,14 +14,14 @@ triton::XTexture::XTexture(
 	cContext* context,
 	types::boolean bCreateSampler,
 	ETextureFormat textureFormat,
-	dword usageMask,
+	ETextureUsageBit usageMask,
 	ETextureDimension textureDimension,
 	s32 textureSlot,
-	EImageFormat expectedDataFormat,
+	EImageDataFormat expectedDataFormat,
 	const std::filesystem::path& filePath
 ) : iObject(mem_alloc, context)
 {
-	SImageResource tex = _context->GetBackend<IImageDecoder>()->Decode(
+	_image = _context->GetBackend<IImageDecoder>()->DecodeImage(
 		expectedDataFormat,
 		filePath
 	);
@@ -31,8 +31,8 @@ triton::XTexture::XTexture(
 		textureFormat,
 		usageMask,
 		textureDimension,
-		tex.size,
-		tex.data,
+		_image.size,
+		_image.data.mem,
 		textureSlot
 	);
 
@@ -44,16 +44,16 @@ triton::XTexture::XTexture(
 	cContext* context,
 	types::boolean bCreateSampler,
 	ETextureFormat textureFormat,
-	dword usageMask,
+	ETextureUsageBit usageMask,
 	ETextureDimension textureDimension,
 	s32 textureSlot,
 	EImageFileFormat containerFormat,
-	EImageFormat expectedDataFormat,
+	EImageDataFormat expectedDataFormat,
 	const u8* data,
 	usize dataByteSize
 ) : iObject(mem_alloc, context)
 {
-	SImageResource tex = _context->GetBackend<IImageDecoder>()->Decode(
+	_image = _context->GetBackend<IImageDecoder>()->DecodeImage(
 		containerFormat,
 		expectedDataFormat,
 		data,
@@ -65,8 +65,8 @@ triton::XTexture::XTexture(
 		textureFormat,
 		usageMask,
 		textureDimension,
-		tex.size,
-		tex.data,
+		_image.size,
+		_image.data.mem,
 		textureSlot
 	);
 
@@ -78,7 +78,7 @@ triton::XTexture::XTexture(
 	cContext* context,
 	types::boolean bCreateSampler,
 	ETextureFormat textureFormat,
-	dword usageMask,
+	ETextureUsageBit usageMask,
 	ETextureDimension textureDimension,
 	const cVector3& size,
 	const types::u8* data,
@@ -104,6 +104,8 @@ triton::XTexture::~XTexture()
 		return;
 
 	CRenderCommandProxy::DestroyTexture(_gpuTexture);
+
+	_context->GetBackend<IImageDecoder>()->ReleaseImage(_image);
 }
 
 void triton::XTexture::CreateOnGpu(

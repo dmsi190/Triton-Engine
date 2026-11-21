@@ -1,4 +1,4 @@
-// image_format_enum.hpp
+// image_data_format_enum.hpp
 
 #pragma once
 
@@ -6,7 +6,7 @@
 
 namespace triton
 {
-	enum class EImageFormat : types::dword
+	enum class EImageDataFormat : types::dword
 	{
 		Unknown,
 		R8,

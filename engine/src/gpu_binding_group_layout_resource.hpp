@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vector>
 #include "gpu_resource.hpp"
 #include "render_binding_group_binding_struct.hpp"
 #include "types.hpp"

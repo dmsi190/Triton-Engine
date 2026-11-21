@@ -35,18 +35,18 @@
 
 using namespace types;
 
-triton::CEngine::CEngine(const SMemAlloc& mem_alloc, cContext* context, IApplication* app)
+triton::XEngine::XEngine(const SMemAlloc& mem_alloc, cContext* context, IApplication* app)
 	: XSubsystem(mem_alloc, context), _app(app)
 {
 	Initialize();
 }
 
-triton::CEngine::~CEngine()
+triton::XEngine::~XEngine()
 {
 	Shutdown();
 }
 
-void triton::CEngine::Initialize()
+void triton::XEngine::Initialize()
 {
 	CThreadGuard::CaptureMainThreadId();
 
@@ -60,16 +60,9 @@ void triton::CEngine::Initialize()
 	// Set context for render command proxy
 	CRenderCommandProxy::SetContext(_context);
 
-	// Create memory allocator
-	CMemoryAllocator::Initialize(
-		caps.memory_allocator_bin_count,
-		caps.memory_allocator_bin_capacity,
-		caps.memory_allocator_bin_mem_step
-	);
-
 	// Register backends
 	_context->RegisterBackend<IInputBackend>(new CInputBackendSDL(_context));
-	_context->RegisterBackend<iAudioBackend>(new cAudioBackendOAL(_context));
+	//_context->RegisterBackend<iAudioBackend>(new cAudioBackendOAL(_context));
 	_context->RegisterBackend<IModelBackend>(new XModelBackendAssimp(_context));
 	_context->RegisterBackend<IImageDecoder>(CCreator::Create<BImageDecoderMulti>(_context));
 
@@ -96,33 +89,33 @@ void triton::CEngine::Initialize()
 	_context->RegisterSubsystem(CCreator::Create<XGraphics>(_context));
 }
 
-void triton::CEngine::Shutdown()
+void triton::XEngine::Shutdown()
 {
 	CGraphicsBuffers::Release();
 	ReleaseRenderThread();
 	ReleaseSynchronization();
 	ReleaseRenderCommandRecorder();
-	CMemoryAllocator::Release();
+	_app->DestroyWindow();
 }
 
-void triton::CEngine::Run()
+void triton::XEngine::Run()
 {
 	MainThreadFunction();
 }
 
-void triton::CEngine::InitializeSynchronization()
+void triton::XEngine::InitializeSynchronization()
 {
 	_sync = CCreator::Create<XSynchronization>(_context, _cmd_recorder, 1024);
 }
 
-void triton::CEngine::InitializeRenderCommandRecorder()
+void triton::XEngine::InitializeRenderCommandRecorder()
 {
 	CThreadGuard::AssertMain();
 
 	_cmd_recorder = CCreator::Create<XRenderCommandRecorder>();
 }
 
-void triton::CEngine::InitializeRenderThread()
+void triton::XEngine::InitializeRenderThread()
 {
 	CThreadGuard::AssertMain();
 
@@ -134,24 +127,24 @@ void triton::CEngine::InitializeRenderThread()
 	_sync->WaitForRenderThreadToInit();
 }
 
-void triton::CEngine::ReleaseSynchronization()
+void triton::XEngine::ReleaseSynchronization()
 {
 	CCreator::Destroy<XSynchronization>(_sync);
 }
 
-void triton::CEngine::ReleaseRenderCommandRecorder()
+void triton::XEngine::ReleaseRenderCommandRecorder()
 {
 	CCreator::Destroy<XRenderCommandRecorder>(_cmd_recorder);
 }
 
-void triton::CEngine::ReleaseRenderThread()
+void triton::XEngine::ReleaseRenderThread()
 {
 	_render_thread->Stop();
 
 	CCreator::Destroy<XRenderThread>(_render_thread);
 }
 
-void triton::CEngine::MainThreadFunction()
+void triton::XEngine::MainThreadFunction()
 {
 	CThreadGuard::AssertMain();
 
@@ -198,7 +191,7 @@ void triton::CEngine::MainThreadFunction()
 
 			_app->Update();
 
-			_context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->Clear();
+			_context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->Clear();
 			_context->GetSubsystem<XGraphics>()->ExecutePasses();
 		}
 		

@@ -6,18 +6,20 @@
 #include "render_pass.hpp"
 #include "thread_guard.hpp"
 #include "input_backend.hpp"
-#include "shader_pool.hpp"
 #include "render_pass_geometry.hpp"
 
 using namespace types;
 
 triton::XCamera::XCamera(
-    const SMemoryAllocation& mem_alloc,
+    const SMemAlloc& mem_alloc,
     cContext* context,
     f32 fov,
     f32 zNear,
     f32 zFar
-) : iObject(mem_alloc, context), _fov(fov), _zNear(zNear), _zFar(zFar) {}
+) : iObject(mem_alloc, context),
+    _fov(fov),
+    _zNear(zNear),
+    _zFar(zFar) {}
 
 void triton::XCamera::Bind(XRenderPassGeometry* pass)
 {
@@ -38,13 +40,12 @@ void triton::XCamera::Update(
 )
 {
     const cTime* time = _context->GetSubsystem<cTime>();
-    const cMath* math = _context->GetSubsystem<cMath>();
 
     const f32 deltaTime = 1.0f; //time->GetDeltaTime();
-    if (_eulerAngles.GetX() > math->DegreesToRadians(65.0f))
-        _eulerAngles.SetX(math->DegreesToRadians(65.0f));
-    else if (_eulerAngles.GetX() < math->DegreesToRadians(-65.0f))
-        _eulerAngles.SetX(math->DegreesToRadians(-65.0f));
+    if (_eulerAngles.GetX() > CMath::DegreesToRadians(65.0f))
+        _eulerAngles.SetX(CMath::DegreesToRadians(65.0f));
+    else if (_eulerAngles.GetX() < CMath::DegreesToRadians(-65.0f))
+        _eulerAngles.SetX(CMath::DegreesToRadians(-65.0f));
     const cQuaternion quatX = cQuaternion(_eulerAngles.GetX(), cVector3(1.0f, 0.0f, 0.0f));
     const cQuaternion quatY = cQuaternion(_eulerAngles.GetY(), cVector3(0.0f, 1.0f, 0.0f));
     const cQuaternion quatZ = cQuaternion(_eulerAngles.GetZ(), cVector3(0.0f, 0.0f, 1.0f));
@@ -53,8 +54,8 @@ void triton::XCamera::Update(
     _viewMatrix = cMatrix4(_worldPosition, _worldDirection, cVector3(0.0f, 1.0f, 0.0f));
     _projectionMatrix = cMatrix4(_fov, (f32)screenWidth / screenHeight, _zNear, _zFar);
     _viewProjectionMatrix = _projectionMatrix * _viewMatrix;
-    AddEuler(cMath::EEulerAngle::PITCH, -mouseDelta.GetY() * mouseSensitivity * deltaTime);
-    AddEuler(cMath::EEulerAngle::YAW, -mouseDelta.GetX() * mouseSensitivity * deltaTime);
+    AddEuler(CMath::EEulerAngle::PITCH, -mouseDelta.GetY() * mouseSensitivity * deltaTime);
+    AddEuler(CMath::EEulerAngle::YAW, -mouseDelta.GetX() * mouseSensitivity * deltaTime);
     
     const f32 camSpeed = 1.0f;
     IInputBackend* ib = _context->GetBackend<IInputBackend>();
@@ -75,14 +76,14 @@ void triton::XCamera::Update(
     }
 }
 
-void triton::XCamera::AddEuler(cMath::EEulerAngle angle, f32 value)
+void triton::XCamera::AddEuler(CMath::EEulerAngle angle, f32 value)
 {
     value = glm::radians(value);
-    if (angle == cMath::EEulerAngle::PITCH)
+    if (angle == CMath::EEulerAngle::PITCH)
         _eulerAngles.AddX(value);
-    else if (angle == cMath::EEulerAngle::YAW)
+    else if (angle == CMath::EEulerAngle::YAW)
         _eulerAngles.AddY(value);
-    else if (angle == cMath::EEulerAngle::ROLL)
+    else if (angle == CMath::EEulerAngle::ROLL)
         _eulerAngles.AddZ(value);
 }
 

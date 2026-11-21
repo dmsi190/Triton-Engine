@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include "types.hpp"
+
 namespace triton
 {
-    enum class EImageFileFormat
+    enum class EImageFileFormat : types::dword
     {
         Unknown,
         PNG,

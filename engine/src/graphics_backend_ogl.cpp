@@ -54,7 +54,7 @@ namespace triton
     }
 }
 
-void triton::XGraphicsBackendOGL::CreateGraphicsContext(SWindowBackend& window)
+void triton::XGraphicsBackendOGL::CreateGraphicsContext(SWindowResource& window)
 {
     window.renderContextInstance = (qword)SDL_GL_CreateContext((SDL_Window*)window.instance);
     if (!window.renderContextInstance)
@@ -76,12 +76,12 @@ void triton::XGraphicsBackendOGL::CreateGraphicsContext(SWindowBackend& window)
     glDebugMessageCallback(GLDebugCallback, nullptr);
 }
 
-void triton::XGraphicsBackendOGL::MakeWindowGraphicsContextCurrent(const SWindowBackend& window)
+void triton::XGraphicsBackendOGL::MakeWindowGraphicsContextCurrent(const SWindowResource& window)
 {
     SDL_GL_MakeCurrent((SDL_Window*)window.instance, (SDL_GLContext)window.renderContextInstance);
 }
 
-void triton::XGraphicsBackendOGL::SwapWindowBuffers(const SWindowBackend& window)
+void triton::XGraphicsBackendOGL::SwapWindowBuffers(const SWindowResource& window)
 {
     SDL_GL_SwapWindow((SDL_Window*)window.instance);
 }
@@ -182,7 +182,7 @@ triton::SGPUShaderResource triton::XGraphicsBackendOGL::CreateShader(
 
     std::string vertexCppStrInclude = "";
     std::string fragmentCppStrInclude = "";
-    CFileSystem* fs = _context->GetSubsystem<CFileSystem>();
+    XFileSystem* fs = _context->GetSubsystem<XFileSystem>();
     /*if (vertexIncludePathCount > 0)
     {
         usize vertexIncludeBufferByteCount = 0;
@@ -495,9 +495,9 @@ void triton::XGraphicsBackendOGL::ResizeRenderTargetColors(
         auto& attachment = renderTarget.color_attachments[i];
         newColorAttachments.emplace_back(
             CreateTexture(
-                cVector3(size.x, size.y, attachment.GetDepth()),
-                attachment.GetDimension(),
-                attachment.GetFormat(),
+                cVector3(size.x, size.y, attachment.size.GetZ()),
+                attachment.dimension,
+                attachment.format,
                 nullptr,
                 0
             )
@@ -515,7 +515,7 @@ void triton::XGraphicsBackendOGL::ResizeRenderTargetColors(
             GL_FRAMEBUFFER,
             GL_COLOR_ATTACHMENT0 + i,
             GL_TEXTURE_2D,
-            (GLuint)renderTarget.color_attachments[i].GetInstance(),
+            (GLuint)renderTarget.color_attachments[i].instance,
             0
         );
     }
@@ -529,42 +529,42 @@ void triton::XGraphicsBackendOGL::ResizeRenderTargetDepth(
 )
 {
     SGPUTextureResource newDepthAttachment = CreateTexture(
-        cVector3(size.x, size.y, renderTarget.depth_attachment.GetDepth()),
-        renderTarget.depth_attachment.GetDimension(),
-        renderTarget.depth_attachment.GetFormat(),
+        cVector3(size.x, size.y, renderTarget.depth_attachment.size.GetZ()),
+        renderTarget.depth_attachment.dimension,
+        renderTarget.depth_attachment.format,
         nullptr,
         0
     );
-    DestroyTexture(renderTarget.GetDepthAttachment());
-    renderTarget.SetDepthAttachment(newDepthAttachment);
+    DestroyTexture(renderTarget.depth_attachment);
+    renderTarget.depth_attachment = newDepthAttachment;
 
     GLenum buffs[16] = {};
-    glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)renderTarget.GetInstance());
+    glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)renderTarget.instance);
     glFramebufferTexture2D(
         GL_FRAMEBUFFER,
         GL_DEPTH_STENCIL_ATTACHMENT,
         GL_TEXTURE_2D,
-        renderTarget.GetDepthAttachment().GetInstance(),
+        renderTarget.depth_attachment.instance,
         0
     );
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void triton::XGraphicsBackendOGL::UpdateRenderTargetBuffers(CGPURenderTargetResource& renderTarget)
+void triton::XGraphicsBackendOGL::UpdateRenderTargetBuffers(SGPURenderTargetResource& renderTarget)
 {
     GLuint instance = 0;
 
     GLenum buffs[16] = {};
     glGenFramebuffers(1, &instance);
     glBindFramebuffer(GL_FRAMEBUFFER, instance);
-    for (usize i = 0; i < renderTarget.GetColorAttachmentCount(); i++)
+    for (usize i = 0; i < renderTarget.color_attachments.size(); i++)
     {
         buffs[i] = GL_COLOR_ATTACHMENT0 + i;
         glFramebufferTexture2D(
             GL_FRAMEBUFFER,
             GL_COLOR_ATTACHMENT0 + i,
             GL_TEXTURE_2D,
-            (GLuint)renderTarget.GetColorAttachments()[i].GetInstance(),
+            (GLuint)renderTarget.color_attachments[i].instance,
             0
         );
     }
@@ -572,16 +572,16 @@ void triton::XGraphicsBackendOGL::UpdateRenderTargetBuffers(CGPURenderTargetReso
         GL_FRAMEBUFFER,
         GL_DEPTH_STENCIL_ATTACHMENT,
         GL_TEXTURE_2D,
-        (GLuint)renderTarget.GetDepthAttachment().GetInstance(),
+        (GLuint)renderTarget.depth_attachment.instance,
         0
     );
-    glDrawBuffers(renderTarget.GetColorAttachmentCount(), &buffs[0]);
+    glDrawBuffers(renderTarget.color_attachments.size(), &buffs[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void triton::XGraphicsBackendOGL::BindRenderTarget(const CGPURenderTargetResource& renderTarget)
+void triton::XGraphicsBackendOGL::BindRenderTarget(const SGPURenderTargetResource& renderTarget)
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)renderTarget.GetInstance());
+    glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)renderTarget.instance);
 }
 
 void triton::XGraphicsBackendOGL::UnbindRenderTarget()
@@ -589,15 +589,15 @@ void triton::XGraphicsBackendOGL::UnbindRenderTarget()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void triton::XGraphicsBackendOGL::DestroyRenderTarget(const CGPURenderTargetResource& renderTarget)
+void triton::XGraphicsBackendOGL::DestroyRenderTarget(const SGPURenderTargetResource& renderTarget)
 {
     UnbindRenderTarget();
 
-    GLuint instance = renderTarget.GetInstance();
+    GLuint instance = renderTarget.instance;
     glDeleteFramebuffers(1, &instance);
 }
 
-triton::CGPUBufferResource triton::XGraphicsBackendOGL::CreateBuffer(
+triton::SGPUBufferResource triton::XGraphicsBackendOGL::CreateBuffer(
     EGPUBufferType type,
     const types::u8* data,
     types::usize byteSize,
@@ -633,90 +633,90 @@ triton::CGPUBufferResource triton::XGraphicsBackendOGL::CreateBuffer(
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
-    return CGPUBufferResource(instance, 0, 0, type, byteSize, slot);
+    return SGPUBufferResource(instance, 0, 0, type, byteSize, slot);
 }
 
-void triton::XGraphicsBackendOGL::BindBuffer(const CGPUBufferResource& buffer)
+void triton::XGraphicsBackendOGL::BindBuffer(const SGPUBufferResource& buffer)
 {
-    if (buffer.GetBufferType() == EGPUBufferType::Vertex)
-        glBindBuffer(GL_ARRAY_BUFFER, (GLuint)buffer.GetInstance());
-    else if (buffer.GetBufferType() == EGPUBufferType::Index)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, (GLuint)buffer.GetInstance());
-    else if (buffer.GetBufferType() == EGPUBufferType::Uniform)
-        glBindBufferBase(GL_UNIFORM_BUFFER, buffer.GetSlot(), (GLuint)buffer.GetInstance());
-    else if (buffer.GetBufferType() == EGPUBufferType::Storage)
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, buffer.GetSlot(), buffer.GetInstance());
+    if (buffer.type == EGPUBufferType::Vertex)
+        glBindBuffer(GL_ARRAY_BUFFER, (GLuint)buffer.instance);
+    else if (buffer.type == EGPUBufferType::Index)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, (GLuint)buffer.instance);
+    else if (buffer.type == EGPUBufferType::Uniform)
+        glBindBufferBase(GL_UNIFORM_BUFFER, buffer.slot, (GLuint)buffer.instance);
+    else if (buffer.type == EGPUBufferType::Storage)
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, buffer.slot, buffer.instance);
 }
 
-void triton::XGraphicsBackendOGL::BindBufferNotVAO(const CGPUBufferResource& buffer)
+void triton::XGraphicsBackendOGL::BindBufferNotVAO(const SGPUBufferResource& buffer)
 {
-    if (buffer.GetBufferType() == EGPUBufferType::Uniform)
-        glBindBufferBase(GL_UNIFORM_BUFFER, buffer.GetSlot(), (GLuint)buffer.GetInstance());
-    else if (buffer.GetBufferType() == EGPUBufferType::Storage)
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, buffer.GetSlot(), buffer.GetInstance());
+    if (buffer.type == EGPUBufferType::Uniform)
+        glBindBufferBase(GL_UNIFORM_BUFFER, buffer.slot, (GLuint)buffer.instance);
+    else if (buffer.type == EGPUBufferType::Storage)
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, buffer.slot, buffer.instance);
 }
 
-void triton::XGraphicsBackendOGL::UnbindBuffer(const CGPUBufferResource& buffer)
+void triton::XGraphicsBackendOGL::UnbindBuffer(const SGPUBufferResource& buffer)
 {
-    if (buffer.GetBufferType() == EGPUBufferType::Vertex)
+    if (buffer.type == EGPUBufferType::Vertex)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-    else if (buffer.GetBufferType() == EGPUBufferType::Index)
+    else if (buffer.type == EGPUBufferType::Index)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    else if (buffer.GetBufferType() == EGPUBufferType::Uniform)
-        glBindBufferBase(GL_UNIFORM_BUFFER, buffer.GetSlot(), 0);
-    else if (buffer.GetBufferType() == EGPUBufferType::Storage)
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, buffer.GetSlot(), 0);
+    else if (buffer.type == EGPUBufferType::Uniform)
+        glBindBufferBase(GL_UNIFORM_BUFFER, buffer.slot, 0);
+    else if (buffer.type == EGPUBufferType::Storage)
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, buffer.slot, 0);
 }
 
 void triton::XGraphicsBackendOGL::WriteBuffer(
-    const CGPUBufferResource& buffer,
+    const SGPUBufferResource& buffer,
     types::usize offset,
     types::usize byteSize,
     const types::u8* data
 )
 {
-    if (buffer.GetBufferType() == EGPUBufferType::Vertex)
+    if (buffer.type == EGPUBufferType::Vertex)
     {
-        glBindBuffer(GL_ARRAY_BUFFER, buffer.GetInstance());
+        glBindBuffer(GL_ARRAY_BUFFER, buffer.instance);
         glBufferSubData(GL_ARRAY_BUFFER, offset, byteSize, data);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
-    else if (buffer.GetBufferType() == EGPUBufferType::Index)
+    else if (buffer.type == EGPUBufferType::Index)
     {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.GetInstance());
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.instance);
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, byteSize, data);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
-    else if (buffer.GetBufferType() == EGPUBufferType::Uniform)
+    else if (buffer.type == EGPUBufferType::Uniform)
     {
-        glBindBuffer(GL_UNIFORM_BUFFER, buffer.GetInstance());
+        glBindBuffer(GL_UNIFORM_BUFFER, buffer.instance);
         glBufferSubData(GL_UNIFORM_BUFFER, offset, byteSize, data);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
-    else if (buffer.GetBufferType() == EGPUBufferType::Storage)
+    else if (buffer.type == EGPUBufferType::Storage)
     {
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer.GetInstance());
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer.instance);
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, byteSize, data);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 }
 
-void triton::XGraphicsBackendOGL::DestroyBuffer(const CGPUBufferResource& buffer)
+void triton::XGraphicsBackendOGL::DestroyBuffer(const SGPUBufferResource& buffer)
 {
-    if (buffer.GetBufferType() == EGPUBufferType::Vertex)
+    if (buffer.type == EGPUBufferType::Vertex)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-    else if (buffer.GetBufferType() == EGPUBufferType::Index)
+    else if (buffer.type == EGPUBufferType::Index)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    else if (buffer.GetBufferType() == EGPUBufferType::Uniform)
+    else if (buffer.type == EGPUBufferType::Uniform)
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    else if (buffer.GetBufferType() == EGPUBufferType::Storage)
+    else if (buffer.type == EGPUBufferType::Storage)
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-    GLuint instance = buffer.GetInstance();
+    GLuint instance = buffer.instance;
     glDeleteBuffers(1, &instance);
 }
 
-triton::CGPUTextureResource triton::XGraphicsBackendOGL::CreateTexture(
+triton::SGPUTextureResource triton::XGraphicsBackendOGL::CreateTexture(
     const cVector3& size,
     ETextureDimension dimension,
     ETextureFormat format,
@@ -819,49 +819,49 @@ triton::CGPUTextureResource triton::XGraphicsBackendOGL::CreateTexture(
         glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
     }
 
-    return CGPUTextureResource::Invalid();
+    return SGPUTextureResource::Invalid();
 }
 
-triton::CGPUTextureResource triton::XGraphicsBackendOGL::ResizeTexture(const CGPUTextureResource& texture, const cVector2& size)
+triton::SGPUTextureResource triton::XGraphicsBackendOGL::ResizeTexture(const SGPUTextureResource& texture, const cVector2& size)
 {
-    CGPUTextureResource newTexture = CreateTexture(
-        cVector3(size.GetX(), size.GetY(), texture.GetDepth()),
-        texture.GetDimension(),
-        texture.GetFormat(),
+    SGPUTextureResource newTexture = CreateTexture(
+        cVector3(size.GetX(), size.GetY(), texture.size.GetZ()),
+        texture.dimension,
+        texture.format,
         nullptr,
-        texture.GetSlot()
+        texture.slot
     );
     DestroyTexture(texture);
 
     return newTexture;
 }
 
-void triton::XGraphicsBackendOGL::BindTexture(const CGPUTextureResource& texture)
+void triton::XGraphicsBackendOGL::BindTexture(const SGPUTextureResource& texture)
 {
-    if (texture.GetDimension() == ETextureDimension::Texture2D)
+    if (texture.dimension == ETextureDimension::Texture2D)
     {
-        glActiveTexture(GL_TEXTURE0 + texture.GetSlot());
-        glBindTexture(GL_TEXTURE_2D, texture.GetInstance());
+        glActiveTexture(GL_TEXTURE0 + texture.slot);
+        glBindTexture(GL_TEXTURE_2D, texture.instance);
         glActiveTexture(GL_TEXTURE0);
     }
-    else if (texture.GetDimension() == ETextureDimension::Texture2DArray)
+    else if (texture.dimension == ETextureDimension::Texture2DArray)
     {
-        glActiveTexture(GL_TEXTURE0 + texture.GetSlot());
-        glBindTexture(GL_TEXTURE_2D_ARRAY, texture.GetInstance());
+        glActiveTexture(GL_TEXTURE0 + texture.slot);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, texture.instance);
         glActiveTexture(GL_TEXTURE0);
     }
 }
 
-void triton::XGraphicsBackendOGL::UnbindTexture(const CGPUTextureResource& texture)
+void triton::XGraphicsBackendOGL::UnbindTexture(const SGPUTextureResource& texture)
 {
-    if (texture.GetDimension() == ETextureDimension::Texture2D)
+    if (texture.dimension == ETextureDimension::Texture2D)
         glBindTexture(GL_TEXTURE_2D, 0);
-    else if (texture.GetDimension() == ETextureDimension::Texture2DArray)
+    else if (texture.dimension == ETextureDimension::Texture2DArray)
         glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
 void triton::XGraphicsBackendOGL::WriteTexture(
-    const CGPUTextureResource& texture,
+    const SGPUTextureResource& texture,
     const cVector3& offset,
     const cVector2& size,
     const types::u8* data
@@ -871,52 +871,52 @@ void triton::XGraphicsBackendOGL::WriteTexture(
     GLenum channelsGL = GL_RGBA;
     GLenum formatComponentGL = GL_UNSIGNED_BYTE;
 
-    if (texture.GetFormat() == ETextureFormat::R8)
+    if (texture.format == ETextureFormat::R8)
     {
         formatGL = GL_R8;
         channelsGL = GL_RED;
         formatComponentGL = GL_UNSIGNED_BYTE;
     }
-    else if (texture.GetFormat() == ETextureFormat::R8F)
+    else if (texture.format == ETextureFormat::R8F)
     {
         formatGL = GL_R8;
         channelsGL = GL_RED;
         formatComponentGL = GL_FLOAT;
     }
-    else if (texture.GetFormat() == ETextureFormat::RGBA8_SRGB_Mips)
+    else if (texture.format == ETextureFormat::RGBA8_SRGB_Mips)
     {
         formatGL = GL_SRGB8_ALPHA8;
         channelsGL = GL_RGBA;
         formatComponentGL = GL_UNSIGNED_BYTE;
     }
-    else if (texture.GetFormat() == ETextureFormat::RGBA8)
+    else if (texture.format == ETextureFormat::RGBA8)
     {
         formatGL = GL_RGBA8;
         channelsGL = GL_RGBA;
         formatComponentGL = GL_UNSIGNED_BYTE;
     }
-    else if (texture.GetFormat() == ETextureFormat::RGB16F)
+    else if (texture.format == ETextureFormat::RGB16F)
     {
         formatGL = GL_RGB16F;
         channelsGL = GL_RGB;
         formatComponentGL = GL_HALF_FLOAT;
     }
-    else if (texture.GetFormat() == ETextureFormat::RGBA16F)
+    else if (texture.format == ETextureFormat::RGBA16F)
     {
         formatGL = GL_RGBA16F;
         channelsGL = GL_RGBA;
         formatComponentGL = GL_HALF_FLOAT;
     }
-    else if (texture.GetFormat() == ETextureFormat::DepthStencil)
+    else if (texture.format == ETextureFormat::DepthStencil)
     {
         formatGL = GL_DEPTH24_STENCIL8;
         channelsGL = GL_DEPTH_STENCIL;
         formatComponentGL = GL_UNSIGNED_INT_24_8;
     }
 
-    if (texture.GetDimension() == ETextureDimension::Texture2D)
+    if (texture.dimension == ETextureDimension::Texture2D)
     {
-        glBindTexture(GL_TEXTURE_2D, texture.GetInstance());
+        glBindTexture(GL_TEXTURE_2D, texture.instance);
         glTexSubImage2D(
             GL_TEXTURE_2D,
             0,
@@ -930,13 +930,13 @@ void triton::XGraphicsBackendOGL::WriteTexture(
         );
         glBindTexture(GL_TEXTURE_2D, 0);
     }
-    else if (texture.GetDimension() == ETextureDimension::Texture2DArray)
+    else if (texture.dimension == ETextureDimension::Texture2DArray)
     {
-        if (offset.GetX() + size.GetX() <= texture.GetWidth() &&
-            offset.GetY() + size.GetY() <= texture.GetHeight() &&
-            offset.GetZ() < texture.GetDepth())
+        if (offset.GetX() + size.GetX() <= texture.size.GetX() &&
+            offset.GetY() + size.GetY() <= texture.size.GetY() &&
+            offset.GetZ() < texture.size.GetZ())
         {
-            glBindTexture(GL_TEXTURE_2D_ARRAY, texture.GetInstance());
+            glBindTexture(GL_TEXTURE_2D_ARRAY, texture.instance);
             glTexSubImage3D(
                 GL_TEXTURE_2D_ARRAY,
                 0,
@@ -955,65 +955,63 @@ void triton::XGraphicsBackendOGL::WriteTexture(
     }
 }
 
-void triton::XGraphicsBackendOGL::WriteTextureToFile(const CGPUTextureResource& texture, const std::string& filename)
+void triton::XGraphicsBackendOGL::WriteTextureToFile(const SGPUTextureResource& texture, const std::string& filename)
 {
-    if (texture.GetFormat() != ETextureFormat::RGBA8)
+    if (texture.format != ETextureFormat::RGBA8)
         return;
 
     GLenum channelsGL = GL_RGBA;
     GLenum formatComponentGL = GL_UNSIGNED_BYTE;
     usize formatByteCount = 4;
 
-    if (texture.GetFormat() == ETextureFormat::RGBA8)
+    if (texture.format == ETextureFormat::RGBA8)
     {
         channelsGL = GL_RGBA;
         formatComponentGL = GL_UNSIGNED_BYTE;
         formatByteCount = 4;
     }
 
-    if (texture.GetDimension() == ETextureDimension::Texture2D)
+    if (texture.dimension == ETextureDimension::Texture2D)
     {
-        const sCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
-        cMemoryAllocator* memoryAllocator = _context->GetMemoryAllocator();
+        const SCapabilities& caps = _context->GetSubsystem<XEngine>()->GetApplication()->GetCapabilities();
 
-        u8* pixels = (u8*)memoryAllocator->Allocate(
-            texture.GetWidth() * texture.GetHeight() * formatByteCount,
-            caps.memoryAlignment
+        SMemAlloc pixels = CMemoryAllocator::Allocate(
+            texture.size.GetX() * texture.size.GetY() * formatByteCount
         );
 
-        glBindTexture(GL_TEXTURE_2D, texture.GetInstance());
-        glGetTexImage(GL_TEXTURE_2D, 0, channelsGL, formatComponentGL, pixels);
+        glBindTexture(GL_TEXTURE_2D, texture.instance);
+        glGetTexImage(GL_TEXTURE_2D, 0, channelsGL, formatComponentGL, pixels.mem);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         // TODO: Implement texture to file write
 
-        memoryAllocator->Deallocate(pixels);
+        CMemoryAllocator::Deallocate(pixels);
     }
 }
 
-void triton::XGraphicsBackendOGL::GenerateTextureMips(const CGPUTextureResource& texture)
+void triton::XGraphicsBackendOGL::GenerateTextureMips(const SGPUTextureResource& texture)
 {
-    if (texture.GetDimension() == ETextureDimension::Texture2D)
+    if (texture.dimension == ETextureDimension::Texture2D)
     {
-        glBindTexture(GL_TEXTURE_2D, texture.GetInstance());
+        glBindTexture(GL_TEXTURE_2D, texture.instance);
         glGenerateMipmap(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
-    else if (texture.GetDimension() == ETextureDimension::Texture2DArray)
+    else if (texture.dimension == ETextureDimension::Texture2DArray)
     {
-        glBindTexture(GL_TEXTURE_2D_ARRAY, texture.GetInstance());
+        glBindTexture(GL_TEXTURE_2D_ARRAY, texture.instance);
         glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
         glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
     }
 }
 
-void triton::XGraphicsBackendOGL::DestroyTexture(const CGPUTextureResource& texture)
+void triton::XGraphicsBackendOGL::DestroyTexture(const SGPUTextureResource& texture)
 {
-    if (texture.GetDimension() == ETextureDimension::Texture2D)
+    if (texture.dimension == ETextureDimension::Texture2D)
         glBindTexture(GL_TEXTURE_2D, 0);
-    else if (texture.GetDimension() == ETextureDimension::Texture2DArray)
+    else if (texture.dimension == ETextureDimension::Texture2DArray)
         glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
-    GLuint instance = texture.GetInstance();
+    GLuint instance = texture.instance;
     glDeleteTextures(1, (GLuint*)&instance);
 }

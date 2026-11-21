@@ -7,7 +7,7 @@
 #include "object.hpp"
 #include "graphics_backend2.hpp"
 #include "graphics_backend2_vulkan_structs.hpp"
-#include "texture_formats.hpp"
+#include "texture_format.hpp"
 #include "render_native_command_struct.hpp"
 #include "render_pipeline_stage_bit_enum.hpp"
 #include "render_resource_access_bit_enum.hpp"
@@ -50,7 +50,9 @@ namespace triton
 		types::usize									_currentFrame = 0;
 
 	public:
-		explicit BGraphicsBackend2Vulkan(cContext* context) : IGraphicsBackend2(context) {}
+		explicit BGraphicsBackend2Vulkan(const SMemAlloc& mem_alloc, cContext* context)
+			: IGraphicsBackend2(mem_alloc, context) {}
+
 		~BGraphicsBackend2Vulkan() override = default;
 
 		// Initialization/Shutdown

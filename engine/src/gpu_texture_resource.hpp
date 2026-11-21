@@ -3,7 +3,7 @@
 #pragma once
 
 #include "math.hpp"
-#include "texture_formats.hpp"
+#include "texture_format.hpp"
 #include "texture_dimensions.hpp"
 #include "gpu_resource.hpp"
 #include "gpu_buffer_resource.hpp"

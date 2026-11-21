@@ -20,18 +20,20 @@ namespace triton
 		
 		virtual ~IImageDecoder() = default;
 
-		virtual SImageResource Decode(
-			EImageFormat expectedDataFormat,
+		virtual SImageResource DecodeImage(
+			EImageDataFormat expectedDataFormat,
 			const std::filesystem::path& filePath
 		) = 0;
 
-		virtual SImageResource Decode(
+		virtual SImageResource DecodeImage(
 			EImageFileFormat fileFormat,
-			EImageFormat expectedDataFormat,
+			EImageDataFormat expectedDataFormat,
 			const types::u8* data,
 			types::usize dataByteSize
 		) = 0;
 
-		virtual EImageFormat TextureFormatToImageFormat(ETextureFormat textureFormat) = 0;
+		virtual void ReleaseImage(SImageResource& image) = 0;
+
+		virtual EImageDataFormat TextureFormatToImageFormat(ETextureFormat textureFormat) = 0;
 	};
 }

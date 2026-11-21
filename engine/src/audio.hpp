@@ -1,5 +1,5 @@
 // audio.hpp
-
+/*
 #pragma once
 
 #include "subsystem.hpp"
@@ -43,7 +43,7 @@ namespace triton
 		types::u16 channelCount = 0;
 		types::u16 bitsPerSample = 0;
 		types::u32 sampleRate = 0;
-		SMemoryAllocation data;
+		SMemAlloc data;
 		types::usize dataByteSize = 0;
 	};
-}
+}*/

@@ -140,6 +140,7 @@ void triton::XRenderGroup::RemoveInstance(SRenderInstance* instance)
 			updated_instance->connected_object->GetMotionType(),
 			updated_instance->connected_object->GetMaterialIndex()
 		);
+
 		instance->SetWorldMatrix(
 			updated_instance->connected_object->GetMotionType(),
 			updated_instance->connected_object->GetWorldMatrix()

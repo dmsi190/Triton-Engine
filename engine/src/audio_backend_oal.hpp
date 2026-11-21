@@ -1,5 +1,5 @@
 // audio_backend_oal.hpp
-
+/*
 #pragma once
 
 #include <AL/al.h>
@@ -34,4 +34,4 @@ namespace triton
         virtual void SetListenerVelocity(const cVector3& velocity) override final;
         virtual void SetListenerOrientation(const cVector3& at, const cVector3& up) override final;
     };
-}
+}*/

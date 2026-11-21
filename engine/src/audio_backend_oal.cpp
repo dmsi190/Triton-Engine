@@ -1,5 +1,5 @@
 // audio_backend_oal.cpp
-
+/*
 #include "audio_backend_oal.hpp"
 
 using namespace types;
@@ -90,4 +90,4 @@ void triton::cAudioBackendOAL::SetListenerOrientation(const cVector3& at, const 
 {
     ALfloat values[] = { at.GetX(), at.GetY(), at.GetZ(), up.GetX(), up.GetY(), up.GetZ() };
     alListenerfv(AL_ORIENTATION, &values[0]);
-}
+}*/

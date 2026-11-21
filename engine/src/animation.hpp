@@ -4,7 +4,6 @@
 
 #include <optional>
 #include "object.hpp"
-#include "handle.hpp"
 #include "animation_key.hpp"
 #include "animation_frame.hpp"
 #include "skeleton.hpp"
@@ -22,7 +21,7 @@ namespace triton
 
     public:
         explicit XAnimation(
-            const SMemoryAllocation& mem_alloc,
+            const SMemAlloc& mem_alloc,
             cContext* context,
             const std::string& name,
             types::f32 duration,

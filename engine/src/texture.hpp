@@ -6,11 +6,12 @@
 #include "object.hpp"
 #include "math.hpp"
 #include "gpu_texture_resource.hpp"
-#include "texture_formats.hpp"
+#include "texture_format.hpp"
 #include "texture_dimensions.hpp"
-#include "image_format_enum.hpp"
+#include "image_data_format_enum.hpp"
 #include "image_file_format_enum.hpp"
 #include "graphics_texture_usage_bit_enum.hpp"
+#include "image_backend_data.hpp"
 
 namespace triton
 {
@@ -20,6 +21,7 @@ namespace triton
 	{
 		TRITON_OBJECT(XTexture)
 
+		SImageResource		_image;
 		SGPUTextureResource _gpuTexture = SGPUTextureResource::Invalid();
 
 	public:
@@ -28,10 +30,10 @@ namespace triton
 			cContext* context,
 			types::boolean bCreateSampler,
 			ETextureFormat textureFormat,
-			types::dword usageMask,
+			ETextureUsageBit usageMask,
 			ETextureDimension textureDimension,
 			types::s32 textureSlot,
-			EImageFormat expectedDataFormat,
+			EImageDataFormat expectedDataFormat,
 			const std::filesystem::path& filePath
 		);
 
@@ -40,11 +42,11 @@ namespace triton
 			cContext* context,
 			types::boolean bCreateSampler,
 			ETextureFormat textureFormat,
-			types::dword usageMask,
+			ETextureUsageBit usageMask,
 			ETextureDimension textureDimension,
 			types::s32 textureSlot,
 			EImageFileFormat containerFormat,
-			EImageFormat expectedDataFormat,
+			EImageDataFormat expectedDataFormat,
 			const types::u8* data,
 			types::usize dataByteSize
 		);
@@ -54,7 +56,7 @@ namespace triton
 			cContext* context,
 			types::boolean bCreateSampler,
 			ETextureFormat textureFormat,
-			types::dword usageMask,
+			ETextureUsageBit usageMask,
 			ETextureDimension textureDimension,
 			const cVector3& size,
 			const types::u8* data,

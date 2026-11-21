@@ -54,7 +54,7 @@ namespace triton
 
 		~XRenderGroup() override;
 
-		const SRenderInstance* AddInstance();
+		const SRenderInstance* AddInstance(XWorldObject* connected_object);
 
 		void RemoveInstance(SRenderInstance* instance);
 

@@ -12,30 +12,43 @@
 #include "thread_subsystem.hpp"
 #include "window.hpp"
 #include "time.hpp"
+#include "creator.hpp"
 #include "log.hpp"
 
 using namespace types;
 
-triton::IApplication::IApplication(cContext* context, const sCapabilities& caps) : _context(context), _caps(caps)
+triton::IApplication::IApplication(cContext* context, const SCapabilities& caps) : _context(context), _caps(caps)
 {
-    _engine = new CEngine(_context, this);
+    CMemoryAllocator::Initialize(
+        caps.memory_allocator_bin_count,
+        caps.memory_allocator_bin_capacity,
+        caps.memory_allocator_bin_mem_step
+    );
+
+    _engine = CCreator::Create<XEngine>(_context, this);
 }
 
 triton::IApplication::~IApplication()
 {
-    delete _window;
-    delete _engine;
+    CCreator::Destroy<XEngine>(_engine);
+
+    CMemoryAllocator::Release();
 }
 
 void triton::IApplication::CreateWindow()
 {
-    _window = new CWindow(
+    _window = CCreator::Create<CWindow>(
         _context,
         _caps.window.title,
         _caps.window.size,
         _caps.window.fullscreen,
         _caps.graphicsBackend
     );
+}
+
+void triton::IApplication::DestroyWindow()
+{
+    CCreator::Destroy<CWindow>(_window);
 }
 
 void triton::IApplication::Run()

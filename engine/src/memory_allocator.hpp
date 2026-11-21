@@ -10,7 +10,7 @@ namespace triton
     {
         types::u32 bin_index;
         types::u32 block_index;
-        types::u8* mem;
+        types::u8* mem = nullptr;
 
         static SMemAlloc Invalid();
 

@@ -20,9 +20,9 @@ namespace triton
 
 	inline std::thread::id global_main_thread_id = std::this_thread::get_id();
 
-	class CEngine final : public XSubsystem
+	class XEngine final : public XSubsystem
 	{
-		TRITON_OBJECT(CEngine)
+		TRITON_OBJECT(XEngine)
 
 		IApplication*				_app;
 		XSynchronization*			_sync;
@@ -30,9 +30,9 @@ namespace triton
 		XRenderThread*				_render_thread;
 
 	public:
-		explicit CEngine(const SMemAlloc& mem_alloc, cContext* context, IApplication* app);
+		explicit XEngine(const SMemAlloc& mem_alloc, cContext* context, IApplication* app);
 
-		~CEngine() override;
+		~XEngine() override;
 
 		void Initialize();
 		void Shutdown();

@@ -10,6 +10,7 @@
 #include <immintrin.h>
 #define LZCNT32(x) __builtin_clz(x)
 #endif
+#include "backend.hpp"
 
 using namespace types;
 
@@ -202,7 +203,7 @@ triton::cMatrix4::cMatrix4(const cVector3& position, const cVector3& direction, 
 	: _mat(glm::lookAtRH(position._vec, position._vec + direction._vec, up._vec)) {}
 
 triton::cMatrix4::cMatrix4(f32 fov, f32 aspect, f32 zNear, f32 zFar)
-	: _mat(glm::perspective(cMath::DegreesToRadians(fov), aspect, zNear, zFar)) {}
+	: _mat(glm::perspective(CMath::DegreesToRadians(fov), aspect, zNear, zFar)) {}
 
 triton::cMatrix4 triton::cMatrix4::operator*(const cMatrix4& mat) const
 {
@@ -211,23 +212,21 @@ triton::cMatrix4 triton::cMatrix4::operator*(const cMatrix4& mat) const
 
 void triton::cTransform::Transform()
 {
-	const glm::quat quatX = glm::angleAxis(cMath::DegreesToRadians(_rotation.GetX()), glm::vec3(1.0f, 0.0f, 0.0f));
-	const glm::quat quatY = glm::angleAxis(cMath::DegreesToRadians(_rotation.GetY()), glm::vec3(0.0f, 1.0f, 0.0f));
-	const glm::quat quatZ = glm::angleAxis(cMath::DegreesToRadians(_rotation.GetZ()), glm::vec3(0.0f, 0.0f, 1.0f));
+	const glm::quat quatX = glm::angleAxis(CMath::DegreesToRadians(_rotation.GetX()), glm::vec3(1.0f, 0.0f, 0.0f));
+	const glm::quat quatY = glm::angleAxis(CMath::DegreesToRadians(_rotation.GetY()), glm::vec3(0.0f, 1.0f, 0.0f));
+	const glm::quat quatZ = glm::angleAxis(CMath::DegreesToRadians(_rotation.GetZ()), glm::vec3(0.0f, 0.0f, 1.0f));
 	_world._mat =
 		glm::translate(glm::mat4(1.0f), _position._vec) *
 		glm::toMat4(quatZ * quatY * quatX) *
 		glm::scale(glm::mat4(1.0f), _scale._vec);
 }
 
-triton::cMath::cMath(cContext* context) : CSubsystem(context) {}
-
-f32 triton::cMath::DegreesToRadians(f32 degrees)
+f32 triton::CMath::DegreesToRadians(f32 degrees)
 {
 	return glm::radians(degrees);
 }
 
-qword triton::cMath::MakeHashMask(usize size)
+qword triton::CMath::MakeHashMask(usize size)
 {
 	unsigned int count = LZCNT32((unsigned int)size);
 	qword mask = (qword)((1 << (31 - count)) - 1);
@@ -235,7 +234,7 @@ qword triton::cMath::MakeHashMask(usize size)
 	return mask;
 }
 
-qword triton::cMath::HashBytes(const u8* data, usize dataByteSize, qword mask)
+qword triton::CMath::HashBytes(const u8* data, usize dataByteSize, qword mask)
 {
 	qword hash = 0x9e3779b97f4a7c15ull;
 	while (dataByteSize >= 4)
@@ -251,10 +250,10 @@ qword triton::cMath::HashBytes(const u8* data, usize dataByteSize, qword mask)
 	return hash & mask;
 }
 
-triton::cMatrix4 triton::cMath::Transform(
-	cVector3 worldPosition,
-	cVector3 worldRotation,
-	cVector3 scale
+triton::cMatrix4 triton::CMath::Transform(
+	const cVector3& worldPosition,
+	const cVector3& worldRotation,
+	const cVector3& scale
 )
 {
 	glm::mat4 rotX = glm::rotate(glm::mat4(1.0f), glm::radians(worldRotation.GetX()), glm::vec3(1.0f, 0.0f, 0.0f));

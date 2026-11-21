@@ -10,7 +10,7 @@
 #include "input_window_resource.hpp"
 #include "gpu_buffer_types.hpp"
 #include "graphics_adapter_type_enum.hpp"
-#include "graphics_texture_usage_enum.hpp"
+#include "graphics_texture_usage_bit_enum.hpp"
 #include "texture_dimensions.hpp"
 #include "gpu_texture_resource.hpp"
 #include "gpu_buffer_resource.hpp"

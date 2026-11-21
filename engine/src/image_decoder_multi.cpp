@@ -7,8 +7,8 @@
 
 using namespace types;
 
-triton::SImageResource triton::BImageDecoderMulti::Decode(
-	EImageFormat expectedDataFormat,
+triton::SImageResource triton::BImageDecoderMulti::DecodeImage(
+	EImageDataFormat expectedDataFormat,
 	const std::filesystem::path& filePath
 )
 {
@@ -62,9 +62,9 @@ triton::SImageResource triton::BImageDecoderMulti::Decode(
 	}
 }
 
-triton::SImageResource triton::BImageDecoderMulti::Decode(
+triton::SImageResource triton::BImageDecoderMulti::DecodeImage(
 	EImageFileFormat fileFormat,
-	EImageFormat expectedDataFormat,
+	EImageDataFormat expectedDataFormat,
 	const types::u8* data,
 	types::usize dataByteSize
 )
@@ -119,25 +119,31 @@ triton::SImageResource triton::BImageDecoderMulti::Decode(
 	}
 }
 
-triton::EImageFormat triton::BImageDecoderMulti::TextureFormatToImageFormat(ETextureFormat textureFormat)
+void triton::BImageDecoderMulti::ReleaseImage(SImageResource& image)
 {
-	if (textureFormat == ETextureFormat::R8)
-		return EImageFormat::R8;
-	else if (textureFormat == ETextureFormat::RGBA8)
-		return EImageFormat::RGBA8;
-	else if (textureFormat == ETextureFormat::RGBA8_SRGB_Mips)
-		return EImageFormat::RGBA8_SRGB;
-
-	return EImageFormat::Unknown;
+	if (image.data.IsValid() == True)
+		CMemoryAllocator::Deallocate(image.data);
 }
 
-usize triton::BImageDecoderMulti::DetermineChannelCount(EImageFormat format)
+triton::EImageDataFormat triton::BImageDecoderMulti::TextureFormatToImageFormat(ETextureFormat textureFormat)
 {
-	if (format == EImageFormat::R8)
+	if (textureFormat == ETextureFormat::R8)
+		return EImageDataFormat::R8;
+	else if (textureFormat == ETextureFormat::RGBA8)
+		return EImageDataFormat::RGBA8;
+	else if (textureFormat == ETextureFormat::RGBA8_SRGB_Mips)
+		return EImageDataFormat::RGBA8_SRGB;
+
+	return EImageDataFormat::Unknown;
+}
+
+usize triton::BImageDecoderMulti::DetermineChannelCount(EImageDataFormat format)
+{
+	if (format == EImageDataFormat::R8)
 		return 1;
-	else if (format == EImageFormat::RGBA8)
+	else if (format == EImageDataFormat::RGBA8)
 		return 4;
-	else if (format == EImageFormat::RGBA8_SRGB)
+	else if (format == EImageDataFormat::RGBA8_SRGB)
 		return 4;
 
 	return 0;
@@ -145,24 +151,24 @@ usize triton::BImageDecoderMulti::DetermineChannelCount(EImageFormat format)
 
 boolean triton::BImageDecoderMulti::ValidateDDSFormat(
 	tinyddsloader::DDSFile::DXGIFormat ddsFormat,
-	EImageFormat expectedFormat
+	EImageDataFormat expectedFormat
 )
 {
 	if (ddsFormat == tinyddsloader::DDSFile::DXGIFormat::R8_UNorm &&
-		expectedFormat == EImageFormat::R8)
+		expectedFormat == EImageDataFormat::R8)
 		return True;
 	else if (ddsFormat == tinyddsloader::DDSFile::DXGIFormat::R8G8B8A8_UNorm &&
-		expectedFormat == EImageFormat::RGBA8)
+		expectedFormat == EImageDataFormat::RGBA8)
 		return True;
 	else if (ddsFormat == tinyddsloader::DDSFile::DXGIFormat::R8G8B8A8_UNorm_SRGB &&
-		expectedFormat == EImageFormat::RGBA8_SRGB)
+		expectedFormat == EImageDataFormat::RGBA8_SRGB)
 		return True;
 
 	return False;
 }
 
 triton::SImageResource triton::BImageDecoderMulti::ReturnPNGData(
-	EImageFormat expectedDataFormat,
+	EImageDataFormat expectedDataFormat,
 	const std::string& filePathStr,
 	const stbi_uc* stbData,
 	int stbWidth,
@@ -198,7 +204,7 @@ triton::SImageResource triton::BImageDecoderMulti::ReturnPNGData(
 	const usize imageDataByteSize = (usize)(stbWidth * stbHeight * stbDesiredChannels);
 	const cVector3 imageSize = cVector3((f32)stbWidth, (f32)stbHeight, 1.0f);
 
-	SMemoryAllocation imageData = CMemoryAllocator::Allocate(imageDataByteSize);
+	SMemAlloc imageData = CMemoryAllocator::Allocate(imageDataByteSize);
 	
 	std::memcpy(&imageData.mem[0], &stbData[0], imageDataByteSize);
 
@@ -214,7 +220,7 @@ triton::SImageResource triton::BImageDecoderMulti::ReturnPNGData(
 }
 
 triton::SImageResource triton::BImageDecoderMulti::ReturnDDSData(
-	EImageFormat expectedDataFormat,
+	EImageDataFormat expectedDataFormat,
 	const std::string& filePathStr,
 	tinyddsloader::Result ddsResult,
 	tinyddsloader::DDSFile& dds
@@ -267,7 +273,7 @@ triton::SImageResource triton::BImageDecoderMulti::ReturnDDSData(
 	const usize imageDataByteSize = (usize)(ddsWidth * ddsHeight) * channelCount;
 	const cVector3 imageSize = cVector3((f32)ddsWidth, (f32)ddsHeight, 1.0f);
 
-	SMemoryAllocation imageData = CMemoryAllocator::Allocate(imageDataByteSize);
+	SMemAlloc imageData = CMemoryAllocator::Allocate(imageDataByteSize);
 	
 	std::memcpy(&imageData.mem[0], ddsData, imageDataByteSize);
 

@@ -222,7 +222,7 @@ const triton::SGPUTextureResource& triton::XGraphics::CreateRenderTargets()
     _transparentRenderTarget = *rtPool->Create(transparentColorAttachments, depth);*/
 
     const cVector2 application_window_size =
-        _context->GetSubsystem<CEngine>()->GetApplication()->GetWindow()->GetSize();
+        _context->GetSubsystem<XEngine>()->GetApplication()->GetWindow()->GetSize();
 
     XTexture* color_texture = CCreator::Create<XTexture>(
         True,

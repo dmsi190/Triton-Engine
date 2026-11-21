@@ -11,25 +11,25 @@
 namespace triton
 {
     class cContext;
-    class CEngine;
+    class XEngine;
     class CWindow;
 
     class IApplication
     {
-        TRITON_CLASS_NAME(IApplication)
-
     protected:
         cContext* _context = nullptr;
-        sCapabilities _caps;
+        SCapabilities _caps;
         CWindow* _window = nullptr;
-        CEngine* _engine = nullptr;
+        XEngine* _engine = nullptr;
 
     public:
-        explicit IApplication(cContext* context, const sCapabilities& caps);
+        explicit IApplication(cContext* context, const SCapabilities& caps);
 
         virtual ~IApplication();
 
         void CreateWindow();
+
+        void DestroyWindow();
 
         virtual void Setup() = 0;
 
@@ -39,10 +39,10 @@ namespace triton
 
         void Run();
 
-        inline const sCapabilities& GetCapabilities() const { return _caps; }
+        inline const SCapabilities& GetCapabilities() const { return _caps; }
 
         inline CWindow* GetWindow() const { return _window; }
 
-        inline CEngine* GetEngine() const { return _engine; }
+        inline XEngine* GetEngine() const { return _engine; }
     };
 }

@@ -17,7 +17,7 @@ void triton::CGraphicsBuffers::Initialize(cContext* context)
 {
 	_context = context;
 
-    const SCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+    const SCapabilities& caps = _context->GetSubsystem<XEngine>()->GetApplication()->GetCapabilities();
 
     _rigid_vertex_buffer = CCreator::Create<XGPUBuffer>(
         _context,

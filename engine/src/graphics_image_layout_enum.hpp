@@ -6,7 +6,7 @@
 
 namespace triton
 {
-	enum class EGraphicsImageLayout : types::u32
+	enum class EGraphicsImageLayout : types::dword
 	{
 		Undefined,
 		ColorAttachment,

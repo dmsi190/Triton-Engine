@@ -21,7 +21,7 @@ triton::XGPUBuffer::XGPUBuffer(
     _element_byte_size(element_byte_size),
     _element_count(byte_size / _element_byte_size),
     _reserve_capacity(
-        _context->GetSubsystem<CEngine>()->
+        _context->GetSubsystem<XEngine>()->
         GetApplication()->
         GetCapabilities().staging_buffer_reserve_capacity
     ),

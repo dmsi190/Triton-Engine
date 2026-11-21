@@ -195,10 +195,8 @@ namespace triton
 		inline void SetScale(const cVector3& scale) { _scale = scale; }
 	};
 
-	class cMath : public CSubsystem
+	class CMath
 	{
-		TRITON_CLASS_NAME(cMath)
-
 	public:
 		enum class EEulerAngle
 		{
@@ -207,10 +205,12 @@ namespace triton
 			ROLL
 		};
 
-		explicit cMath(cContext* context);
-		~cMath() = default;
+		explicit CMath() = default;
+
+		~CMath() = default;
 
 		static types::f32 DegreesToRadians(types::f32 degrees);
+
 		static types::qword MakeHashMask(types::usize size);
 
 		template <typename TValue>
@@ -219,15 +219,15 @@ namespace triton
 		static types::qword HashBytes(const types::u8* data, types::usize dataByteSize, types::qword mask);
 
 		static cMatrix4 Transform(
-			cVector3 worldPosition,
-			cVector3 worldRotation,
-			cVector3 scale
+			const cVector3& worldPosition,
+			const cVector3& worldRotation,
+			const cVector3& scale
 		);
 	};
 }
 
 template <typename TValue>
-types::qword triton::cMath::Hash(const TValue& value, types::qword mask)
+types::qword triton::CMath::Hash(const TValue& value, types::qword mask)
 {
 	if constexpr (std::is_same_v<TValue, cTag>)
 	{

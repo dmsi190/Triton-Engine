@@ -15,34 +15,37 @@ namespace triton
 
 	public:
 		explicit BImageDecoderMulti(const SMemAlloc& mem_alloc, cContext* context)
-			: IImageDecoder(mem_alloc, context) {}
-		
+			: IImageDecoder(mem_alloc, context) {
+		}
+
 		~BImageDecoderMulti() override = default;
 
-		SImageResource Decode(
-			EImageFormat expectedDataFormat,
+		SImageResource DecodeImage(
+			EImageDataFormat expectedDataFormat,
 			const std::filesystem::path& filePath
 		) override final;
 
-		SImageResource Decode(
+		SImageResource DecodeImage(
 			EImageFileFormat fileFormat,
-			EImageFormat expectedDataFormat,
+			EImageDataFormat expectedDataFormat,
 			const types::u8* data,
 			types::usize dataByteSize
 		) override final;
 
-		EImageFormat TextureFormatToImageFormat(ETextureFormat textureFormat) override final;
+		void ReleaseImage(SImageResource& image) override final;
+
+		EImageDataFormat TextureFormatToImageFormat(ETextureFormat textureFormat) override final;
 
 	private:
-		types::usize DetermineChannelCount(EImageFormat format);
+		types::usize DetermineChannelCount(EImageDataFormat format);
 
 		types::boolean ValidateDDSFormat(
 			tinyddsloader::DDSFile::DXGIFormat ddsFormat,
-			EImageFormat expectedFormat
+			EImageDataFormat expectedFormat
 		);
 
 		SImageResource ReturnPNGData(
-			EImageFormat expectedDataFormat,
+			EImageDataFormat expectedDataFormat,
 			const std::string& filePathStr,
 			const stbi_uc* stbData,
 			int stbWidth,
@@ -51,7 +54,7 @@ namespace triton
 		);
 
 		SImageResource ReturnDDSData(
-			EImageFormat expectedDataFormat,
+			EImageDataFormat expectedDataFormat,
 			const std::string& filePathStr,
 			tinyddsloader::Result ddsResult,
 			tinyddsloader::DDSFile& dds

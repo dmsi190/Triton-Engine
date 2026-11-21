@@ -1,12 +1,11 @@
 // animation.cpp
 
 #include "animation.hpp"
-#include "skeleton_pool.hpp"
 
 using namespace types;
 
 triton::XAnimation::XAnimation(
-    const SMemoryAllocation& mem_alloc,
+    const SMemAlloc& mem_alloc,
     cContext* context,
     const std::string& name,
     f32 duration,

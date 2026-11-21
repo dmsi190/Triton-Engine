@@ -3,7 +3,7 @@
 #pragma once
 
 #include "backend.hpp"
-#include "input_window_backend.hpp"
+#include "input_window_resource.hpp"
 #include "math.hpp"
 #include "gpu_resource.hpp"
 #include "shader_define.hpp"
@@ -20,20 +20,22 @@ namespace triton
 {
     class cContext;
 
-	class IGraphicsBackend : public iBackend
+	class IGraphicsBackend : public IBackend
 	{
-        TRITON_CLASS_NAME(IGraphicsBackend)
+        TRITON_OBJECT(IGraphicsBackend)
 
 	public:
-        explicit IGraphicsBackend(cContext* context) : iBackend(context) {}
+        explicit IGraphicsBackend(const SMemAlloc& mem_alloc, cContext* context)
+            : IBackend(mem_alloc, context) {}
+
 		~IGraphicsBackend() override = default;
 
 		// Context
-		virtual void CreateGraphicsContext(SWindowBackend& window) = 0;
+		virtual void CreateGraphicsContext(SWindowResource& window) = 0;
 
-		virtual void MakeWindowGraphicsContextCurrent(const SWindowBackend& window) = 0;
+		virtual void MakeWindowGraphicsContextCurrent(const SWindowResource& window) = 0;
 
-		virtual void SwapWindowBuffers(const SWindowBackend& window) = 0;
+		virtual void SwapWindowBuffers(const SWindowResource& window) = 0;
 
 		// Drawcall
 		virtual void ClearColor(const cVector4& color) = 0;

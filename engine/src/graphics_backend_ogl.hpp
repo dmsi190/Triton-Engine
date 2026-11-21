@@ -9,15 +9,17 @@ namespace triton
 	class XGraphicsBackendOGL : public IGraphicsBackend
 	{
 	public:
-		explicit XGraphicsBackendOGL(cContext* context) : IGraphicsBackend(context) {}
+		explicit XGraphicsBackendOGL(const SMemAlloc& mem_alloc, cContext* context)
+            : IGraphicsBackend(mem_alloc, context) {}
+
 		~XGraphicsBackendOGL() override = default;
 
 		// Context
-		virtual void CreateGraphicsContext(SWindowBackend& window) override final;
+		virtual void CreateGraphicsContext(SWindowResource& window) override final;
 
-		virtual void MakeWindowGraphicsContextCurrent(const SWindowBackend& window) override final;
+		virtual void MakeWindowGraphicsContextCurrent(const SWindowResource& window) override final;
 
-		virtual void SwapWindowBuffers(const SWindowBackend& window) override final;
+		virtual void SwapWindowBuffers(const SWindowResource& window) override final;
 
 		// Drawcall
 		virtual void ClearColor(const cVector4& color) override final;

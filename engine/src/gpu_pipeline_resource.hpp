@@ -13,14 +13,14 @@ namespace triton
 {
     struct SGPUPipelineResource : public SGPUResource
     {
-        EPipelineBindPoint                              bind_point = EPipelineBindPoint::Unknown;
+        ERenderPipelineBindPoint                        bind_point = ERenderPipelineBindPoint::Unknown;
         types::qword                                    layout = 0;
         std::vector<SGPUBindingGroupLayoutResource>     binding_group_layouts;
 
         explicit SGPUPipelineResource(
             types::qword instance,
             types::qword view_instance,
-            EPipelineBindPoint bind_point,
+            ERenderPipelineBindPoint bind_point,
             types::qword layout,
             const std::vector<SGPUBindingGroupLayoutResource>& binding_group_layouts
         ) :
@@ -34,7 +34,7 @@ namespace triton
         static SGPUPipelineResource Invalid()
         {
             return SGPUPipelineResource(
-                0, 0, EPipelineBindPoint::Unknown, 0, {}
+                0, 0, ERenderPipelineBindPoint::Unknown, 0, {}
             );
         }
     };
