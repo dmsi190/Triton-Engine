@@ -11,6 +11,9 @@
 #include "thread_guard.hpp"
 #include "input_backend.hpp"
 #include "render_native_command_struct.hpp"
+#include "render_native_draw_command_info_struct.hpp"
+#include "render_instance_motion_type.hpp"
+#include "texture_format.hpp"
 
 using namespace types;
 
@@ -100,7 +103,7 @@ void triton::XRenderThread::ThreadFunction()
 	}
 }
 
-void triton::cRenderThread::ExecuteCommands(
+void triton::XRenderThread::ExecuteCommands(
 	const SRenderCommandPack& renderCommandPack,
 	IGraphicsBackend2* gfxBackend
 )
@@ -144,11 +147,11 @@ void triton::cRenderThread::ExecuteCommands(
 			}
 			case ERenderCommand::CREATE_BUFFER:
 			{
-				CGPUBufferResource resultBuffer = gfxBackend->CreateBuffer(
+				SGPUBufferResource resultBuffer = gfxBackend->CreateBuffer(
 					(EGPUBufferType)cmd._args._argA,
 					cmd._args._argB
 				);
-				new (_sync->GetResultBuffer().data) CGPUBufferResource(resultBuffer);
+				new (_sync->GetResultBuffer().data.mem) SGPUBufferResource(resultBuffer);
 				break;
 			}
 			case ERenderCommand::BIND_BUFFER:
@@ -160,7 +163,7 @@ void triton::cRenderThread::ExecuteCommands(
 			case ERenderCommand::WRITE_BUFFER:
 			{
 				gfxBackend->WriteBuffer(
-					*((CGPUBufferResource*)cmd._args._argA),
+					*((SGPUBufferResource*)cmd._args._argA),
 					(usize)cmd._args._argB,
 					(const u8*)cmd._args._argC,
 					(usize)cmd._args._argD
@@ -170,7 +173,7 @@ void triton::cRenderThread::ExecuteCommands(
 			case ERenderCommand::DESTROY_BUFFER:
 			{
 				gfxBackend->DestroyBuffer(
-					*((CGPUBufferResource*)cmd._args._argA)
+					*((SGPUBufferResource*)cmd._args._argA)
 				);
 				break;
 			}
@@ -199,21 +202,21 @@ void triton::cRenderThread::ExecuteCommands(
 			}
 			case ERenderCommand::CREATE_TEXTURE:
 			{
-				CGPUTextureResource resultTexture = gfxBackend->CreateTexture(
+				SGPUTextureResource resultTexture = gfxBackend->CreateTexture(
 					cmd._args._argA,
 					(ETextureFormat)cmd._args._argB,
 					(dword)cmd._args._argC,
 					(ETextureDimension)cmd._args._argD,
 					*((const cVector3*)cmd._args._argE),
-					(CGPUTextureResource*)cmd._args._argF
+					(SGPUTextureResource*)cmd._args._argF
 				);
-				new (_sync->GetResultBuffer().data) CGPUTextureResource(resultTexture);
+				new (_sync->GetResultBuffer().data.mem) SGPUTextureResource(resultTexture);
 				break;
 			}
 			case ERenderCommand::WRITE_TEXTURE:
 			{
 				gfxBackend->WriteTexture(
-					*((CGPUTextureResource*)cmd._args._argA),
+					*((SGPUTextureResource*)cmd._args._argA),
 					(u8*)cmd._args._argB
 				);
 				break;
@@ -228,37 +231,37 @@ void triton::cRenderThread::ExecuteCommands(
 			case ERenderCommand::DESTROY_TEXTURE:
 			{
 				gfxBackend->DestroyTexture(
-					*((CGPUTextureResource*)cmd._args._argA)
+					*((SGPUTextureResource*)cmd._args._argA)
 				);
 				break;
 			}
 			case ERenderCommand::CREATE_RENDER_TARGET:
 			{
 				usize attachmentCount = cmd._args._argA;
-				CGPUTextureResource* attachments = (CGPUTextureResource*)cmd._args._argB;
-				std::vector<CGPUTextureResource> attachmentsVec;
+				SGPUTextureResource* attachments = (SGPUTextureResource*)cmd._args._argB;
+				std::vector<SGPUTextureResource> attachmentsVec;
 				for (usize i = 0; i < attachmentCount; i++)
 					attachmentsVec.push_back(attachments[i]);
-				CGPURenderTargetResource resultRenderTarget = gfxBackend->CreateRenderTarget(
+				SGPURenderTargetResource resultRenderTarget = gfxBackend->CreateRenderTarget(
 					attachmentsVec,
-					*((CGPUTextureResource*)cmd._args._argC)
+					*((SGPUTextureResource*)cmd._args._argC)
 				);
-				new (_sync->GetResultBuffer().data) CGPURenderTargetResource(resultRenderTarget);
+				new (_sync->GetResultBuffer().data.mem) SGPURenderTargetResource(resultRenderTarget);
 				break;
 			}
 			case ERenderCommand::CREATE_SHADER:
 			{
-				CGPUShaderResource resultGPUShader = gfxBackend->CreateShader(
+				SGPUShaderResource resultGPUShader = gfxBackend->CreateShader(
 					(dword)cmd._args._argA,
 					*((SShaderBytecodeFiles*)cmd._args._argB)
 				);
-				new (_sync->GetResultBuffer().data) CGPUShaderResource(resultGPUShader);
+				new (_sync->GetResultBuffer().data.mem) SGPUShaderResource(resultGPUShader);
 				break;
 			}
 			case ERenderCommand::DESTROY_SHADER:
 			{
 				gfxBackend->DestroyShader(
-					*((CGPUShaderResource*)cmd._args._argA)
+					*((SGPUShaderResource*)cmd._args._argA)
 				);
 				break;
 			}
@@ -274,15 +277,15 @@ void triton::cRenderThread::ExecuteCommands(
 			}
 			case ERenderCommand::CREATE_RENDER_PASS:
 			{
-				CGPURenderPassResource resultRenderPass = gfxBackend->CreateRenderPass(
-					*((CGPURenderTargetResource*)cmd._args._argA),
+				SGPURenderPassResource resultRenderPass = gfxBackend->CreateRenderPass(
+					*((SGPURenderTargetResource*)cmd._args._argA),
 					cmd._args._argB,
 					*(cVector4*)cmd._args._argC,
 					*(f32*)cmd._args._argD,
-					*(std::vector<EResourceUsage>*)cmd._args._argE,
-					*(std::vector<EResourceUsage>*)cmd._args._argF
+					*(std::vector<ERenderResourceUsage>*)cmd._args._argE,
+					*(std::vector<ERenderResourceUsage>*)cmd._args._argF
 				);
-				memcpy(&_sync->GetResultBuffer().data[0], &resultRenderPass, sizeof(CGPURenderPassResource));
+				memcpy(&_sync->GetResultBuffer().data.mem[0], &resultRenderPass, sizeof(SGPURenderPassResource));
 				break;
 			}
 			case ERenderCommand::BeginRenderPass:
@@ -322,8 +325,8 @@ void triton::cRenderThread::ExecuteCommands(
 			case ERenderCommand::ExecuteRenderPass:
 			{
 				const usize bindingGroupCount = cmd._args._argA;
-				CGPUBindingGroupResource* bindingGroups = (CGPUBindingGroupResource*)cmd._args._argB;
-				std::vector<CGPUBindingGroupResource> bindingGroupsVector;
+				SGPUBindingGroupResource* bindingGroups = (SGPUBindingGroupResource*)cmd._args._argB;
+				std::vector<SGPUBindingGroupResource> bindingGroupsVector;
 				for (usize i = 0; i < bindingGroupCount; ++i)
 					bindingGroupsVector.push_back(bindingGroups[i]);
 
@@ -361,75 +364,75 @@ void triton::cRenderThread::ExecuteCommands(
 			case ERenderCommand::DESTROY_RENDER_PASS:
 			{
 				gfxBackend->DestroyRenderPass(
-					*((CGPURenderPassResource*)cmd._args._argA)
+					*((SGPURenderPassResource*)cmd._args._argA)
 				);
 				break;
 			}
 			case ERenderCommand::CREATE_PIPELINE:
 			{
-				CGPUPipelineResource resultPipeline = gfxBackend->CreatePipeline(
-					*(CGPUShaderResource*)cmd._args._argA,
-					*(std::vector<CGPUBindingGroupLayoutResource>*)cmd._args._argB,
+				SGPUPipelineResource resultPipeline = gfxBackend->CreatePipeline(
+					*(SGPUShaderResource*)cmd._args._argA,
+					*(std::vector<SGPUBindingGroupLayoutResource>*)cmd._args._argB,
 					(boolean)cmd._args._argC,
 					cmd._args._argD ? std::optional(std::reference_wrapper(*(SViewport*)cmd._args._argD)) : std::nullopt,
-					cmd._args._argE ? std::optional(std::reference_wrapper(*(CGPURenderTargetResource*)cmd._args._argE)) : std::nullopt,
-					cmd._args._argF ? std::optional(std::reference_wrapper(*(CGPURenderPassResource*)cmd._args._argF)) : std::nullopt,
-					(EPrimitiveTopology)cmd._args._argG,
+					cmd._args._argE ? std::optional(std::reference_wrapper(*(SGPURenderTargetResource*)cmd._args._argE)) : std::nullopt,
+					cmd._args._argF ? std::optional(std::reference_wrapper(*(SGPURenderPassResource*)cmd._args._argF)) : std::nullopt,
+					(ERenderPrimitiveTopology)cmd._args._argG,
 					(EVertexBufferFormat)cmd._args._argH
 				);
 				
-				new (_sync->GetResultBuffer().data) CGPUPipelineResource(resultPipeline);
+				new (_sync->GetResultBuffer().data.mem) SGPUPipelineResource(resultPipeline);
 
 				break;
 			}
 			case ERenderCommand::DESTROY_PIPELINE:
 			{
 				gfxBackend->DestroyPipeline(
-					*(CGPUPipelineResource*)cmd._args._argA
+					*(SGPUPipelineResource*)cmd._args._argA
 				);
 				break;
 			}
 			case ERenderCommand::CreateBindingGroupLayout:
 			{
-				CGPUBindingGroupLayoutResource resultBindingGroupLayout = gfxBackend->CreateBindingGroupLayout(
-					*(const std::vector<SBindingGroupBinding>*)cmd._args._argA
+				SGPUBindingGroupLayoutResource resultBindingGroupLayout = gfxBackend->CreateBindingGroupLayout(
+					*(const std::vector<SRenderBindingGroupBinding>*)cmd._args._argA
 				);
 
-				new (_sync->GetResultBuffer().data) CGPUBindingGroupLayoutResource(resultBindingGroupLayout);
+				new (_sync->GetResultBuffer().data.mem) SGPUBindingGroupLayoutResource(resultBindingGroupLayout);
 
 				break;
 			}
 			case ERenderCommand::DestroyBindingGroupLayout:
 			{
 				gfxBackend->DestroyBindingGroupLayout(
-					*(CGPUBindingGroupLayoutResource*)cmd._args._argA
+					*(SGPUBindingGroupLayoutResource*)cmd._args._argA
 				);
 				break;
 			}
 			case ERenderCommand::CreateBindingGroup:
 			{
-				CGPUBindingGroupResource resultBindingGroup = gfxBackend->CreateBindingGroup(
+				SGPUBindingGroupResource resultBindingGroup = gfxBackend->CreateBindingGroup(
 					cmd._args._argA,
-					*(const CGPUBindingGroupLayoutResource*)cmd._args._argB,
-					*(const std::vector<SBindingGroupBinding>*)cmd._args._argC,
-					*(const std::vector<SBindingGroupBinding>*)cmd._args._argD
+					*(const SGPUBindingGroupLayoutResource*)cmd._args._argB,
+					*(const std::vector<SRenderBindingGroupBinding>*)cmd._args._argC,
+					*(const std::vector<SRenderBindingGroupBinding>*)cmd._args._argD
 				);
 
-				new (_sync->GetResultBuffer().data) CGPUBindingGroupResource(resultBindingGroup);
+				new (_sync->GetResultBuffer().data.mem) SGPUBindingGroupResource(resultBindingGroup);
 
 				break;
 			}
 			case ERenderCommand::DestroyBindingGroup:
 			{
 				gfxBackend->DestroyBindingGroup(
-					*(CGPUBindingGroupResource*)cmd._args._argA
+					*(SGPUBindingGroupResource*)cmd._args._argA
 				);
 				break;
 			}
 			case ERenderCommand::FinalizeSwapchain:
 			{
 				gfxBackend->FinalizeSwapchain(
-					*(CGPUTextureResource*)cmd._args._argA
+					*(SGPUTextureResource*)cmd._args._argA
 				);
 				break;
 			}
@@ -459,8 +462,8 @@ void triton::cRenderThread::ExecuteCommands(
 			case ERenderCommand::Dispatch:
 			{
 				gfxBackend->Dispatch(
-					*(CGPUPipelineResource*)cmd._args._argA,
-					*(const std::vector<CGPUBindingGroupResource>*)cmd._args._argB,
+					*(SGPUPipelineResource*)cmd._args._argA,
+					*(const std::vector<SGPUBindingGroupResource>*)cmd._args._argB,
 					cVector3(cmd._args._argC, cmd._args._argD, cmd._args._argE)
 				);
 				break;
@@ -469,7 +472,7 @@ void triton::cRenderThread::ExecuteCommands(
 	}
 }
 
-void triton::cRenderThread::Present(IGraphicsBackend2* gfxBackend)
+void triton::XRenderThread::Present(IGraphicsBackend2* gfxBackend)
 {
 	//gfxBackend->SwapWindowBuffers(_window->GetBackendWindow());
 	gfxBackend->BeginFrame();

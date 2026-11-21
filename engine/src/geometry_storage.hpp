@@ -16,22 +16,24 @@ namespace triton
     class cEngine;
     class cContext;
 
-    class CGeometryStorage final : public CSubsystem
+    class XGeometryStorage final : public XSubsystem
     {
-        TRITON_CLASS_NAME(CGeometryStorage)
+        TRITON_OBJECT(XGeometryStorage)
 
-        XGPUBuffer*     _rigid_vertex_buffer;
-        XGPUBuffer*     _skinned_vertex_buffer;
-        XGPUBuffer*     _rigid_index_buffer;
-        XGPUBuffer*     _skinned_index_buffer;
-        types::usize    _rigid_vertex_buffer_size;
-        types::usize    _skinned_vertex_buffer_size;
-        types::usize    _rigid_index_buffer_size;
-        types::usize    _skinned_index_buffer_size;
+        types::usize    _rigid_vertex_buffer_cursor;
+        types::usize    _skinned_vertex_buffer_cursor;
+        types::usize    _rigid_index_buffer_cursor;
+        types::usize    _skinned_index_buffer_cursor;
 
     public:
-        explicit CGeometryStorage(cContext* context);
-        ~CGeometryStorage();
+        explicit XGeometryStorage(const SMemAlloc& mem_alloc, cContext* context)
+            : XSubsystem(mem_alloc, context),
+              _rigid_vertex_buffer_cursor(0),
+              _skinned_vertex_buffer_cursor(0),
+              _rigid_index_buffer_cursor(0),
+              _skinned_index_buffer_cursor(0) {}
+        
+        ~XGeometryStorage() override = default;
 
         std::optional<triton::SGeometryView> Store(
             EVertexBufferFormat format,
@@ -40,25 +42,5 @@ namespace triton
             const types::u8* indices,
             types::usize index_count
         );
-
-        inline XGPUBuffer* GetRigidVertexBuffer() const
-        {
-            return _rigid_vertex_buffer;
-        }
-
-        inline XGPUBuffer* GetSkinnedVertexBuffer() const
-        {
-            return _skinned_vertex_buffer;
-        }
-
-        inline XGPUBuffer* GetRigidIndexBuffer() const
-        {
-            return _rigid_index_buffer;
-        }
-
-        inline XGPUBuffer* GetSkinnedIndexBuffer() const
-        {
-            return _skinned_index_buffer;
-        }
     };
 }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "subsystem.hpp"
+#include "gpu_texture_resource.hpp"
 #include "types.hpp"
 
 namespace triton
@@ -14,9 +15,9 @@ namespace triton
     class XRenderPassCulling;
     class XRenderPassGeometry;
 
-	class CGraphics : public CSubsystem
+	class XGraphics : public XSubsystem
 	{
-        TRITON_CLASS_NAME(CGraphics)
+        TRITON_OBJECT(XGraphics)
 
         XShader*                    _opaque_rigid_phong_shader;
         XShader*                    _opaque_skinned_phong_shader;
@@ -30,9 +31,9 @@ namespace triton
         XRenderPassGeometry*        _opaque_skinned_pass;
 
 	public:
-        explicit CGraphics(cContext* context);
+        explicit XGraphics(const SMemAlloc& mem_alloc, cContext* context);
 
-        ~CGraphics() override;
+        ~XGraphics() override;
 
         void ExecutePasses();
         

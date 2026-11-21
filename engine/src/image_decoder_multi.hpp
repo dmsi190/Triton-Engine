@@ -11,10 +11,11 @@ namespace triton
 {
 	class BImageDecoderMulti : public IImageDecoder
 	{
-		TRITON_CLASS_NAME(BImageDecoderMulti)
+		TRITON_OBJECT(BImageDecoderMulti)
 
 	public:
-		explicit BImageDecoderMulti(cContext* context) : IImageDecoder(context) {}
+		explicit BImageDecoderMulti(const SMemAlloc& mem_alloc, cContext* context)
+			: IImageDecoder(mem_alloc, context) {}
 		
 		~BImageDecoderMulti() override = default;
 

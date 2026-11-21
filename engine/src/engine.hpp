@@ -16,21 +16,21 @@ namespace triton
 	class IApplication;
 	class XSynchronization;
 	class XRenderCommandRecorder;
-	class cRenderThread;
+	class XRenderThread;
 
 	inline std::thread::id global_main_thread_id = std::this_thread::get_id();
 
-	class CEngine final : public CSubsystem
+	class CEngine final : public XSubsystem
 	{
-		TRITON_CLASS_NAME(CEngine)
+		TRITON_OBJECT(CEngine)
 
-		IApplication* _app = nullptr;
-		XSynchronization* _sync = nullptr;
-		XRenderCommandRecorder* _cmd_recorder = nullptr;
-		cRenderThread* _render_thread = nullptr;
+		IApplication*				_app;
+		XSynchronization*			_sync;
+		XRenderCommandRecorder*		_cmd_recorder;
+		XRenderThread*				_render_thread;
 
 	public:
-		explicit CEngine(cContext* context, IApplication* app);
+		explicit CEngine(const SMemAlloc& mem_alloc, cContext* context, IApplication* app);
 
 		~CEngine() override;
 

@@ -9,6 +9,7 @@
 #include "world_render_instance.hpp"
 #include "creator.hpp"
 #include "gpu_buffer.hpp"
+#include "vertex.hpp"
 
 using namespace types;
 
@@ -17,6 +18,38 @@ void triton::CGraphicsBuffers::Initialize(cContext* context)
 	_context = context;
 
     const SCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+
+    _rigid_vertex_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
+        EGPUBufferType::Vertex,
+        0,
+        caps.staticVertexBufferSize,
+        0
+    );
+
+    _skinned_vertex_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
+        EGPUBufferType::Vertex,
+        0,
+        caps.skinnedVertexBufferSize,
+        0
+    );
+
+    _rigid_index_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
+        EGPUBufferType::Index,
+        0,
+        caps.staticIndexBufferSize,
+        0
+    );
+
+    _skinned_index_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
+        EGPUBufferType::Index,
+        0,
+        caps.skinnedIndexBufferSize,
+        0
+    );
 
     _static_instance_buffer = CCreator::Create<XGPUBuffer>(
         EGPUBufferType::Storage,

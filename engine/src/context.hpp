@@ -10,13 +10,13 @@
 
 namespace triton
 {
-	class iBackend;
-	class CSubsystem;
+	class IBackend;
+	class XSubsystem;
 
 	class cContext
 	{
-		std::unordered_map<ClassType, iBackend*> _backends;
-		std::unordered_map<ClassType, CSubsystem*> _subsystems;
+		std::unordered_map<ClassType, IBackend*> _backends;
+		std::unordered_map<ClassType, XSubsystem*> _subsystems;
 
 	public:
 		explicit cContext() = default;
@@ -25,7 +25,7 @@ namespace triton
 		template <typename T>
 		void RegisterBackend(T* backend);
 
-		void RegisterSubsystem(CSubsystem* subsystem);
+		void RegisterSubsystem(XSubsystem* subsystem);
 
 		template <typename T>
 		void ReleaseSubsystem();
@@ -48,7 +48,7 @@ void triton::cContext::RegisterBackend(T* backend)
 		_backends.insert({ type, backend });
 }
 
-void triton::cContext::RegisterSubsystem(CSubsystem* subsystem)
+void triton::cContext::RegisterSubsystem(XSubsystem* subsystem)
 {
 	// TODO: static_assert that T must inherit from iObject
 	ClassType type = subsystem->GetType();

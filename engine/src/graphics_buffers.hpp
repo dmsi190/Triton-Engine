@@ -13,6 +13,10 @@ namespace triton
 	class CGraphicsBuffers final
 	{
 		inline static cContext*				_context;
+		inline static XGPUBuffer*			_rigid_vertex_buffer;
+		inline static XGPUBuffer*			_skinned_vertex_buffer;
+		inline static XGPUBuffer*			_rigid_index_buffer;
+		inline static XGPUBuffer*			_skinned_index_buffer;
 		inline static XGPUBuffer*			_static_instance_buffer;
 		inline static XGPUBuffer*			_dynamic_instance_buffer;
 		inline static SGPUBufferResource	_main_indirect_draw_commands_buffer = SGPUBufferResource::Invalid();
@@ -26,6 +30,14 @@ namespace triton
 		static void Initialize(cContext* context);
 
 		static void Release();
+
+		static XGPUBuffer* GetRigidVertexBuffer() { return _rigid_vertex_buffer; }
+
+		static XGPUBuffer* GetSkinnedVertexBuffer() { return _skinned_vertex_buffer; }
+
+		static XGPUBuffer* GetRigidIndexBuffer() { return _rigid_index_buffer; }
+
+		static XGPUBuffer* GetSkinnedIndexBuffer() { return _skinned_index_buffer; }
 
 		static XGPUBuffer* GetStaticInstanceBuffer() { return _static_instance_buffer; }
 

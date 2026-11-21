@@ -6,17 +6,17 @@
 #include "backend.hpp"
 #include "image_backend_data.hpp"
 #include "image_file_format_enum.hpp"
-#include "texture_formats.hpp"
+#include "texture_format.hpp"
 #include "object.hpp"
 
 namespace triton
 {
-	class IImageDecoder : public iBackend
+	class IImageDecoder : public IBackend
 	{
-		TRITON_CLASS_NAME(IImageDecoder)
+		TRITON_OBJECT(IImageDecoder)
 
 	public:
-		explicit IImageDecoder(cContext* context) : iBackend(context) {}
+		explicit IImageDecoder(const SMemAlloc& mem_alloc, cContext* context) : IBackend(mem_alloc, context) {}
 		
 		virtual ~IImageDecoder() = default;
 

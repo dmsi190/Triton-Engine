@@ -13,7 +13,7 @@ namespace triton
 		template <typename T, typename... Args>
 		static T* Create(Args&&... args)
 		{
-			SMemoryAllocation mem_alloc = CMemoryAllocator::Allocate(sizeof(T));
+			SMemAlloc mem_alloc = CMemoryAllocator::Allocate(sizeof(T));
 
 			T* object = (T*)mem_alloc.mem;
 

@@ -20,35 +20,23 @@
 #include "render_thread.hpp"
 #include "thread_guard.hpp"
 #include "geometry_storage.hpp"
-#include "model3d_backend.hpp"
-#include "model3d_backend_assimp.hpp"
+#include "model_backend.hpp"
+#include "model_backend_assimp.hpp"
 #include "synchronization.hpp"
 #include "render_thread.hpp"
-#include "camera_pool.hpp"
-#include "skinned_bones_pool.hpp"
-#include "model3d_pool.hpp"
-#include "skin_pool.hpp"
-#include "input_layout_pool.hpp"
-#include "render_target_pool.hpp"
-#include "render_pass_pools.hpp"
-#include "shader_pool.hpp"
-#include "gpu_buffer_pool.hpp"
-#include "render_instance_static_pool.hpp"
-#include "render_instance_dynamic_pool.hpp"
-#include "texture_pool.hpp"
-#include "world_render_domain_pool.hpp"
-#include "world_render_group_pool.hpp"
-#include "world_object_pool.hpp"
 #include "window.hpp"
 #include "image_decoder_multi.hpp"
 #include "graphics_backend2_vulkan.hpp"
 #include "world.hpp"
 #include "render_command_proxy.hpp"
 #include "graphics_buffers.hpp"
+#include "creator.hpp"
+#include "render_thread.hpp"
 
 using namespace types;
 
-triton::CEngine::CEngine(cContext* context, IApplication* app) : CSubsystem(context), _app(app)
+triton::CEngine::CEngine(const SMemAlloc& mem_alloc, cContext* context, IApplication* app)
+	: XSubsystem(mem_alloc, context), _app(app)
 {
 	Initialize();
 }
@@ -82,14 +70,14 @@ void triton::CEngine::Initialize()
 	// Register backends
 	_context->RegisterBackend<IInputBackend>(new CInputBackendSDL(_context));
 	_context->RegisterBackend<iAudioBackend>(new cAudioBackendOAL(_context));
-	_context->RegisterBackend<IModel3DBackend>(new XModel3DBackendAssimp(_context));
-	_context->RegisterBackend<IImageDecoder>(new BImageDecoderMulti(_context));
+	_context->RegisterBackend<IModelBackend>(new XModelBackendAssimp(_context));
+	_context->RegisterBackend<IImageDecoder>(CCreator::Create<BImageDecoderMulti>(_context));
 
 	// Create application window
 	_app->CreateWindow();
 
 	// Register file system subsystem before graphics backend
-	_context->RegisterSubsystem(new CFileSystem(_context));
+	_context->RegisterSubsystem(CCreator::Create<XFileSystem>(_context));
 
 	// Register graphics backend
 	_context->RegisterBackend<IGraphicsBackend2>(new BGraphicsBackend2Vulkan(_context));
@@ -103,11 +91,9 @@ void triton::CEngine::Initialize()
 	CGraphicsBuffers::Initialize(_context);
 
 	// Register subsystems
-	_context->RegisterSubsystem(new CGeometryStorage(_context));
+	_context->RegisterSubsystem(CCreator::Create<XGeometryStorage>(_context));
 
-	_context->RegisterSubsystem(new CGraphics(_context));
-
-	_context->RegisterSubsystem(new UWorld(_context));
+	_context->RegisterSubsystem(CCreator::Create<XGraphics>(_context));
 }
 
 void triton::CEngine::Shutdown()
@@ -141,7 +127,7 @@ void triton::CEngine::InitializeRenderThread()
 	CThreadGuard::AssertMain();
 
 	// Create render thread
-	_render_thread = CCreator::Create<cRenderThread>(_context, _sync, _app->GetWindow());
+	_render_thread = CCreator::Create<XRenderThread>(_context, _sync, _app->GetWindow());
 	_render_thread->Run();
 
 	// Wait until render thread gets initialized
@@ -162,7 +148,7 @@ void triton::CEngine::ReleaseRenderThread()
 {
 	_render_thread->Stop();
 
-	CCreator::Destroy<cRenderThread>(_render_thread);
+	CCreator::Destroy<XRenderThread>(_render_thread);
 }
 
 void triton::CEngine::MainThreadFunction()
@@ -213,7 +199,7 @@ void triton::CEngine::MainThreadFunction()
 			_app->Update();
 
 			_context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->Clear();
-			_context->GetSubsystem<CGraphics>()->ExecutePasses();
+			_context->GetSubsystem<XGraphics>()->ExecutePasses();
 		}
 		
 		{

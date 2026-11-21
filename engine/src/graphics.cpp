@@ -1,32 +1,28 @@
 // graphics.cpp
 
 #include "graphics.hpp"
+#include "context.hpp"
 #include "thread_guard.hpp"
 #include "graphics_backend.hpp"
-#include "render_pass_pools.hpp"
-#include "render_target_pool.hpp"
-#include "input_layout_pool.hpp"
 #include "filesystem_manager.hpp"
 #include "geometry_storage.hpp"
-#include "skinned_bones_pool.hpp"
-#include "shader_pool.hpp"
-#include "render_instance_static_pool.hpp"
-#include "render_instance_dynamic_pool.hpp"
-#include "graphics_texture_usage_enum.hpp"
-#include "material_pool.hpp"
 #include "texture.hpp"
 #include "window.hpp"
 #include "shader_stage_bit_enum.hpp"
-#include "camera_pool.hpp"
-#include "world_render_domain_pool.hpp"
 #include "creator.hpp"
 #include "application.hpp"
 #include "graphics_buffers.hpp"
 #include "render_command_proxy.hpp"
+#include "texture_format.hpp"
+#include "render_target.hpp"
+#include "shader_texture_binding.hpp"
+#include "gpu_buffer.hpp"
+#include "render_pass_culling.hpp"
+#include "render_pass_geometry.hpp"
 
 using namespace types;
 
-void triton::CGraphics::CreateShaders()
+void triton::XGraphics::CreateShaders()
 {
     /*CFileSystem* fs = _context->GetSubsystem<CFileSystem>();
 
@@ -169,7 +165,7 @@ void triton::CGraphics::CreateShaders()
     );
 }
 
-const triton::SGPUTextureResource& triton::CGraphics::CreateRenderTargets()
+const triton::SGPUTextureResource& triton::XGraphics::CreateRenderTargets()
 {
     /*cVector2 windowSize = _context->GetSubsystem<CEngine>()->GetApplication()->GetWindow()->GetSize();
     _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
@@ -258,14 +254,14 @@ const triton::SGPUTextureResource& triton::CGraphics::CreateRenderTargets()
     return swapchain_present_texture;
 }
 
-void triton::CGraphics::CreateCameraAndRenderDomain()
+void triton::XGraphics::CreateCameraAndRenderDomain()
 {
     _camera = CCreator::Create<XCamera>(65.0f, 0.01f, 1000.0f);
 
     _render_domain = CCreator::Create<XRenderDomain>(_camera);
 }
 
-void triton::CGraphics::CreateRenderPasses()
+void triton::XGraphics::CreateRenderPasses()
 {
     /*cVector2 windowSize = _context->GetSubsystem<CEngine>()->GetApplication()->GetWindow()->GetSize();
     CFileSystem* fs = _context->GetSubsystem<CFileSystem>();
@@ -404,15 +400,15 @@ void triton::CGraphics::CreateRenderPasses()
             _opaque_render_target->GetColorAttachmentSize(0).GetY()
         );
 
-        const std::vector<EResourceUsage> src_render_target_attachments_usage = {
-            EResourceUsage::Unknown, EResourceUsage::Unknown
+        const std::vector<ERenderResourceUsage> src_render_target_attachments_usage = {
+            ERenderResourceUsage::Unknown, ERenderResourceUsage::Unknown
         };
-        const std::vector<EResourceUsage> dst_render_target_attachments_usage = {
-            EResourceUsage::PixelShaderRead, EResourceUsage::DepthAttachment
+        const std::vector<ERenderResourceUsage> dst_render_target_attachments_usage = {
+            ERenderResourceUsage::PixelShaderRead, ERenderResourceUsage::DepthAttachment
         };
 
         const std::vector<SGPUBufferResource> input_buffers = {
-            CGraphicsBuffers::GetStaticInstanceBuffer()
+            CGraphicsBuffers::GetStaticInstanceBuffer()->GetGPUResource()
         };
 
         const std::vector<SShaderTextureBinding> input_textures;
@@ -426,7 +422,7 @@ void triton::CGraphics::CreateRenderPasses()
             src_render_target_attachments_usage,
             dst_render_target_attachments_usage,
             _opaque_rigid_pbr_shader,
-            EPrimitiveTopology::TriangleList,
+            ERenderPrimitiveTopology::TriangleList,
             viewport,
             input_buffers,
             input_textures
@@ -434,12 +430,12 @@ void triton::CGraphics::CreateRenderPasses()
     }
 }
 
-void triton::CGraphics::DestroyShaders()
+void triton::XGraphics::DestroyShaders()
 {
     CCreator::Destroy<XShader>(_opaque_rigid_pbr_shader);
 }
 
-void triton::CGraphics::DestroyRenderTargets()
+void triton::XGraphics::DestroyRenderTargets()
 {
     for (auto attachment : _opaque_render_target->GetColorAttachments())
         CCreator::Destroy<XTexture>(attachment);
@@ -449,32 +445,32 @@ void triton::CGraphics::DestroyRenderTargets()
     CCreator::Destroy<XRenderTarget>(_opaque_render_target);
 }
 
-void triton::CGraphics::DestroyCameraAndRenderDomain()
+void triton::XGraphics::DestroyCameraAndRenderDomain()
 {
     CCreator::Destroy<XRenderDomain>(_render_domain);
 
     CCreator::Destroy<XCamera>(_camera);
 }
 
-void triton::CGraphics::DestroyRenderPasses()
+void triton::XGraphics::DestroyRenderPasses()
 {
     CCreator::Destroy<XRenderPassGeometry>(_opaque_rigid_pass);
 
     CCreator::Destroy<XRenderPassCulling>(_culling_pass);
 }
 
-void triton::CGraphics::ReleaseSwapchainResources()
+void triton::XGraphics::ReleaseSwapchainResources()
 {
     CRenderCommandProxy::ReleaseSwapchainResources();
 }
 
-void triton::CGraphics::ExecuteBuiltinPasses()
+void triton::XGraphics::ExecuteBuiltinPasses()
 {
     _culling_pass->Render();
     _opaque_rigid_pass->Render();
 }
 
-triton::CGraphics::CGraphics(cContext* context) : CSubsystem(context)
+triton::XGraphics::XGraphics(const SMemAlloc& mem_alloc, cContext* context) : XSubsystem(mem_alloc, context)
 {
     // TODO Vulkan backend: uncomment and rewrite when Vulkan backend will be ready
     // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -491,7 +487,7 @@ triton::CGraphics::CGraphics(cContext* context) : CSubsystem(context)
     CRenderCommandProxy::FinalizeSwapchain(swapchain_present_texture);
 }
 
-triton::CGraphics::~CGraphics()
+triton::XGraphics::~XGraphics()
 {
     // TODO Vulkan backend: uncomment and rewrite when Vulkan backend will be ready
     // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -508,7 +504,7 @@ triton::CGraphics::~CGraphics()
     DestroyShaders();
 }
 
-void triton::CGraphics::ExecutePasses()
+void triton::XGraphics::ExecutePasses()
 {
     // TODO: [Vulkan backend] This must be done using render command queue on main thread
     // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
