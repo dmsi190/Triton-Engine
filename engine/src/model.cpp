@@ -3,16 +3,15 @@
 #include "model.hpp"
 #include "context.hpp"
 #include "tasset.hpp"
-#include "skeleton_pool.hpp"
 #include "texture.hpp"
 #include "image_decoder.hpp"
-#include "graphics_texture_usage_enum.hpp"
+#include "graphics_texture_usage_bit_enum.hpp"
 #include "creator.hpp"
 
 using namespace types;
 
 triton::XModel::XModel(
-	const SMemoryAllocation& mem_alloc,
+	const SMemAlloc& mem_alloc,
     cContext* context,
 	EVertexBufferFormat vertexDataFormat,
 	EModelFileType fileType,
@@ -26,7 +25,7 @@ triton::XModel::XModel(
 		std::filesystem::path modelFolderPath = filePath.parent_path();
 		std::filesystem::path modelLocalPath = filePath.filename();
 
-		auto result = _context->GetBackend<IModel3DBackend>()->CreateModel(
+		auto result = _context->GetBackend<IModelBackend>()->CreateModel(
 			modelFolderPath.generic_string(),
 			modelLocalPath.generic_string(),
 			vertexDataFormat
@@ -36,7 +35,7 @@ triton::XModel::XModel(
 
         _data = *result;
     }
-    else if (_fileType == EModelFileType::Asset)
+    /*else if (_fileType == EModelFileType::Asset)
     {
 		std::filesystem::path assetFolderPath = filePath.parent_path();
 
@@ -188,18 +187,18 @@ triton::XModel::XModel(
 
 			_data.animations.push_back(animHandle);
 		}
-    }
+    }*/
 }
 
 triton::XModel::~XModel()
 {
 	if (_fileType == EModelFileType::Raw)
 	{
-		_context->GetBackend<IModel3DBackend>()->DestroyModel(_data);
+		_context->GetBackend<IModelBackend>()->DestroyModel(_data);
 	}
-	else if (_fileType == EModelFileType::Asset)
+	/*else if (_fileType == EModelFileType::Asset)
 	{
 		_asset->Destroy();
 		CCreator::Destroy<asset::CModel3DAsset>(_asset);
-	}
+	}*/
 }

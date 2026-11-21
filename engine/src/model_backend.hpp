@@ -20,9 +20,9 @@ namespace triton
     struct SModelData
     {
         EVertexBufferFormat vertexDataFormat = EVertexBufferFormat::Unknown;
-        SMemAlloc<SRigidVertexGPULayout> rigidVertexData;
-        SMemAlloc<SSkinnedVertexGPULayout> skinnedVertexData;
-        SMemAlloc<types::u32> indexData;
+        SMemAlloc rigidVertexData;
+        SMemAlloc skinnedVertexData;
+        SMemAlloc indexData;
         types::usize vertexCount = 0;
         types::usize indexCount = 0;
         std::vector<XMaterial*> materials = {};
@@ -30,12 +30,14 @@ namespace triton
         std::vector<XAnimation*> animations = {};
     };
 
-    class IModelBackend : public iBackend
+    class IModelBackend : public IBackend
     {
-        TRITON_CLASS_NAME(IModelBackend)
+        TRITON_OBJECT(IModelBackend)
 
     public:
-        explicit IModelBackend(cContext* context) : iBackend(context) {}
+        explicit IModelBackend(const SMemAlloc& mem_alloc, cContext* context)
+            : IBackend(mem_alloc, context) {}
+
         ~IModelBackend() override = default;
 
         virtual std::optional<SModelData> CreateModel(

@@ -1,5 +1,5 @@
 // event_manager.hpp
-
+/*
 #pragma once
 
 #include <memory>
@@ -43,4 +43,4 @@ namespace triton
         void Send(eEventType type);
         void Send(eEventType type, XDataBuffer* data);
     };
-}
+}*/

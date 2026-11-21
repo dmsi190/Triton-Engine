@@ -1,52 +1,30 @@
 // world_render_domain.cpp
 
 #include "world_render_domain.hpp"
-#include "world_render_domain_pool.hpp"
-#include "world_render_group_pool.hpp"
+#include "creator.hpp"
 
 using namespace types;
 
-std::optional<triton::SHandle> triton::XRenderDomain::CreateRenderGroup(
+triton::XRenderGroup* triton::XRenderDomain::CreateRenderGroup(
 	ERenderInstanceMotionType motionType,
-	const SGeometryView& geometry,
-	const SHandle& material,
+	const SGeometryView& shared_geometry,
 	usize max_instance_count
 )
 {
-	CRenderGroupPool* renderGroupPool = _context->GetPool<CRenderGroupPool>();
-
-	SHandle renderGroup = *renderGroupPool->Create(
+	XRenderGroup* render_group = CCreator::Create<XRenderGroup>(
+		_context,
 		motionType,
-		(const SHandle&)_context->GetPool<CRenderDomainPool>()->GetHandle(_poolIndex),
-		geometry,
-		(const SHandle&)material,
+		this,
+		shared_geometry,
 		max_instance_count
 	);
 
-	_renderGroups.push_back(renderGroup);
+	_renderGroups.push_back(render_group);
 
-	return renderGroup;
+	return render_group;
 }
 
-void triton::XRenderDomain::RemoveRenderGroup(const SHandle& renderGroup)
+void triton::XRenderDomain::DestroyRenderGroup(XRenderGroup* renderGroup)
 {
-	_context->GetPool<CRenderGroupPool>()->Destroy(renderGroup);
-}
-
-void triton::XRenderDomain::QueryRenderGroups()
-{
-	_renderGroups.clear();
-
-	CRenderGroupPool* renderGroupPool = _context->GetPool<CRenderGroupPool>();
-
-	SHandle thisHandle = _context->GetPool<CRenderDomainPool>()->GetHandle(this->_poolIndex);
-	SBufferView<XRenderGroup> renderGroupInstancesBufferView = renderGroupPool->GetData();
-
-	for (usize i = 0; i < renderGroupInstancesBufferView.elementCount; ++i)
-	{
-		XRenderGroup& renderGroup = renderGroupInstancesBufferView.elements[i];
-
-		if (renderGroup.GetRenderDomain() == thisHandle)
-			_renderGroups.push_back(renderGroupPool->GetHandle(i));
-	}
+	CCreator::Destroy<XRenderGroup>(renderGroup);
 }

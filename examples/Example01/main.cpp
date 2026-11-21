@@ -7,16 +7,11 @@
 #include "camera.hpp"
 #include "math.hpp"
 #include "animation.hpp"
-#include "camera_pool.hpp"
 #include "geometry_storage.hpp"
-#include "model3d_pool.hpp"
-#include "skin_pool.hpp"
-#include "render_pass_pools.hpp"
-#include "material_pool.hpp"
-#include "geometry_storage.hpp"
-#include "world_object_pool.hpp"
-#include "world_render_domain_pool.hpp"
-#include "world_render_group_pool.hpp"
+#include "creator.hpp"
+#include "model.hpp"
+#include "render_pass_geometry.hpp"
+#include "world_render_domain.hpp"
 
 using namespace triton;
 using namespace types;
@@ -24,7 +19,7 @@ using namespace types;
 class cMyApplication final : public IApplication
 {
 public:
-    cMyApplication(cContext* context, const sCapabilities& caps) : IApplication(context, caps)
+    cMyApplication(cContext* context, const SCapabilities& caps) : IApplication(context, caps)
     {
     }
 
@@ -34,16 +29,9 @@ public:
 
     virtual void Setup() override final
     {
-        CGeometryStorage* gs = _context->GetSubsystem<CGeometryStorage>();
-        CGraphics* gfx = _context->GetSubsystem<CGraphics>();
-        CMaterialPool* materialPool = _context->GetPool<CMaterialPool>();
-        CWorldObjectPool* worldObjectPool = _context->GetPool<CWorldObjectPool>();
-        CModel3DPool* model3DPool = _context->GetPool<CModel3DPool>();
+        XGeometryStorage* gs = _context->GetSubsystem<XGeometryStorage>();
+        XGraphics* gfx = _context->GetSubsystem<XGraphics>();
 
-        auto cam_handle = *_context->GetPool<CCameraPool>()->Create(65.0f, 0.01f, 1000.0f);
-        XCamera& cam = *_context->GetPool<CCameraPool>()->Get(cam_handle);
-        cam.SetWorldPosition(cVector3(0.0f, 0.0f, 30.0f));
-        
         //opaqueStaticRP.SetCamera(camh);
         
         /*m3d = *_context->GetSubsystem<XModel3DSubsystem>()->CreateModelFromAsset(
@@ -64,8 +52,8 @@ public:
         triVerts[2].texcoord = cVector2(1.0f, 0.0f);
         u32 triInds[3] = { 0, 1, 2 };
 
-        SGeometryView triGeom = *gs->Create(
-            EVertexBufferFormat::Rigid_48,
+        SGeometryView triGeom = *gs->Store(
+            EVertexBufferFormat::Rigid,
             (u8*)triVerts,
             3,
             (u8*)triInds,
@@ -117,48 +105,34 @@ public:
         //);
         //auto m3dd = *_context->GetSubsystem<XModel3DSubsystem>()->GetPool()->Get(m3d);
 
-        auto model1_handle = *_context->GetPool<CModel3DPool>()->Create(
-            EVertexBufferFormat::Rigid_48,
-            EModel3DFileType::Raw,
+        XModel* model1 = CCreator::Create<XModel>(
+            EVertexBufferFormat::Rigid,
+            EModelFileType::Raw,
             "C:/My/My_Projects_Programming/TritonEngine/runtime/data/models/lighthouse/lighthouse.fbx"
         );
-        XModel3D& model1_model = *_context->GetPool<CModel3DPool>()->Get(model1_handle);
-        SGeometryView model1_geom = *gs->Create(
-            model1_model.GetVertexFormat(),
-            (u8*)model1_model.GetRigidVertices(),
-            model1_model.GetVertexCount(),
-            (u8*)model1_model.GetIndices(),
-            model1_model.GetIndexCount()
+        SGeometryView model1_geom = *gs->Store(
+            model1->GetVertexFormat(),
+            (u8*)model1->GetRigidVertices(),
+            model1->GetVertexCount(),
+            (u8*)model1->GetIndices(),
+            model1->GetIndexCount()
         );
 
-        SHandle geom_render_pass_handle =
-            _context->GetSubsystem<CGraphics>()->GetOpaqueRigidRenderPass();
-        XRenderPassGeometry& geom_render_pass =
-            *_context->GetPool<CRenderPassGeometryPool>()->Get(geom_render_pass_handle);
-        SHandle render_domain_handle = geom_render_pass.GetRenderDomain();
-        XRenderDomain& render_domain = *_context->GetPool<CRenderDomainPool>()->Get(render_domain_handle);
+        XRenderPassGeometry* geom_render_pass =
+            _context->GetSubsystem<XGraphics>()->GetOpaqueRigidPass();
 
-        SHandle render_group1_handle = *render_domain.CreateRenderGroup(
+        XRenderDomain* render_domain = geom_render_pass->GetRenderDomain();
+
+        XRenderGroup* render_group1 = render_domain->CreateRenderGroup(
             ERenderInstanceMotionType::Static,
             model1_geom,
-            model1_model.GetMaterial(),
             1024
         );
-        SHandle render_group2_handle = *render_domain.CreateRenderGroup(
-            ERenderInstanceMotionType::Static,
-            model1_geom,
-            model1_model.GetMaterial(),
-            1024
-        );
-
-        SHandle model1_object_handle = *_context->GetPool<CWorldObjectPool>()->Create(
-            render_group1_handle,
+        
+        XWorldObject* model1_object = CCreator::Create<XWorldObject>(
+            _context,
+            render_group1,
             cVector3(0.0f, -10.0f, 0.0f)
-        );
-
-        SHandle model2_object_handle = *_context->GetPool<CWorldObjectPool>()->Create(
-            render_group2_handle,
-            cVector3(0.0f, 10.0f, 0.0f)
         );
 
         /*auto gameObject1Handle = *gameObjectPool->Create("MyObject1");
@@ -358,9 +332,9 @@ int main()
     cContext* context = new cContext();
     std::cout << "Context initialized." << std::endl;
 
-    sCapabilities caps = {};
-    caps.graphicsBackend = EAvailableGraphicsBackend::Vulkan;
-    caps.preferredGraphicsDevice = EGraphicsDeviceType::Discrete;
+    SCapabilities caps = {};
+    caps.graphicsBackend = EGraphicsBackendType::Vulkan;
+    caps.preferredGraphicsDevice = EGraphicsAdapterType::Discrete;
     caps.framesInFlight = 2;
     caps.window.title = "My Test Application";
     caps.window.size = cVector2(800, 600);

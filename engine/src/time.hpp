@@ -21,11 +21,14 @@ namespace triton
 		types::f32 _deltaTime = 0.0f;
 
 	public:
-		explicit cTime(cContext* context);
-		~cTime() = default;
+		explicit cTime(const SMemAlloc& mem_alloc, cContext* context);
+
+		~cTime() override = default;
 
 		void BeginFrame();
+
 		void Update();
+
 		void EndFrame();
 
 		inline types::f32 GetDeltaTime() const { return _deltaTime; }

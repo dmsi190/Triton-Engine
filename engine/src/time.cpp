@@ -4,7 +4,7 @@
 
 using namespace types;
 
-triton::cTime::cTime(cContext* context) : XSubsystem(context) {}
+triton::cTime::cTime(const SMemAlloc& mem_alloc, cContext* context) : XSubsystem(mem_alloc, context) {}
 
 void triton::cTime::BeginFrame()
 {
