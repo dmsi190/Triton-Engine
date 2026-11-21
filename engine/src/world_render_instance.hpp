@@ -38,25 +38,21 @@ namespace triton
 
         ~SRenderInstance() = default;
 
-        inline void SetMaterial(const SHandle& material)
-        {
-            _material = material;
-            WriteToStaging();
-        }
+        void SetMaterialIndex(
+            ERenderInstanceMotionType motion_type,
+            types::s32 index
+        );
 
-        inline void SetSkin(const SHandle& skin)
-        {
-            XSkin& sk = *_context->GetPool<CSkinPool>()->Get(skin);
-            _skinnedBoneBufferOffset = sk.GetSkinnedBoneBufferOffset();
-            WriteToStaging();
-        }
+        void SetWorldMatrix(
+            ERenderInstanceMotionType motion_type,
+            const cMatrix4& world_matrix
+        );
 
-        inline void SetWorldPosition(const cVector3& worldPosition) { _transform.SetPosition(worldPosition); }
-
-        inline void SetRotation(const cVector3& rotation) { _transform.SetRotation(rotation); }
-
-        inline void SetScale(const cVector3& scale) { _transform.SetScale(scale); }
-        
-        void WriteToStaging();
+        void WriteStaging(
+            ERenderInstanceMotionType motion_type,
+            types::usize element_local_byte_offset,
+            const void* data,
+            types::usize byte_size
+        );
 	};
 }

@@ -51,7 +51,12 @@ namespace triton
 
 		void ReleaseStagingFrame(const SGPUBufferFrame& frame);
 
-		void WriteStaging(types::usize index, const void* element);
+		void WriteStaging(
+			types::usize index,
+			types::usize element_local_byte_offset,
+			const void* data,
+			types::usize byte_size
+		);
 
 		void Flush();
 

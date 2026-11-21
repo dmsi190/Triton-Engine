@@ -1,20 +1,56 @@
 // world_render_instance.cpp
 
+#include <cstddef>
 #include "world_render_instance.hpp"
-#include "render_instance_static_pool.hpp"
-#include "render_instance_dynamic_pool.hpp"
+#include "gpu_buffer.hpp"
+#include "graphics_buffers.hpp"
 
-void triton::XRenderInstance::WriteToStaging()
+using namespace types;
+
+void triton::SRenderInstance::SetMaterialIndex(
+	ERenderInstanceMotionType motion_type,
+	types::s32 index
+)
 {
-    CRenderInstancePool* renderInstancePool = nullptr;
+	WriteStaging(
+		motion_type,
+		offsetof(SRenderInstanceGPULayout, materialIndex),
+		(const void*)&index,
+		sizeof(s32)
+	);
+}
 
-    if (_motionType == ERenderInstanceMotionType::Static)
-        renderInstancePool = _context->GetPool<CRenderInstanceStaticPool>();
-    else if (_motionType == ERenderInstanceMotionType::Dynamic)
-        renderInstancePool = _context->GetPool<CRenderInstanceDynamicPool>();
+void triton::SRenderInstance::SetWorldMatrix(
+	ERenderInstanceMotionType motion_type,
+	const cMatrix4& world_matrix
+)
+{
+	WriteStaging(
+		motion_type,
+		offsetof(SRenderInstanceGPULayout, world),
+		(const void*)&world_matrix,
+		sizeof(cMatrix4)
+	);
+}
 
-    renderInstancePool->WriteToStaging(
-        _poolIndex,
-        *this
-    );
- }
+void triton::SRenderInstance::WriteStaging(
+	ERenderInstanceMotionType motion_type,
+	usize element_local_byte_offset,
+	const void* data,
+	usize byte_size
+)
+{
+	XGPUBuffer* buffer = nullptr;
+
+	if (motion_type == ERenderInstanceMotionType::Static)
+		buffer = CGraphicsBuffers::GetStaticInstanceBuffer();
+	else if (motion_type == ERenderInstanceMotionType::Dynamic)
+		buffer = CGraphicsBuffers::GetDynamicInstanceBuffer();
+
+	buffer->WriteStaging(
+		instance_buffer_index,
+		element_local_byte_offset,
+		data,
+		byte_size
+	);
+}

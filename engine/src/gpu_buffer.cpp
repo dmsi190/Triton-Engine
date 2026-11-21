@@ -158,11 +158,18 @@ void triton::XGPUBuffer::ReleaseStagingFrame(const SGPUBufferFrame& frame)
         ResizeBuffers(_staging_element_count - cut_count);
 }
 
-void triton::XGPUBuffer::WriteStaging(types::usize index, const void* element)
+void triton::XGPUBuffer::WriteStaging(
+    usize index,
+    usize element_local_byte_offset,
+    const void* data,
+    usize byte_size
+)
 {
-    void* write_ptr = (u8*)_staging_buffer + index * _element_byte_size;
+    void* element_ptr = (u8*)_staging_buffer + index * _element_byte_size;
 
-    std::memcpy(write_ptr, element, _element_byte_size);
+    void* write_ptr = (u8*)element_ptr + element_local_byte_offset;
+
+    std::memcpy(write_ptr, data, byte_size);
 
     _dirty_bit = True;
 }
