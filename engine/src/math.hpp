@@ -228,11 +228,7 @@ namespace triton
 template <typename TValue>
 types::qword triton::CMath::Hash(const TValue& value, types::qword mask)
 {
-	if constexpr (std::is_same_v<TValue, cTag>)
-	{
-		return HashBytes((const types::u8*)value.GetData(), value.GetByteSize(), mask);
-	}
-	else if constexpr (std::is_same_v<TValue, std::string>)
+	if constexpr (std::is_same_v<TValue, std::string>)
 	{
 		return HashBytes((const types::u8*)value.c_str(), value.size(), mask);
 	}

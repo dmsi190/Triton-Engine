@@ -6,13 +6,14 @@
 
 using namespace types;
 
-triton::CWindow::CWindow(
+triton::XWindow::XWindow(
+	const SMemAlloc& mem_alloc,
 	cContext* context,
 	const std::string& title,
 	const cVector2& size,
 	boolean fullscreen,
 	EGraphicsBackendType graphicsBackend
-) : _context(context)
+) : iObject(mem_alloc, context)
 {
 	_window = _context->GetBackend<IInputBackend>()->CreateBackendWindow(
 		title,
@@ -22,7 +23,7 @@ triton::CWindow::CWindow(
 	);
 }
 
-triton::CWindow::~CWindow()
+triton::XWindow::~XWindow()
 {
 	_context->GetBackend<IInputBackend>()->DestroyBackendWindow(_window);
 }

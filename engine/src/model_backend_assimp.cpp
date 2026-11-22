@@ -8,7 +8,7 @@
 #include "skeleton_bone.hpp"
 #include "animation.hpp"
 #include "image_decoder.hpp"
-#include "graphics_texture_usage_enum.hpp"
+#include "graphics_texture_usage_bit_enum.hpp"
 #include "log.hpp"
 #include "creator.hpp"
 #include "application.hpp"
@@ -77,10 +77,10 @@ std::optional<triton::SModelData> triton::XModelBackendAssimp::ParseImportedScen
     usize vertexCount = 0;
     usize indexCount = 0;
     std::vector<usize> indexOffsets = {};
-    SMemAlloc<SRigidVertexGPULayout> rigidVertexData;
-    SMemAlloc<SSkinnedVertexGPULayout> skinnedVertexData;
-    SMemAlloc<u32> indexData;
-    SMemAlloc<cVector3> bitangents;
+    SMemAlloc rigidVertexData;
+    SMemAlloc skinnedVertexData;
+    SMemAlloc indexData;
+    SMemAlloc bitangents;
     std::vector<SModelMaterialData> materials = {};
     std::vector<XMaterial*> modelMaterials = {};
     std::unordered_map<std::string, types::usize> boneIndices = {};
@@ -251,38 +251,42 @@ void triton::XModelBackendAssimp::CountVerticesIndices(
 
 void triton::XModelBackendAssimp::AllocateVertexIndexBuffers(
     EVertexBufferFormat vertexDataFormat,
-    SMemAlloc<SRigidVertexGPULayout>& rigidVertexData,
-    SMemAlloc<SSkinnedVertexGPULayout>& skinnedVertexData,
-    SMemAlloc<u32>& indices,
+    SMemAlloc& rigidVertexData,
+    SMemAlloc& skinnedVertexData,
+    SMemAlloc& indices,
     usize vertexCount,
     usize indexCount
 )
 {
     if (vertexDataFormat == EVertexBufferFormat::Rigid)
-        rigidVertexData = CMemoryAllocator::Allocate<SRigidVertexGPULayout>(
+        rigidVertexData = CMemoryAllocator::Allocate(
             vertexCount * sizeof(SRigidVertexGPULayout)
         );
     else if (vertexDataFormat == EVertexBufferFormat::Skinned)
-        skinnedVertexData = CMemoryAllocator::Allocate<SSkinnedVertexGPULayout>(
+        skinnedVertexData = CMemoryAllocator::Allocate(
             vertexCount * sizeof(SSkinnedVertexGPULayout)
         );
 
-    indices = CMemoryAllocator::Allocate<u32>(indexCount * sizeof(u32));
+    indices = CMemoryAllocator::Allocate(indexCount * sizeof(u32));
 }
 
-void triton::XModelBackendAssimp::AllocateTempBitangentBuffer(SMemAlloc<cVector3>& bitangents, usize vertexCount)
+void triton::XModelBackendAssimp::AllocateTempBitangentBuffer(SMemAlloc& bitangents, usize vertexCount)
 {
-    bitangents = CMemoryAllocator::Allocate<cVector3>(vertexCount * sizeof(cVector3));
+    bitangents = CMemoryAllocator::Allocate(vertexCount * sizeof(cVector3));
 }
 
 void triton::XModelBackendAssimp::ParseVertexData(
     const aiScene* scene,
     EVertexBufferFormat vertexDataFormat,
-    const SMemAlloc<SRigidVertexGPULayout>& rigidVertexData,
-    const SMemAlloc<SSkinnedVertexGPULayout>& skinnedVertexData,
-    const SMemAlloc<cVector3>& bitangents
+    const SMemAlloc& rigidVertexData,
+    const SMemAlloc& skinnedVertexData,
+    const SMemAlloc& bitangents_memory
 )
 {
+    SRigidVertexGPULayout* rigidVertices = (SRigidVertexGPULayout*)rigidVertexData.mem;
+    SSkinnedVertexGPULayout* skinnedVertices = (SSkinnedVertexGPULayout*)skinnedVertexData.mem;
+    cVector3* bitangents = (cVector3*)bitangents_memory.mem;
+
     usize globalVertexIndex = 0;
     for (usize meshIndex = 0; meshIndex < scene->mNumMeshes; meshIndex++)
     {
@@ -298,20 +302,20 @@ void triton::XModelBackendAssimp::ParseVertexData(
 
             if (vertexDataFormat == EVertexBufferFormat::Rigid)
             {
-                rigidVertexData.mem[globalVertexIndex].position = cVector3(position.x, position.y, position.z);
-                rigidVertexData.mem[globalVertexIndex].texcoord = cVector2(texcoord.x, texcoord.y);
-                rigidVertexData.mem[globalVertexIndex].normal = cVector3(normal.x, normal.y, normal.z);
-                rigidVertexData.mem[globalVertexIndex].tangent = cVector4(tangent.x, tangent.y, tangent.z, 0.0f);
+                rigidVertices[globalVertexIndex].position = cVector3(position.x, position.y, position.z);
+                rigidVertices[globalVertexIndex].texcoord = cVector2(texcoord.x, texcoord.y);
+                rigidVertices[globalVertexIndex].normal = cVector3(normal.x, normal.y, normal.z);
+                rigidVertices[globalVertexIndex].tangent = cVector4(tangent.x, tangent.y, tangent.z, 0.0f);
             }
             else if (vertexDataFormat == EVertexBufferFormat::Skinned)
             {
-                skinnedVertexData.mem[globalVertexIndex].position = cVector3(position.x, position.y, position.z);
-                skinnedVertexData.mem[globalVertexIndex].texcoord = cVector2(texcoord.x, texcoord.y);
-                skinnedVertexData.mem[globalVertexIndex].normal = cVector3(normal.x, normal.y, normal.z);
-                skinnedVertexData.mem[globalVertexIndex].tangent = cVector4(tangent.x, tangent.y, tangent.z, 0.0f);
+                skinnedVertices[globalVertexIndex].position = cVector3(position.x, position.y, position.z);
+                skinnedVertices[globalVertexIndex].texcoord = cVector2(texcoord.x, texcoord.y);
+                skinnedVertices[globalVertexIndex].normal = cVector3(normal.x, normal.y, normal.z);
+                skinnedVertices[globalVertexIndex].tangent = cVector4(tangent.x, tangent.y, tangent.z, 0.0f);
             }
 
-            bitangents.mem[globalVertexIndex] = cVector3(bitangent.x, bitangent.y, bitangent.z);
+            bitangents[globalVertexIndex] = cVector3(bitangent.x, bitangent.y, bitangent.z);
             
             globalVertexIndex += 1;
         }
@@ -320,63 +324,67 @@ void triton::XModelBackendAssimp::ParseVertexData(
 
 void triton::XModelBackendAssimp::CalculateHandedness(
     EVertexBufferFormat vertexDataFormat,
-    const SMemAlloc<SRigidVertexGPULayout>& rigidVertexData,
-    const SMemAlloc<SSkinnedVertexGPULayout>& skinnedVertexData,
-    const SMemAlloc<cVector3>& bitangents,
+    const SMemAlloc& rigidVertexData,
+    const SMemAlloc& skinnedVertexData,
+    const SMemAlloc& bitangents_memory,
     usize vertexCount
 )
 {
+    SRigidVertexGPULayout* rigidVertices = (SRigidVertexGPULayout*)rigidVertexData.mem;
+    SSkinnedVertexGPULayout* skinnedVertices = (SSkinnedVertexGPULayout*)skinnedVertexData.mem;
+    cVector3* bitangents = (cVector3*)bitangents_memory.mem;
+
     for (usize i = 0; i < vertexCount; i++)
     {
         // TODO: encapsulate GLM code to math-related backend
         if (vertexDataFormat == EVertexBufferFormat::Rigid)
         {
             glm::vec3 normal = glm::vec3(
-                rigidVertexData.mem[i].normal.GetX(),
-                rigidVertexData.mem[i].normal.GetY(),
-                rigidVertexData.mem[i].normal.GetZ()
+                rigidVertices[i].normal.GetX(),
+                rigidVertices[i].normal.GetY(),
+                rigidVertices[i].normal.GetZ()
             );
             glm::vec3 tangent = glm::vec3(
-                rigidVertexData.mem[i].tangent.GetX(),
-                rigidVertexData.mem[i].tangent.GetY(),
-                rigidVertexData.mem[i].tangent.GetZ()
+                rigidVertices[i].tangent.GetX(),
+                rigidVertices[i].tangent.GetY(),
+                rigidVertices[i].tangent.GetZ()
             );
             glm::vec3 bitangent = glm::vec3(
-                bitangents.mem[i].GetX(),
-                bitangents.mem[i].GetY(),
-                bitangents.mem[i].GetZ()
+                bitangents[i].GetX(),
+                bitangents[i].GetY(),
+                bitangents[i].GetZ()
             );
             f32 handedness = (glm::dot(glm::cross(normal, tangent), bitangent) < 0.0f) ? -1.0f : 1.0f;
 
-            rigidVertexData.mem[i].tangent.SetW(handedness);
+            rigidVertices[i].tangent.SetW(handedness);
         }
         else if (vertexDataFormat == EVertexBufferFormat::Skinned)
         {
             glm::vec3 normal = glm::vec3(
-                skinnedVertexData.mem[i].normal.GetX(),
-                skinnedVertexData.mem[i].normal.GetY(),
-                skinnedVertexData.mem[i].normal.GetZ()
+                skinnedVertices[i].normal.GetX(),
+                skinnedVertices[i].normal.GetY(),
+                skinnedVertices[i].normal.GetZ()
             );
             glm::vec3 tangent = glm::vec3(
-                skinnedVertexData.mem[i].tangent.GetX(),
-                skinnedVertexData.mem[i].tangent.GetY(),
-                skinnedVertexData.mem[i].tangent.GetZ()
+                skinnedVertices[i].tangent.GetX(),
+                skinnedVertices[i].tangent.GetY(),
+                skinnedVertices[i].tangent.GetZ()
             );
             glm::vec3 bitangent = glm::vec3(
-                bitangents.mem[i].GetX(),
-                bitangents.mem[i].GetY(),
-                bitangents.mem[i].GetZ()
+                bitangents[i].GetX(),
+                bitangents[i].GetY(),
+                bitangents[i].GetZ()
             );
             f32 handedness = (glm::dot(glm::cross(normal, tangent), bitangent) < 0.0f) ? -1.0f : 1.0f;
 
-            skinnedVertexData.mem[i].tangent.SetW(handedness);
+            skinnedVertices[i].tangent.SetW(handedness);
         }
     }
 }
 
 void triton::XModelBackendAssimp::ParseIndexData(
     const aiScene* scene,
-    const SMemAlloc<u32>& indexData,
+    const SMemAlloc& indexData,
     const std::vector<usize>& indexOffsets
 )
 {
@@ -516,9 +524,9 @@ void triton::XModelBackendAssimp::CreateMaterials(
     }
 }
 
-void triton::XModelBackendAssimp::DeallocateTempBitangentBuffer(SMemAlloc<cVector3>& bitangents)
+void triton::XModelBackendAssimp::DeallocateTempBitangentBuffer(SMemAlloc& bitangents)
 {
-    CMemoryAllocator::Deallocate<cVector3>(bitangents);
+    CMemoryAllocator::Deallocate(bitangents);
 }
 
 void triton::XModelBackendAssimp::CreateBones(
@@ -578,11 +586,13 @@ void triton::XModelBackendAssimp::CreateBones(
 
 void triton::XModelBackendAssimp::FinalizeBoneWeights(
     cContext* context,
-    const SMemAlloc<SSkinnedVertexGPULayout>& vertexData,
+    const SMemAlloc& vertexData,
     types::usize vertexCount,
     std::vector<std::vector<SBoneWeight>>& vertexWeights
 )
 {
+    SSkinnedVertexGPULayout* skinnedVertices = (SSkinnedVertexGPULayout*)vertexData.mem;
+
     for (usize vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++)
     {
         auto& weights = vertexWeights[vertexIndex];
@@ -596,7 +606,7 @@ void triton::XModelBackendAssimp::FinalizeBoneWeights(
             }
         );
 
-        const SCapabilities& caps = context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+        const SCapabilities& caps = context->GetSubsystem<XEngine>()->GetApplication()->GetCapabilities();
 
         if (weights.size() > caps.maxBoneCountPerVertex)
             weights.resize(caps.maxBoneCountPerVertex);
@@ -614,8 +624,8 @@ void triton::XModelBackendAssimp::FinalizeBoneWeights(
 
         for (usize i = 0; i < weights.size(); i++)
         {
-            vertexData.mem[vertexIndex].boneIndices[i] = weights[i].boneIndex;
-            vertexData.mem[vertexIndex].boneWeights[i] = weights[i].weight;
+            skinnedVertices[vertexIndex].boneIndices[i] = weights[i].boneIndex;
+            skinnedVertices[vertexIndex].boneWeights[i] = weights[i].weight;
         }
     }
 }
@@ -896,9 +906,9 @@ std::optional<triton::XTexture*> triton::XModelBackendAssimp::CreateTextureFromF
 
 triton::SModelData triton::XModelBackendAssimp::PrepareResult(
     EVertexBufferFormat vertexDataFormat,
-    const SMemAlloc<SRigidVertexGPULayout>& rigidVertexData,
-    const SMemAlloc<SSkinnedVertexGPULayout>& skinnedVertexData,
-    const SMemAlloc<u32>& indexData,
+    const SMemAlloc& rigidVertexData,
+    const SMemAlloc& skinnedVertexData,
+    const SMemAlloc& indexData,
     usize vertexCount,
     usize indexCount,
     const std::vector<XMaterial*>& modelMaterials,

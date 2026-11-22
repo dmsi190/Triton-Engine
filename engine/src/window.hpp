@@ -12,20 +12,24 @@ namespace triton
 {
     class cContext;
 
-    class CWindow
+    class XWindow : public iObject
     {
+        TRITON_OBJECT(XWindow)
+
         cContext* _context = nullptr;
         SWindowResource _window;
 
     public:
-        explicit CWindow(
+        explicit XWindow(
+            const SMemAlloc& mem_alloc,
             cContext* context,
             const std::string& title,
             const cVector2& size,
             types::boolean fullscreen,
             EGraphicsBackendType graphicsBackend
         );
-        ~CWindow();
+
+        ~XWindow() override;
 
         inline const cVector2& GetSize() const { return _window.size; }
 

@@ -65,6 +65,20 @@ void triton::CGraphicsBuffers::Initialize(cContext* context)
         1
     );
 
+    _material_buffer = CCreator::Create<XGPUBuffer>(
+        EGPUBufferType::Storage,
+        sizeof(XMaterial::TGPULayout),
+        caps.maxRenderMaterialCount * sizeof(XMaterial::TGPULayout),
+        2
+    );
+
+    _skinned_bone_buffer = CCreator::Create<XGPUBuffer>(
+        EGPUBufferType::Storage,
+        sizeof(cMatrix4),
+        caps.maxSkinnedBoneCount * sizeof(cMatrix4),
+        3
+    );
+
     _main_indirect_draw_commands_buffer = CRenderCommandProxy::CreateBuffer(
         EGPUBufferType::Storage,
         sizeof(u32) + caps.render_group_count * sizeof(SRenderIndirectDrawCommand)
@@ -104,4 +118,12 @@ void triton::CGraphicsBuffers::Release()
     CRenderCommandProxy::DestroyBuffer(_main_command_render_group_indices_buffer);
     CRenderCommandProxy::DestroyBuffer(_shadow_indirect_draw_commands_buffer);
     CRenderCommandProxy::DestroyBuffer(_main_indirect_draw_commands_buffer);
+    CCreator::Destroy<XGPUBuffer>(_skinned_bone_buffer);
+    CCreator::Destroy<XGPUBuffer>(_material_buffer);
+    CCreator::Destroy<XGPUBuffer>(_dynamic_instance_buffer);
+    CCreator::Destroy<XGPUBuffer>(_static_instance_buffer);
+    CCreator::Destroy<XGPUBuffer>(_skinned_index_buffer);
+    CCreator::Destroy<XGPUBuffer>(_rigid_index_buffer);
+    CCreator::Destroy<XGPUBuffer>(_skinned_vertex_buffer);
+    CCreator::Destroy<XGPUBuffer>(_rigid_vertex_buffer);
 }

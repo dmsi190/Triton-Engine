@@ -37,7 +37,7 @@ triton::IApplication::~IApplication()
 
 void triton::IApplication::CreateWindow()
 {
-    _window = CCreator::Create<CWindow>(
+    _window = CCreator::Create<XWindow>(
         _context,
         _caps.window.title,
         _caps.window.size,
@@ -48,7 +48,7 @@ void triton::IApplication::CreateWindow()
 
 void triton::IApplication::DestroyWindow()
 {
-    CCreator::Destroy<CWindow>(_window);
+    CCreator::Destroy<XWindow>(_window);
 }
 
 void triton::IApplication::Run()

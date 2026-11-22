@@ -33,14 +33,14 @@ namespace triton
         std::vector<SShaderTextureBinding>              _inputTextures = {};
         SDepthState                                     _depthState;
         SBlendState                                     _blendState;
-        EPrimitiveTopology                              _primitiveTopology = EPrimitiveTopology::Unknown;
+        ERenderPrimitiveTopology                        _primitiveTopology = ERenderPrimitiveTopology::Unknown;
         SViewport                                       _viewport = {};
         types::boolean                                  _bClearRenderTarget = types::False;
         XRenderTarget*                                  _renderTarget;
         XShader*                                        _shader;
         SGPUPipelineResource                            _gpuPipeline = SGPUPipelineResource::Invalid();
         SNativeCommandDrawInfo                          _nativeCommandDrawInfoArrays[2];
-        SRenderPassGPUPushConstantsLayout               _pushConstantArrays[2];
+        SRenderPassPushConstantsLayout                  _pushConstantArrays[2];
         std::vector<SGPUBindingGroupLayoutResource>     _gpuBindingGroupLayouts;
         std::vector<SGPUBindingGroupResource>           _gpuBindingGroupBuffersArrays[2];
 
@@ -56,7 +56,7 @@ namespace triton
             const std::vector<ERenderResourceUsage>& srcAttachmentsUsage,
             const std::vector<ERenderResourceUsage>& dstAttachmentsUsage,
             XShader* shader,
-            EPrimitiveTopology primitiveTopology,
+            ERenderPrimitiveTopology primitiveTopology,
             const SViewport& viewport,
             const std::vector<SGPUBufferResource>& inputBuffers,
             const std::vector<SShaderTextureBinding>& inputTextures

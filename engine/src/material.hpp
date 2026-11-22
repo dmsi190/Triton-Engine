@@ -26,10 +26,8 @@ namespace triton
         types::f32                      _shininess = 0.0f;
 
     public:
-        explicit XMaterial(const SMemoryAllocation& mem_alloc, cContext* context) : iObject(mem_alloc, context) {}
-
         explicit XMaterial(
-            const SMemoryAllocation& mem_alloc,
+            const SMemAlloc& mem_alloc,
             cContext* context,
             const std::optional<XTexture*>& diffuseTexture,
             const std::optional<XTexture*>& normalTexture,

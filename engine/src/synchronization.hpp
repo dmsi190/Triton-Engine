@@ -247,8 +247,8 @@ namespace triton
 			// TODO: add result buffer locking/unlocking
 			// |||||||||||||||||||||||||||||||||||||||||
 			// VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-			TResult result = *(TResult*)&_resultBuffer.data[0];
-			((TResult*)&_resultBuffer.data[0])->~TResult();
+			TResult result = *(TResult*)&_resultBuffer.data.mem[0];
+			((TResult*)&_resultBuffer.data.mem[0])->~TResult();
 
 			return result;
 		}

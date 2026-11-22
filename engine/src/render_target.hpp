@@ -7,7 +7,6 @@
 #include "gpu_render_target_resource.hpp"
 #include "texture.hpp"
 #include "context.hpp"
-#include "texture_pool.hpp"
 
 namespace triton
 {

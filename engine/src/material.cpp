@@ -11,7 +11,7 @@
 using namespace types;
 
 triton::XMaterial::XMaterial(
-    const SMemoryAllocation& mem_alloc,
+    const SMemAlloc& mem_alloc,
     cContext* context,
     const std::optional<XTexture*>& diffuseTexture,
     const std::optional<XTexture*>& normalTexture,

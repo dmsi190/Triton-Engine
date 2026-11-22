@@ -12,14 +12,14 @@ namespace triton
 {
     class cContext;
     class XEngine;
-    class CWindow;
+    class XWindow;
 
     class IApplication
     {
     protected:
         cContext* _context = nullptr;
         SCapabilities _caps;
-        CWindow* _window = nullptr;
+        XWindow* _window = nullptr;
         XEngine* _engine = nullptr;
 
     public:
