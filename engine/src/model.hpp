@@ -4,7 +4,6 @@
 
 #include <vector>
 #include <filesystem>
-#include "../../tools/tasset/src/tasset/tasset.hpp"
 #include "object.hpp"
 #include "vertex.hpp"
 #include "animation.hpp"
@@ -28,7 +27,6 @@ namespace triton
         TRITON_OBJECT(XModel)
 
         SModelData              _data;
-        asset::CModel3DAsset*   _asset = nullptr;
         EVertexBufferFormat     _vertexDataFormat = EVertexBufferFormat::Unknown;
         EModelFileType          _fileType = EModelFileType::Unknown;
 

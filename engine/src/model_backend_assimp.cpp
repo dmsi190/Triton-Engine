@@ -512,6 +512,7 @@ void triton::XModelBackendAssimp::CreateMaterials(
 
         modelMaterials.push_back(
             CCreator::Create<XMaterial>(
+                _context,
                 diffOpt.has_value() ? *diffOpt : nullptr,
                 normOpt.has_value() ? *normOpt : nullptr,
                 rghnOpt.has_value() ? *rghnOpt : nullptr,
@@ -705,6 +706,7 @@ void triton::XModelBackendAssimp::CreateSkeleton(
 )
 {
     modelSkeleton = CCreator::Create<XSkeleton>(
+        _context,
         bones,
         ConvertMatrix(accumulatedRootTransform)
     );
@@ -777,6 +779,7 @@ void triton::XModelBackendAssimp::CreateAnimations(
 
         modelAnimations.push_back(
             CCreator::Create<XAnimation>(
+                _context,
                 animationName,
                 animationDuration,
                 animationTicksPerSecond,
@@ -821,9 +824,10 @@ std::optional<triton::XTexture*> triton::XModelBackendAssimp::CreateTextureFromM
         if (fmtHint[0] == 'p' && fmtHint[1] == 'n' && fmtHint[2] == 'g')
         {
             return CCreator::Create<XTexture>(
+                _context,
                 types::K_TRUE,
                 dataFormat,
-                (dword)ETextureUsageBit::Sampled,
+                ETextureUsageBit::Sampled,
                 ETextureDimension::Texture2D,
                 0,
                 EImageFileFormat::PNG,
@@ -835,9 +839,10 @@ std::optional<triton::XTexture*> triton::XModelBackendAssimp::CreateTextureFromM
         else if (fmtHint[0] == 'd' && fmtHint[1] == 'd' && fmtHint[2] == 's')
         {
             return CCreator::Create<XTexture>(
+                _context,
                 types::K_TRUE,
                 dataFormat,
-                (dword)ETextureUsageBit::Sampled,
+                ETextureUsageBit::Sampled,
                 ETextureDimension::Texture2D,
                 0,
                 EImageFileFormat::DDS,
@@ -894,9 +899,10 @@ std::optional<triton::XTexture*> triton::XModelBackendAssimp::CreateTextureFromF
     }
     
     return CCreator::Create<XTexture>(
+        _context,
         types::K_TRUE,
         dataFormat,
-        (dword)ETextureUsageBit::Sampled,
+        ETextureUsageBit::Sampled,
         ETextureDimension::Texture2D,
         0,
         _context->GetBackend<IImageDecoder>()->TextureFormatToImageFormat(dataFormat),

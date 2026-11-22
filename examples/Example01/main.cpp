@@ -12,6 +12,7 @@
 #include "model.hpp"
 #include "render_pass_geometry.hpp"
 #include "world_render_domain.hpp"
+#include "world_object.hpp"
 
 using namespace triton;
 using namespace types;
@@ -106,6 +107,7 @@ public:
         //auto m3dd = *_context->GetSubsystem<XModel3DSubsystem>()->GetPool()->Get(m3d);
 
         XModel* model1 = CCreator::Create<XModel>(
+            _context,
             EVertexBufferFormat::Rigid,
             EModelFileType::Raw,
             "C:/My/My_Projects_Programming/TritonEngine/runtime/data/models/lighthouse/lighthouse.fbx"
@@ -126,6 +128,7 @@ public:
         XRenderGroup* render_group1 = render_domain->CreateRenderGroup(
             ERenderInstanceMotionType::Static,
             model1_geom,
+            model1->GetMaterial(),
             1024
         );
         

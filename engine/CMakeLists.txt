@@ -27,7 +27,6 @@ target_link_libraries(
     TracyClient
     TritonThirdpartySTBLib
     TritonThirdpartyTinyDDSLoaderLib
-    TritonTAssetLib
 )
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib")
 add_custom_command(

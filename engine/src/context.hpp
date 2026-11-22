@@ -25,7 +25,14 @@ namespace triton
 		template <typename T>
 		void RegisterBackend(T* backend);
 
-		void RegisterSubsystem(XSubsystem* subsystem);
+		void RegisterSubsystem(XSubsystem* subsystem)
+		{
+			// TODO: static_assert that T must inherit from iObject
+			ClassType type = subsystem->GetType();
+			const auto it = _subsystems.find(type);
+			if (it == _subsystems.end())
+				_subsystems.insert({ type, subsystem });
+		}
 
 		template <typename T>
 		void ReleaseSubsystem();
@@ -46,15 +53,6 @@ void triton::cContext::RegisterBackend(T* backend)
 	const auto it = _backends.find(type);
 	if (it == _backends.end())
 		_backends.insert({ type, backend });
-}
-
-void triton::cContext::RegisterSubsystem(XSubsystem* subsystem)
-{
-	// TODO: static_assert that T must inherit from iObject
-	ClassType type = subsystem->GetType();
-	const auto it = _subsystems.find(type);
-	if (it == _subsystems.end())
-		_subsystems.insert({ type, subsystem });
 }
 
 template <typename T>

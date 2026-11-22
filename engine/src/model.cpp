@@ -2,7 +2,6 @@
 
 #include "model.hpp"
 #include "context.hpp"
-#include "tasset.hpp"
 #include "texture.hpp"
 #include "image_decoder.hpp"
 #include "graphics_texture_usage_bit_enum.hpp"

@@ -52,7 +52,7 @@ add_subdirectory(thirdparty/tracy)
 add_subdirectory(thirdparty/stb_lib)
 add_subdirectory(thirdparty/tinyddsloader_lib)
 
-add_subdirectory(tools)
+#add_subdirectory(tools)
 add_subdirectory(engine)
 #add_subdirectory(editor)
 add_subdirectory(examples)

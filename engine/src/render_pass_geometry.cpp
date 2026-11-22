@@ -108,7 +108,7 @@ triton::XRenderPassGeometry::XRenderPassGeometry(
     );
 
     delete bufferBindingGroupTextureBindings;
-    delete bufferBindingGroupBufferBindings);
+    delete bufferBindingGroupBufferBindings;
 
     _gpuPipeline = CRenderCommandProxy::CreatePipeline(
         _shader->GetGPUResource(),

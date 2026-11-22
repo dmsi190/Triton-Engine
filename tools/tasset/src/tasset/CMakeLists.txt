@@ -4,14 +4,8 @@ add_library(
     TritonTAssetLib
     tasset.cpp
     tasset.hpp
-    types.hpp
 )
 
-target_include_directories(
-    TritonTAssetLib
-    PRIVATE
-    ${CMAKE_SOURCE_DIR}/thirdparty/glm
-)
 target_link_libraries(
     TritonTAssetLib
 	PRIVATE
