@@ -10,7 +10,8 @@
 
 using namespace types;
 
-triton::CInputBackendSDL::CInputBackendSDL(cContext* context) : IInputBackend(context)
+triton::XInputBackendSDL::XInputBackendSDL(const SMemAlloc& mem_alloc, cContext* context)
+    : IInputBackend(mem_alloc, context)
 {
     if (!SDL_Init(SDL_INIT_VIDEO))
     {
@@ -30,7 +31,7 @@ triton::CInputBackendSDL::CInputBackendSDL(cContext* context) : IInputBackend(co
     InitializeKeyMap();
 }
 
-triton::SWindowResource triton::CInputBackendSDL::CreateBackendWindow(
+triton::SWindowResource triton::XInputBackendSDL::CreateBackendWindow(
     const std::string& title,
     const cVector2& size,
     boolean fullscreen,
@@ -73,7 +74,7 @@ triton::SWindowResource triton::CInputBackendSDL::CreateBackendWindow(
     return wb;
 }
 
-void triton::CInputBackendSDL::DestroyBackendWindow(SWindowResource& window)
+void triton::XInputBackendSDL::DestroyBackendWindow(SWindowResource& window)
 {
     if (window.instance == 0)
         return;
@@ -81,7 +82,7 @@ void triton::CInputBackendSDL::DestroyBackendWindow(SWindowResource& window)
     SDL_DestroyWindow((SDL_Window*)window.instance);
 }
 
-void triton::CInputBackendSDL::ResizeWindow(SWindowResource& window, const cVector2& newSize)
+void triton::XInputBackendSDL::ResizeWindow(SWindowResource& window, const cVector2& newSize)
 {
     if (window.instance == 0)
         return;
@@ -89,7 +90,7 @@ void triton::CInputBackendSDL::ResizeWindow(SWindowResource& window, const cVect
     window.size = cVector2(newSize.GetX(), newSize.GetY());
 }
 
-std::vector<const char*> triton::CInputBackendSDL::GetBackendWindowVulkanExtensions()
+std::vector<const char*> triton::XInputBackendSDL::GetBackendWindowVulkanExtensions()
 {
     uint32_t extensionCount = 0;
     const char* const* extensions = SDL_Vulkan_GetInstanceExtensions(&extensionCount);
@@ -101,7 +102,7 @@ std::vector<const char*> triton::CInputBackendSDL::GetBackendWindowVulkanExtensi
     return extensionsVector;
 }
 
-void* triton::CInputBackendSDL::CreateBackendWindowVulkanSurface(SWindowResource& window, void* instance)
+void* triton::XInputBackendSDL::CreateBackendWindowVulkanSurface(SWindowResource& window, void* instance)
 {
     VkInstance sdlInstance = {};
     std::memcpy(&sdlInstance, instance, sizeof(VkInstance));
@@ -121,7 +122,7 @@ void* triton::CInputBackendSDL::CreateBackendWindowVulkanSurface(SWindowResource
     return heapSurface;
 }
 
-void triton::CInputBackendSDL::DestroyBackendWindowVulkanSurface(void* instance, void* surface)
+void triton::XInputBackendSDL::DestroyBackendWindowVulkanSurface(void* instance, void* surface)
 {
     VkInstance sdlInstance = {};
     std::memcpy(&sdlInstance, instance, sizeof(VkInstance));
@@ -138,13 +139,13 @@ void triton::CInputBackendSDL::DestroyBackendWindowVulkanSurface(void* instance,
     delete surface;
 }
 
-void triton::CInputBackendSDL::PreparePollEvent()
+void triton::XInputBackendSDL::PreparePollEvent()
 {
     _bMouseMoved = False;
     _mouseDelta = cVector2(0.0f);
 }
 
-triton::SWindowEvent triton::CInputBackendSDL::PollEvent()
+triton::SWindowEvent triton::XInputBackendSDL::PollEvent()
 {
     SWindowEvent e = {};
     e.type = EWindowEvent::None;
@@ -218,7 +219,7 @@ triton::SWindowEvent triton::CInputBackendSDL::PollEvent()
     return e;
 }
 
-void triton::CInputBackendSDL::ProcessEvent(const SWindowEvent& event, SWindowResource& window)
+void triton::XInputBackendSDL::ProcessEvent(const SWindowEvent& event, SWindowResource& window)
 {
     switch (event.type)
     {
@@ -273,7 +274,7 @@ void triton::CInputBackendSDL::ProcessEvent(const SWindowEvent& event, SWindowRe
     }
 }
 
-void* triton::CInputBackendSDL::GetWindowWin32Handle(SWindowResource& window)
+void* triton::XInputBackendSDL::GetWindowWin32Handle(SWindowResource& window)
 {
     if (window.instance == 0)
         return nullptr;
@@ -281,17 +282,17 @@ void* triton::CInputBackendSDL::GetWindowWin32Handle(SWindowResource& window)
     return nullptr; //(void*)glfwGetWin32Window((GLFWwindow*)window.instance);
 }
 
-triton::EKeyState triton::CInputBackendSDL::GetKey(EKeyCode key)
+triton::EKeyState triton::XInputBackendSDL::GetKey(EKeyCode key)
 {
     return _keyState[(usize)key];
 }
 
-triton::cVector2 triton::CInputBackendSDL::GetCursorPosition(SWindowResource& window)
+triton::cVector2 triton::XInputBackendSDL::GetCursorPosition(SWindowResource& window)
 {
     return _cursorPosition;
 }
 
-triton::cVector2 triton::CInputBackendSDL::GetMouseDelta()
+triton::cVector2 triton::XInputBackendSDL::GetMouseDelta()
 {
     if (_bMouseMoved == True)
         return _mouseDelta;
@@ -299,41 +300,41 @@ triton::cVector2 triton::CInputBackendSDL::GetMouseDelta()
         return cVector2(0.0f);
 }
 
-triton::cVector2 triton::CInputBackendSDL::GetMonitorSize()
+triton::cVector2 triton::XInputBackendSDL::GetMonitorSize()
 {
     return cVector2(0.0f); //cVector2(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 }
 
-void triton::CInputBackendSDL::SetKey(types::cpuword internalKey, EKeyState state)
+void triton::XInputBackendSDL::SetKey(types::cpuword internalKey, EKeyState state)
 {
     auto result = _keyMap.find(internalKey);
     if (result != _keyMap.end())
         _keyState[(usize)result->second] = state;
 }
 
-void triton::CInputBackendSDL::SetWindowFocus(boolean isFocused)
+void triton::XInputBackendSDL::SetWindowFocus(boolean isFocused)
 {
     _isFocused = isFocused;
 }
 
-void triton::CInputBackendSDL::SetWindowMouse(const cVector2& cursorPosition, const cVector2& mouseDelta)
+void triton::XInputBackendSDL::SetWindowMouse(const cVector2& cursorPosition, const cVector2& mouseDelta)
 {
     _cursorPosition = cursorPosition;
     _mouseDelta.AddX(mouseDelta.GetX());
     _mouseDelta.AddY(mouseDelta.GetY());
 }
 
-void triton::CInputBackendSDL::SetVSync(cpuword flag)
+void triton::XInputBackendSDL::SetVSync(cpuword flag)
 {
     // TODO: Implement SDL VSync
 }
 
-boolean triton::CInputBackendSDL::IsWindowFocused()
+boolean triton::XInputBackendSDL::IsWindowFocused()
 {
     return _isFocused;
 }
 
-void triton::CInputBackendSDL::InitializeKeyMap()
+void triton::XInputBackendSDL::InitializeKeyMap()
 {
     _keyMap.emplace(SDL_BUTTON_LEFT, EKeyCode::MouseLeft);
     _keyMap.emplace(SDL_BUTTON_MIDDLE, EKeyCode::MouseMiddle);

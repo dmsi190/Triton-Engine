@@ -61,9 +61,9 @@ void triton::XEngine::Initialize()
 	CRenderCommandProxy::SetContext(_context);
 
 	// Register backends
-	_context->RegisterBackend<IInputBackend>(new CInputBackendSDL(_context));
+	_context->RegisterBackend<IInputBackend>(CCreator::Create<XInputBackendSDL>(_context));
 	//_context->RegisterBackend<iAudioBackend>(new cAudioBackendOAL(_context));
-	_context->RegisterBackend<IModelBackend>(new XModelBackendAssimp(_context));
+	_context->RegisterBackend<IModelBackend>(CCreator::Create<XModelBackendAssimp>(_context));
 	_context->RegisterBackend<IImageDecoder>(CCreator::Create<BImageDecoderMulti>(_context));
 
 	// Create application window
@@ -73,7 +73,7 @@ void triton::XEngine::Initialize()
 	_context->RegisterSubsystem(CCreator::Create<XFileSystem>(_context));
 
 	// Register graphics backend
-	_context->RegisterBackend<IGraphicsBackend2>(new BGraphicsBackend2Vulkan(_context));
+	_context->RegisterBackend<IGraphicsBackend2>(CCreator::Create<BGraphicsBackend2Vulkan>(_context));
 
 	// Initialize render thread
 	InitializeRenderCommandRecorder();
@@ -112,7 +112,7 @@ void triton::XEngine::InitializeRenderCommandRecorder()
 {
 	CThreadGuard::AssertMain();
 
-	_cmd_recorder = CCreator::Create<XRenderCommandRecorder>();
+	_cmd_recorder = CCreator::Create<XRenderCommandRecorder>(_context);
 }
 
 void triton::XEngine::InitializeRenderThread()
@@ -160,7 +160,7 @@ void triton::XEngine::MainThreadFunction()
 	boolean bIsRunning = True;
 
 	IInputBackend* inputBackend = _context->GetBackend<IInputBackend>();
-	CWindow* window = _app->GetWindow();
+	XWindow* window = _app->GetWindow();
 
 	while (bIsRunning)
 	{

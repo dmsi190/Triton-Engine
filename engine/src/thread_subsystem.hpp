@@ -9,6 +9,7 @@
 #include <mutex>
 #include <memory>
 #include <atomic>
+#include "object.hpp"
 #include "types.hpp"
 
 namespace triton

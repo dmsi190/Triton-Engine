@@ -1,8 +1,6 @@
 // render_pass_processing.hpp
 
 #include "render_pass_processing.hpp"
-#include "shader_pool.hpp"
-#include "render_target_pool.hpp"
 
 using namespace types;
 

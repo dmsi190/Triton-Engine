@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vector>
 #include <optional>
 #include <functional>
 #include "gpu_buffer_resource.hpp"
@@ -76,9 +77,9 @@ namespace triton
 
 		static SGPURenderPassResource CreateRenderPass(
 			const SGPURenderTargetResource& render_target_resource,
-			boolean clear_render_target,
-			const cVector4 clear_color,
-			const f32 clear_depth,
+			types::boolean clear_render_target,
+			const cVector4& clear_color,
+			const types::f32 clear_depth,
 			const std::vector<ERenderResourceUsage>& src_render_target_attachments_usage,
 			const std::vector<ERenderResourceUsage>& dst_render_target_attachments_usage
 		);

@@ -90,10 +90,11 @@ namespace triton
     {
     };
 
-    class IPhysicsBackend : public iBackend
+    class IPhysicsBackend : public IBackend
     {
     public:
-        explicit IPhysicsBackend(cContext* context) : iBackend(context) {}
+        explicit IPhysicsBackend(const SMemAlloc& mem_alloc, cContext* context) : IBackend(mem_alloc, context) {}
+
         ~IPhysicsBackend() override = default;
 
         virtual SPhysicsWorldBackendData CreateWorld() = 0;

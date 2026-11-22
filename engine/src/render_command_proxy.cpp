@@ -18,13 +18,13 @@ triton::SGPUBufferResource triton::CRenderCommandProxy::CreateBuffer(
 	usize byte_size
 )
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CREATE_BUFFER,
         (cpuword)type,
         (cpuword)byte_size
     ));
 
-    return _context->GetSubsystem<CEngine>()->
+    return _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<SGPUBufferResource>();
 }
@@ -36,7 +36,7 @@ void triton::CRenderCommandProxy::WriteBuffer(
     usize byte_size
 )
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::WRITE_BUFFER,
         (cpuword)&buffer,
         (cpuword)offset,
@@ -44,19 +44,19 @@ void triton::CRenderCommandProxy::WriteBuffer(
         (cpuword)byte_size
     ));
 
-    _context->GetSubsystem<CEngine>()->
+    _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }
 
 void triton::CRenderCommandProxy::DestroyBuffer(SGPUBufferResource& buffer)
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::DESTROY_BUFFER,
         (cpuword)&buffer
     ));
 
-    _context->GetSubsystem<CEngine>()->
+    _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }
@@ -66,25 +66,25 @@ triton::SGPUShaderResource triton::CRenderCommandProxy::CreateShader(
     const SShaderBytecodeFiles& files
 )
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CREATE_SHADER,
         (cpuword)stage_mask,
         (cpuword)&files
     ));
 
-    return _context->GetSubsystem<CEngine>()->
+    return _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<SGPUShaderResource>();
 }
 
 void triton::CRenderCommandProxy::DestroyShader(SGPUShaderResource& shader)
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::DESTROY_SHADER,
         (cpuword)&shader
     ));
 
-    _context->GetSubsystem<CEngine>()->
+    _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }
@@ -93,24 +93,24 @@ triton::SGPUBindingGroupLayoutResource triton::CRenderCommandProxy::CreateBindin
     const std::vector<SRenderBindingGroupBinding>& bindings
 )
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CreateBindingGroupLayout,
         (cpuword)&bindings
     ));
 
-    return _context->GetSubsystem<CEngine>()->
+    return _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<SGPUBindingGroupLayoutResource>();
 }
 
 void triton::CRenderCommandProxy::DestroyBindingGroupLayout(SGPUBindingGroupLayoutResource& binding_group_layout)
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::DestroyBindingGroupLayout,
         (cpuword)&binding_group_layout
     ));
 
-    _context->GetSubsystem<CEngine>()->
+    _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }
@@ -122,7 +122,7 @@ triton::SGPUBindingGroupResource triton::CRenderCommandProxy::CreateBindingGroup
     const std::vector<SRenderBindingGroupBinding>& textures_to_bind
 )
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CreateBindingGroup,
         (cpuword)0,
         (cpuword)&layout,
@@ -130,19 +130,19 @@ triton::SGPUBindingGroupResource triton::CRenderCommandProxy::CreateBindingGroup
         (cpuword)&textures_to_bind
     ));
 
-    return _context->GetSubsystem<CEngine>()->
+    return _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<SGPUBindingGroupResource>();
 }
 
 void triton::CRenderCommandProxy::DestroyBindingGroup(SGPUBindingGroupResource& binding_group)
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::DestroyBindingGroup,
         (cpuword)&binding_group
     ));
 
-    _context->GetSubsystem<CEngine>()->
+    _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }
@@ -158,7 +158,7 @@ triton::SGPUPipelineResource triton::CRenderCommandProxy::CreatePipeline(
     EVertexBufferFormat vertexBufferFormat
 )
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CREATE_PIPELINE,
         (cpuword)&shader,
         (cpuword)&bindingGroupLayouts,
@@ -170,19 +170,19 @@ triton::SGPUPipelineResource triton::CRenderCommandProxy::CreatePipeline(
         (cpuword)vertexBufferFormat
     ));
 
-    return _context->GetSubsystem<CEngine>()->
+    return _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<SGPUPipelineResource>();
 }
 
 void triton::CRenderCommandProxy::DestroyPipeline(SGPUPipelineResource& pipeline)
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::DESTROY_PIPELINE,
         (cpuword)&pipeline
     ));
 
-    _context->GetSubsystem<CEngine>()->
+    _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }
@@ -190,13 +190,13 @@ void triton::CRenderCommandProxy::DestroyPipeline(SGPUPipelineResource& pipeline
 triton::SGPURenderPassResource triton::CRenderCommandProxy::CreateRenderPass(
     const SGPURenderTargetResource& render_target_resource,
     boolean clear_render_target,
-    const cVector4 clear_color,
+    const cVector4& clear_color,
     const f32 clear_depth,
     const std::vector<ERenderResourceUsage>& src_render_target_attachments_usage,
     const std::vector<ERenderResourceUsage>& dst_render_target_attachments_usage
 )
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CREATE_RENDER_PASS,
         (cpuword)&render_target_resource,
         (cpuword)clear_render_target,
@@ -206,19 +206,19 @@ triton::SGPURenderPassResource triton::CRenderCommandProxy::CreateRenderPass(
         (cpuword)&dst_render_target_attachments_usage
     ));
 
-    return _context->GetSubsystem<CEngine>()->
+    return _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<SGPURenderPassResource>();
 }
 
 void triton::CRenderCommandProxy::DestroyRenderPass(const SGPURenderPassResource& render_pass)
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::DESTROY_RENDER_PASS,
         (cpuword)&render_pass
     ));
 
-    _context->GetSubsystem<CEngine>()->
+    _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }
@@ -228,26 +228,26 @@ triton::SGPURenderTargetResource triton::CRenderCommandProxy::CreateRenderTarget
     const SGPUTextureResource& depth_attachment
 )
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CREATE_RENDER_TARGET,
         (cpuword)color_attachments.size(),
         (cpuword)color_attachments.data(),
         (cpuword)&depth_attachment
     ));
 
-    return _context->GetSubsystem<CEngine>()->
+    return _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<SGPURenderTargetResource>();
 }
 
 void triton::CRenderCommandProxy::DestroyRenderTarget(const SGPURenderTargetResource& render_target)
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::DESTROY_RENDER_TARGET,
         (cpuword)&render_target
     ));
 
-    _context->GetSubsystem<CEngine>()->
+    _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }
@@ -260,9 +260,9 @@ triton::SGPUTextureResource triton::CRenderCommandProxy::CreateTexture(
     const cVector3& size
 )
 {
-    cVector3* size_ptr = CCreator::Create<cVector3>(size);
+    cVector3* size_ptr = new cVector3(size);
 
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::CREATE_TEXTURE,
         (cpuword)create_sampler,
         (cpuword)format,
@@ -271,46 +271,46 @@ triton::SGPUTextureResource triton::CRenderCommandProxy::CreateTexture(
         (cpuword)size_ptr
     ));
 
-    SGPUTextureResource result = _context->GetSubsystem<CEngine>()->
+    SGPUTextureResource result = _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<SGPUTextureResource>();
 
-    CCreator::Destroy<cVector3>(size_ptr);
+    delete size_ptr;
 }
 
 void triton::CRenderCommandProxy::WriteTexture(const SGPUTextureResource& texture, const void* data)
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::WRITE_TEXTURE,
         (cpuword)&texture,
         (cpuword)data
     ));
 
-    _context->GetSubsystem<CEngine>()->
+    _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }
 
 void triton::CRenderCommandProxy::GenerateTextureMips(const SGPUTextureResource& texture)
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::GENERATE_TEXTURE_MIPS,
         (cpuword)&texture
     ));
 
-    _context->GetSubsystem<CEngine>()->
+    _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }
 
 void triton::CRenderCommandProxy::DestroyTexture(const SGPUTextureResource& texture)
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::DESTROY_TEXTURE,
         (cpuword)&texture
     ));
 
-    _context->GetSubsystem<CEngine>()->
+    _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }
@@ -321,7 +321,7 @@ void triton::CRenderCommandProxy::Dispatch(
     const cVector3& work_group_count
 )
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::Dispatch,
         (cpuword)&pipeline,
         (cpuword)&binding_groups,
@@ -333,23 +333,23 @@ void triton::CRenderCommandProxy::Dispatch(
 
 void triton::CRenderCommandProxy::FinalizeSwapchain(const SGPUTextureResource& present_texture)
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::FinalizeSwapchain,
         (cpuword)&present_texture
     ));
 
-    _context->GetSubsystem<CEngine>()->
+    _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }
 
 void triton::CRenderCommandProxy::ReleaseSwapchainResources()
 {
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::ReleaseSwapchainResources
     ));
 
-    _context->GetSubsystem<CEngine>()->
+    _context->GetSubsystem<XEngine>()->
         GetSynchronization()->
         WaitForRenderCommandResult<void*>();
 }

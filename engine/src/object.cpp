@@ -1,5 +1,5 @@
 // object.cpp
-
+/*
 #include "object.hpp"
 #include "event_manager.hpp"
 #include "context.hpp"
@@ -28,4 +28,4 @@ void triton::iObject::Send(eEventType type, XDataBuffer* data)
 {
     cEventDispatcher* dispatcher = _context->GetSubsystem<cEventDispatcher>();
     dispatcher->Send(type, data);
-}
+}*/

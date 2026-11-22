@@ -21,6 +21,8 @@ namespace triton
 		inline static XGPUBuffer*			_dynamic_instance_buffer;
 		inline static XGPUBuffer*			_material_buffer;
 		inline static XGPUBuffer*			_skinned_bone_buffer;
+		inline static XGPUBuffer*			_camera_buffer;
+		inline static XGPUBuffer*			_render_group_buffer;
 		inline static SGPUBufferResource	_main_indirect_draw_commands_buffer = SGPUBufferResource::Invalid();
 		inline static SGPUBufferResource	_shadow_indirect_draw_commands_buffer = SGPUBufferResource::Invalid();
 		inline static SGPUBufferResource	_main_command_render_group_indices_buffer = SGPUBufferResource::Invalid();
@@ -48,6 +50,10 @@ namespace triton
 		static XGPUBuffer* GetMaterialBuffer() { return _material_buffer; }
 
 		static XGPUBuffer* GetSkinnedBoneBuffer() { return _skinned_bone_buffer; }
+
+		static XGPUBuffer* GetCameraBuffer() { return _camera_buffer; }
+
+		static XGPUBuffer* GetRenderGroupBuffer() { return _render_group_buffer; }
 
 		static const SGPUBufferResource& GetMainIndirectDrawCommandsBuffer() { return _main_indirect_draw_commands_buffer; }
 

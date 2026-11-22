@@ -10,6 +10,8 @@
 #include "creator.hpp"
 #include "gpu_buffer.hpp"
 #include "vertex.hpp"
+#include "camera.hpp"
+#include "world_render_group.hpp"
 
 using namespace types;
 
@@ -52,6 +54,7 @@ void triton::CGraphicsBuffers::Initialize(cContext* context)
     );
 
     _static_instance_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
         EGPUBufferType::Storage,
         sizeof(SRenderInstanceGPULayout),
         caps.maxRenderStaticInstanceCount * sizeof(SRenderInstanceGPULayout),
@@ -59,6 +62,7 @@ void triton::CGraphicsBuffers::Initialize(cContext* context)
     );
 
     _dynamic_instance_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
         EGPUBufferType::Storage,
         sizeof(SRenderInstanceGPULayout),
         caps.maxRenderDynamicInstanceCount * sizeof(SRenderInstanceGPULayout),
@@ -66,6 +70,7 @@ void triton::CGraphicsBuffers::Initialize(cContext* context)
     );
 
     _material_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
         EGPUBufferType::Storage,
         sizeof(XMaterial::TGPULayout),
         caps.maxRenderMaterialCount * sizeof(XMaterial::TGPULayout),
@@ -73,10 +78,27 @@ void triton::CGraphicsBuffers::Initialize(cContext* context)
     );
 
     _skinned_bone_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
         EGPUBufferType::Storage,
         sizeof(cMatrix4),
         caps.maxSkinnedBoneCount * sizeof(cMatrix4),
         3
+    );
+
+    _camera_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
+        EGPUBufferType::Storage,
+        sizeof(XCamera::TGPULayout),
+        caps.camera_count * sizeof(XCamera::TGPULayout),
+        4
+    );
+
+    _render_group_buffer = CCreator::Create<XGPUBuffer>(
+        _context,
+        EGPUBufferType::Storage,
+        sizeof(SRenderGroupGPULayout),
+        caps.render_group_count * sizeof(SRenderGroupGPULayout),
+        5
     );
 
     _main_indirect_draw_commands_buffer = CRenderCommandProxy::CreateBuffer(

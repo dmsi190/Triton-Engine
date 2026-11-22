@@ -12,7 +12,7 @@ namespace triton
 {
 	class cContext;
     
-	class CInputBackendSDL final : public IInputBackend
+	class XInputBackendSDL final : public IInputBackend
 	{
         std::unordered_map<types::u32, EKeyCode> _keyMap = {};
         EKeyState _keyState[256] = {};
@@ -22,8 +22,9 @@ namespace triton
         cVector2 _mouseDelta = cVector2(0.0f);
 
 	public:
-		explicit CInputBackendSDL(cContext* context);
-		virtual ~CInputBackendSDL() override final = default;
+		explicit XInputBackendSDL(const SMemAlloc& mem_alloc, cContext* context);
+
+		~XInputBackendSDL() override final = default;
 
         virtual SWindowResource CreateBackendWindow(
             const std::string& title,

@@ -6,7 +6,6 @@
 #include "context.hpp"
 #include "engine.hpp"
 #include "synchronization.hpp"
-#include "texture_pool.hpp"
 #include "render_command_proxy.hpp"
 
 using namespace types;
@@ -24,7 +23,9 @@ triton::XRenderTarget::XRenderTarget(
 
     std::vector<std::reference_wrapper<SGPUTextureResource>> gpuColorAttachments;
     for (usize i = 0; i < colorAttachments.size(); i++)
-        gpuColorAttachments.push_back(colorAttachments[i]->GetGPUResource());
+        gpuColorAttachments.push_back(
+            (SGPUTextureResource&)colorAttachments[i]->GetGPUResource()
+        );
 
     const SGPUTextureResource& gpuDepthAttachment = depthAttachment->GetGPUResource();
 

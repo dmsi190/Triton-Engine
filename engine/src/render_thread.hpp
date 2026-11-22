@@ -16,7 +16,7 @@ namespace triton
 	class IGraphicsBackend2;
 	class CGraphics;
 	class XSynchronization;
-	class CWindow;
+	class XWindow;
 	struct SRenderCommandPack;
 
 	class XRenderThread final : public XThread
@@ -24,14 +24,14 @@ namespace triton
 		TRITON_OBJECT(XRenderThread)
 
 		XSynchronization*	_sync;
-		CWindow*			_window;
+		XWindow*			_window;
 
 	public:
 		explicit XRenderThread(
 			const SMemAlloc& mem_alloc,
 			cContext* context,
 			XSynchronization* sync,
-			CWindow* window
+			XWindow* window
 		) : XThread(mem_alloc, context), _sync(sync), _window(window) {}
 
 		~XRenderThread() override = default;

@@ -41,7 +41,7 @@ namespace triton
 
         inline const SCapabilities& GetCapabilities() const { return _caps; }
 
-        inline CWindow* GetWindow() const { return _window; }
+        inline XWindow* GetWindow() const { return _window; }
 
         inline XEngine* GetEngine() const { return _engine; }
     };

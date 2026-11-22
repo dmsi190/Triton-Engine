@@ -116,11 +116,16 @@ namespace triton
 		SRenderCommand cmds[1024];
 	};
 
-	class XRenderCommandRecorder
+	class XRenderCommandRecorder : public iObject
 	{
+		TRITON_OBJECT(XRenderCommandRecorder)
+
 		SRenderCommandPack _renderCommandPack;
 
 	public:
+		XRenderCommandRecorder(const SMemAlloc& mem_alloc, cContext* context)
+			: iObject(mem_alloc, context) {}
+
 		virtual ~XRenderCommandRecorder() = default;
 
 		inline void Clear()
@@ -186,8 +191,10 @@ namespace triton
 		SMemAlloc data;
 	};
 
-	class XSynchronization
+	class XSynchronization : public iObject
 	{
+		TRITON_OBJECT(XSynchronization)
+
 		cContext* _context = nullptr;
 		XRenderCommandRecorder* _cmdRecorder = nullptr;
 		std::atomic<types::boolean> _bIsRenderThreadInitialized = { types::K_FALSE };
@@ -202,11 +209,13 @@ namespace triton
 
 	public:
 		explicit XSynchronization(
+			const SMemAlloc& mem_alloc,
 			cContext* context,
 			XRenderCommandRecorder* cmdRecorder,
 			types::usize resultBufferByteSize
 		);
-		~XSynchronization();
+
+		~XSynchronization() override;
 
 		void WaitForRenderThreadToInit();
 

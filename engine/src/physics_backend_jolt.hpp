@@ -27,7 +27,8 @@ namespace triton
     class XPhysicsBackendJolt final : public IPhysicsBackend
     {
     public:
-        explicit XPhysicsBackendJolt(cContext* context);
+        explicit XPhysicsBackendJolt(const SMemAlloc& mem_alloc, cContext* context);
+
         ~XPhysicsBackendJolt() override;
 
         SPhysicsWorldBackendData CreateWorld() override final;

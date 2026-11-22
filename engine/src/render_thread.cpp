@@ -27,10 +27,10 @@ void triton::XRenderThread::ThreadFunction()
 	IGraphicsBackend2* gfxBackend = _context->GetBackend<IGraphicsBackend2>();
 
 	// Create graphics contexts for windows
-	IApplication* app = _context->GetSubsystem<CEngine>()->GetApplication();
-	CWindow* window = app->GetWindow();
+	IApplication* app = _context->GetSubsystem<XEngine>()->GetApplication();
+	XWindow* window = app->GetWindow();
 	
-	const SCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+	const SCapabilities& caps = _context->GetSubsystem<XEngine>()->GetApplication()->GetCapabilities();
 
 	gfxBackend->Initialize(
 		window->GetBackendWindow(),

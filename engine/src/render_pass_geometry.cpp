@@ -13,6 +13,7 @@
 #include "graphics_buffers.hpp"
 #include "render_command_proxy.hpp"
 #include "creator.hpp"
+#include "synchronization.hpp"
 
 using namespace types;
 
@@ -275,85 +276,63 @@ void triton::XRenderPassGeometry::Draw()
         );
     }*/
 
-    auto cameraResult = _context->GetPool<CCameraPool>()->Get(
-        _context->GetSubsystem<CGraphics>()->GetCamera()
-    );
-    if (!cameraResult.has_value())
-        return;
-
-    XCamera& camera = *cameraResult;
-    camera.Update(
+    XCamera* camera = _context->GetSubsystem<XGraphics>()->GetCamera();
+    camera->Update(
         _context->GetBackend<IInputBackend>()->GetMouseDelta(),
         800,
         600,
         0.25f
     );
 
-    SHandle vertexBufferHandle = _context->GetSubsystem<CGeometryStorage>()->GetRigidVertexBuffer();
-    SHandle indexBufferHandle = _context->GetSubsystem<CGeometryStorage>()->GetRigidIndexBuffer();
-    XGPUBuffer& vertexBuffer = *_context->GetPool<CGPUBufferPool>()->Get(vertexBufferHandle);
-    XGPUBuffer& indexBuffer = *_context->GetPool<CGPUBufferPool>()->Get(indexBufferHandle);
-    const CGPUBufferResource& gpuVertexBuffer = vertexBuffer.GetGPUResource();
-    const CGPUBufferResource& gpuIndexBuffer = indexBuffer.GetGPUResource();
-    XRenderTarget& renderTarget = *_context->GetPool<CRenderTargetPool>()->Get(_renderTarget);
+    XGPUBuffer* vertex_buffer = CGraphicsBuffers::GetRigidVertexBuffer();
+    XGPUBuffer* index_buffer = CGraphicsBuffers::GetRigidIndexBuffer();
 
-    const usize mainThreadWriteIndex = _context->GetSubsystem<CEngine>()->GetSynchronization()->GetWriteIndex();
+    const usize mainThreadWriteIndex = _context->GetSubsystem<XEngine>()->GetSynchronization()->GetWriteIndex();
 
     static f32 t = 0.0f;
     t += 1.0f;
 
-    _pushConstantArrays[mainThreadWriteIndex].cameraViewProjectionMatrix = camera.GetViewProjectionMatrix();
-    _pushConstantArrays[mainThreadWriteIndex].cameraWorldPosition = camera.GetWorldPosition();
+    _pushConstantArrays[mainThreadWriteIndex].cameraViewProjectionMatrix = camera->GetViewProjectionMatrix();
+    _pushConstantArrays[mainThreadWriteIndex].cameraWorldPosition = camera->GetWorldPosition();
     _pushConstantArrays[mainThreadWriteIndex].time = t;
 
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::BeginRenderPass,
         (cpuword)&_gpuRenderPass,
-        (cpuword)&renderTarget.GetGPUResource(),
+        (cpuword)&_renderTarget->GetGPUResource(),
         (cpuword)&_gpuPipeline,
-        (cpuword)&gpuVertexBuffer,
-        (cpuword)&gpuIndexBuffer,
+        (cpuword)&vertex_buffer->GetGPUResource(),
+        (cpuword)&index_buffer->GetGPUResource(),
         (cpuword)&_pushConstantArrays[mainThreadWriteIndex],
         (cpuword)&_gpuBindingGroupBuffersArrays[mainThreadWriteIndex]
     ));
 
-    auto renderDomainLookup = _context->GetPool<CRenderDomainPool>()->Get(_renderDomain);
+    const std::vector<XRenderGroup*>& render_groups = _renderDomain->GetRenderGroups();
 
-    if (!renderDomainLookup.has_value())
-        return;
-
-    XRenderDomain& renderDomain = *renderDomainLookup;
-    const std::vector<SHandle>& renderGroups = renderDomain.GetRenderGroups();
-
-    for (usize i = 0; i < renderGroups.size(); i++)
+    for (usize i = 0; i < render_groups.size(); i++)
     {
-        XRenderGroup& renderGroup =
-            *_context->
-            GetPool<CRenderGroupPool>()->
-            Get(renderGroups.at(i));
+        XRenderGroup* render_group = render_groups.at(i);
 
-        const XMaterial& sharedMaterial =
-            *_context->GetPool<CMaterialPool>()->Get(renderGroup.GetSharedMaterial());
+        XMaterial* shared_material = render_group->GetSharedMaterial();
 
-        const SGeometryView& sharedGeometry =
-            renderGroup.GetSharedGeometry();
+        const SGeometryView& sharedGeometry = render_group->GetSharedGeometry();
 
-        _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+        _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
             ERenderCommand::ExecuteRenderPass,
             (cpuword)1,
-            (cpuword)&sharedMaterial.GetBindingGroup(),
+            (cpuword)&shared_material->GetBindingGroup(),
             (cpuword)&_gpuPipeline,
-            (cpuword)renderGroup.GetMotionType(),
-            (cpuword)sharedGeometry._vertexCount,
+            (cpuword)render_group->GetMotionType(),
+            (cpuword)sharedGeometry.vertex_count,
             (cpuword)sharedGeometry.draw_info.index_count,
-            (cpuword)renderGroup.GetInstanceCount(),
+            (cpuword)render_group->GetInstanceCount(),
             (cpuword)sharedGeometry.draw_info.index_element_offset,
             (cpuword)sharedGeometry.draw_info.vertex_element_offset,
-            (cpuword)renderGroup.GetInstanceBufferOffset()
+            (cpuword)render_group->GetInstanceBufferStartOffset()
         ));
     }
 
-    _context->GetSubsystem<CEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
+    _context->GetSubsystem<XEngine>()->GetRenderCommandRecorder()->PushCommand(SRenderCommand(
         ERenderCommand::EndRenderPass
     ));
 }

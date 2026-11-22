@@ -5,7 +5,7 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 #include "math.hpp"
-#include "graphics_device_type_enum.hpp"
+#include "graphics_adapter_type_enum.hpp"
 
 namespace triton
 {
@@ -39,7 +39,7 @@ namespace triton
 	struct SPhysicalDevice
 	{
 		SPhysicalDevice(
-			EGraphicsDeviceType type,
+			EGraphicsAdapterType type,
 			VkPhysicalDevice device,
 			VkPhysicalDeviceProperties properties,
 			VkPhysicalDeviceFeatures features,
@@ -57,7 +57,7 @@ namespace triton
 			queueFamilyProperties(queueFamilyProperties),
 			surfaceCapabilities(surfaceCapabilities) {}
 
-		EGraphicsDeviceType type;
+		EGraphicsAdapterType type;
 		VkPhysicalDevice device = VK_NULL_HANDLE;
 		VkPhysicalDeviceProperties properties;
 		VkPhysicalDeviceFeatures features;

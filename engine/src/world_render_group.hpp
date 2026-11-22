@@ -30,6 +30,7 @@ namespace triton
 		XRenderDomain*					_render_domain;
 		ERenderInstanceMotionType		_motion_type;
 		SGeometryView					_shared_geometry;
+		XMaterial*						_shared_material;
 		types::usize					_max_instance_count;
 		types::usize					_instance_count;
 		types::usize					_instance_buffer_start_offset;
@@ -49,6 +50,7 @@ namespace triton
 			ERenderInstanceMotionType motion_type,
 			XRenderDomain* render_domain,
 			const SGeometryView& shared_geometry,
+			XMaterial* shared_material,
 			types::usize max_instance_count
 		);
 
@@ -63,6 +65,8 @@ namespace triton
 		inline ERenderInstanceMotionType GetMotionType() const { return _motion_type; }
 
 		inline const SGeometryView& GetSharedGeometry() const { return _shared_geometry; }
+
+		inline XMaterial* GetSharedMaterial() const { return _shared_material; }
 
 		inline types::usize GetInstanceCount() const { return _instance_count; }
 

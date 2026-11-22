@@ -17,7 +17,7 @@ namespace triton
 
 		ERenderInstanceMotionType			_motion_type = ERenderInstanceMotionType::Unknown;
 		XRenderGroup*						_render_group;
-		SRenderInstance*					_render_instance;
+		const SRenderInstance*				_render_instance;
 		cTransform							_transform;
 		XMaterial*							_material;
 		XSkeleton*							_skeleton;

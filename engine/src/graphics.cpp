@@ -19,6 +19,7 @@
 #include "gpu_buffer.hpp"
 #include "render_pass_culling.hpp"
 #include "render_pass_geometry.hpp"
+#include "world_render_domain.hpp"
 
 using namespace types;
 
@@ -160,7 +161,8 @@ void triton::XGraphics::CreateShaders()
         "C:/My/My_Projects_Programming/TritonEngine/runtime/data/shaders/builtin/passthrough.frag.spv";
 
     _opaque_rigid_pbr_shader = CCreator::Create<XShader>(
-        (dword)EShaderStageBit::Vertex | (dword)EShaderStageBit::Pixel,
+        _context,
+        (EShaderStageBit)((dword)EShaderStageBit::Vertex | (dword)EShaderStageBit::Pixel),
         opaque_rigid_pbr_bytecode_files
     );
 }
@@ -221,13 +223,14 @@ const triton::SGPUTextureResource& triton::XGraphics::CreateRenderTargets()
     std::vector<CGPUTextureResource> transparentColorAttachments = { accumulation, revealage };
     _transparentRenderTarget = *rtPool->Create(transparentColorAttachments, depth);*/
 
-    const cVector2 application_window_size =
+    const cVector2& application_window_size =
         _context->GetSubsystem<XEngine>()->GetApplication()->GetWindow()->GetSize();
 
     XTexture* color_texture = CCreator::Create<XTexture>(
+        _context,
         True,
         ETextureFormat::RGBA8,
-        (dword)ETextureUsageBit::Sampled | (dword)ETextureUsageBit::ColorAttachment,
+        (ETextureUsageBit)((dword)ETextureUsageBit::Sampled | (dword)ETextureUsageBit::ColorAttachment),
         ETextureDimension::Texture2D,
         cVector3(application_window_size.GetX(), application_window_size.GetY(), 1.0f),
         nullptr,
@@ -235,9 +238,10 @@ const triton::SGPUTextureResource& triton::XGraphics::CreateRenderTargets()
     );
 
     XTexture* depth_texture = CCreator::Create<XTexture>(
+        _context,
         True,
         ETextureFormat::DepthStencil,
-        (dword)(dword)ETextureUsageBit::DepthStencilAttachment,
+        ETextureUsageBit::DepthStencilAttachment,
         ETextureDimension::Texture2D,
         cVector3(application_window_size.GetX(), application_window_size.GetY(), 1.0f),
         nullptr,
@@ -245,6 +249,7 @@ const triton::SGPUTextureResource& triton::XGraphics::CreateRenderTargets()
     );
 
     _opaque_render_target = CCreator::Create<XRenderTarget>(
+        _context,
         std::vector<XTexture*>({ color_texture }),
         depth_texture
     );
@@ -256,9 +261,9 @@ const triton::SGPUTextureResource& triton::XGraphics::CreateRenderTargets()
 
 void triton::XGraphics::CreateCameraAndRenderDomain()
 {
-    _camera = CCreator::Create<XCamera>(65.0f, 0.01f, 1000.0f);
+    _camera = CCreator::Create<XCamera>(_context, 65.0f, 0.01f, 1000.0f);
 
-    _render_domain = CCreator::Create<XRenderDomain>(_camera);
+    _render_domain = CCreator::Create<XRenderDomain>(_context, _camera);
 }
 
 void triton::XGraphics::CreateRenderPasses()
@@ -388,7 +393,7 @@ void triton::XGraphics::CreateRenderPasses()
     );*/
 
     {
-        _culling_pass = CCreator::Create<XRenderPassCulling>();
+        _culling_pass = CCreator::Create<XRenderPassCulling>(_context);
     }
 
     {
@@ -414,6 +419,7 @@ void triton::XGraphics::CreateRenderPasses()
         const std::vector<SShaderTextureBinding> input_textures;
 
         _opaque_rigid_pass = CCreator::Create<XRenderPassGeometry>(
+            _context,
             _render_domain,
             _opaque_render_target,
             True,

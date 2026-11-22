@@ -2,7 +2,6 @@
 
 #include <vector>
 #include "material.hpp"
-#include "material_pool.hpp"
 #include "render_binding_group_binding_struct.hpp"
 #include "shader_stage_bit_enum.hpp"
 #include "creator.hpp"
@@ -30,28 +29,28 @@ triton::XMaterial::XMaterial(
     _specularColor(specularColor),
     _shininess(shininess)
 {
-    std::vector<SBindingGroupBinding>* bindings =
-        CCreator::Create<std::vector<SBindingGroupBinding>>();
+    std::vector<SRenderBindingGroupBinding>* bindings =
+        new std::vector<SRenderBindingGroupBinding>();
 
-    bindings->push_back({ 0, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
-    bindings->push_back({ 1, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
-    bindings->push_back({ 2, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
-    bindings->push_back({ 3, EBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    bindings->push_back({ 0, ERenderBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    bindings->push_back({ 1, ERenderBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    bindings->push_back({ 2, ERenderBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
+    bindings->push_back({ 3, ERenderBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
 
     _gpuBindingGroupLayout = CRenderCommandProxy::CreateBindingGroupLayout(*bindings);
 
-    CCreator::Destroy<std::vector<SBindingGroupBinding>>(bindings);
+    delete bindings;
 
-    std::vector<SBindingGroupBinding>* buffersToBind =
-        CCreator::Create<std::vector<SBindingGroupBinding>>();
-    std::vector<SBindingGroupBinding>* texturesToBind =
-        CCreator::Create<std::vector<SBindingGroupBinding>>();
+    std::vector<SRenderBindingGroupBinding>* buffersToBind =
+        new std::vector<SRenderBindingGroupBinding>();
+    std::vector<SRenderBindingGroupBinding>* texturesToBind =
+        new std::vector<SRenderBindingGroupBinding>();
 
     if (diffuseTexture.has_value())
         texturesToBind->push_back(
             {
                 0,
-                EBindingGroupBindingType::TextureSampler,
+                ERenderBindingGroupBindingType::TextureSampler,
                 EShaderStageBit::Pixel,
                 (SGPUResource*)&diffuseTexture.value()->GetGPUResource()
             }
@@ -60,7 +59,7 @@ triton::XMaterial::XMaterial(
         texturesToBind->push_back(
             {
                 1,
-                EBindingGroupBindingType::TextureSampler,
+                ERenderBindingGroupBindingType::TextureSampler,
                 EShaderStageBit::Pixel,
                 (SGPUResource*)&normalTexture.value()->GetGPUResource()
             }
@@ -69,7 +68,7 @@ triton::XMaterial::XMaterial(
         texturesToBind->push_back(
             {
                  2,
-                 EBindingGroupBindingType::TextureSampler,
+                 ERenderBindingGroupBindingType::TextureSampler,
                  EShaderStageBit::Pixel,
                  (SGPUResource*)&roughnessTexture.value()->GetGPUResource()
             }
@@ -78,7 +77,7 @@ triton::XMaterial::XMaterial(
         texturesToBind->push_back(
             {
                 3,
-                EBindingGroupBindingType::TextureSampler,
+                ERenderBindingGroupBindingType::TextureSampler,
                 EShaderStageBit::Pixel,
                 (SGPUResource*)&metallicTexture.value()->GetGPUResource()
             }
@@ -86,13 +85,13 @@ triton::XMaterial::XMaterial(
 
     _gpuBindingGroup = CRenderCommandProxy::CreateBindingGroup(
         1,
-        &_gpuBindingGroupLayout,
-        buffersToBind,
-        texturesToBind
+        _gpuBindingGroupLayout,
+        *buffersToBind,
+        *texturesToBind
     );
 
-    CCreator::Destroy<std::vector<SBindingGroupBinding>>(texturesToBind);
-    CCreator::Destroy<std::vector<SBindingGroupBinding>>(buffersToBind);
+    delete texturesToBind;
+    delete buffersToBind;
 }
 
 void triton::XMaterial::SetShininess(types::f32 shininess)

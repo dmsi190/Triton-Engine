@@ -12,11 +12,13 @@ triton::XRenderGroup::XRenderGroup(
 	ERenderInstanceMotionType motion_type,
 	XRenderDomain* render_domain,
 	const SGeometryView& shared_geometry,
+	XMaterial* shared_material,
 	types::usize max_instance_count
 ) : iObject(mem_alloc, context),
 	_motion_type(motion_type),
 	_render_domain(render_domain),
 	_shared_geometry(shared_geometry),
+	_shared_material(shared_material),
 	_max_instance_count(max_instance_count),
 	_instance_count(0),
 	_instance_buffer_start_offset(0)

@@ -171,7 +171,8 @@ public:
 	}
 };
 
-triton::XPhysicsBackendJolt::XPhysicsBackendJolt(cContext* context) : IPhysicsBackend(context)
+triton::XPhysicsBackendJolt::XPhysicsBackendJolt(const SMemAlloc& mem_alloc, cContext* context)
+	: IPhysicsBackend(mem_alloc, context)
 {
 	RegisterDefaultAllocator();
 	Trace = TraceImpl;
@@ -190,7 +191,7 @@ triton::XPhysicsBackendJolt::~XPhysicsBackendJolt()
 
 triton::SPhysicsWorldBackendData triton::XPhysicsBackendJolt::CreateWorld()
 {
-	const SCapabilities& caps = _context->GetSubsystem<CEngine>()->GetApplication()->GetCapabilities();
+	const SCapabilities& caps = _context->GetSubsystem<XEngine>()->GetApplication()->GetCapabilities();
 
 	TempAllocatorImpl* tempAllocator = new TempAllocatorImpl(caps.maxPhysicsTempBufferByteSize);
 	JobSystemThreadPool* jobSystem = new JobSystemThreadPool(
@@ -270,7 +271,7 @@ triton::SPhysicsShapeBackendData triton::XPhysicsBackendJolt::CreateBoxShape(
 	));
 	shapeSettings.SetEmbedded();
 	ShapeSettings::ShapeResult shapeResult = shapeSettings.Create();
-	ShapeRefC* shape = CCreator::Create<ShapeRefC>(shapeResult.Get());
+	ShapeRefC* shape = new ShapeRefC(shapeResult.Get());
 
 	SPhysicsShapeBackendData psbd;
 	psbd.shape = (void*)shape;
@@ -311,7 +312,7 @@ triton::SPhysicsShapeBackendData triton::XPhysicsBackendJolt::CreateHeightFieldS
 void triton::XPhysicsBackendJolt::DestroyShape(const SPhysicsShapeBackendData& shape)
 {
 	if (shape.shape)
-		CCreator::Destroy<ShapeRefC>((ShapeRefC*)shape.shape);
+		delete shape.shape;
 }
 
 triton::SPhysicsRigidBodyBackendData triton::XPhysicsBackendJolt::CreateRigidBody(
@@ -340,7 +341,7 @@ triton::SPhysicsRigidBodyBackendData triton::XPhysicsBackendJolt::CreateRigidBod
 	);
 	Body* rb = bi.CreateBody(rbSettings);
 	bi.AddBody(rb->GetID(), (EActivation)desc.properties[(int)ERigidBodyPropertyIndices::ActivationMode]);
-	BodyID* rbid = CCreator::Create<BodyID>(rb->GetID());
+	BodyID* rbid = new BodyID(rb->GetID());
 
 	SPhysicsRigidBodyBackendData prbbd;
 	prbbd.body = (void*)rbid;
@@ -360,7 +361,7 @@ void triton::XPhysicsBackendJolt::DestroyRigidBody(
 		BodyID& bid = *(BodyID*)body.body;
 		bi.RemoveBody(bid);
 		bi.DestroyBody(bid);
-		CCreator::Destroy<BodyID>((BodyID*)body.body);
+		delete body.body;
 	}
 }
 

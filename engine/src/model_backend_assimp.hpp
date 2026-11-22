@@ -98,11 +98,11 @@ namespace triton
             SMemAlloc& rigidVertexData,
             SMemAlloc& skinnedVertexData,
             SMemAlloc& indices,
-            usize vertexCount,
-            usize indexCount
+            types::usize vertexCount,
+            types::usize indexCount
         );
         
-        void AllocateTempBitangentBuffer(SMemAlloc& bitangents, usize vertexCount);
+        void AllocateTempBitangentBuffer(SMemAlloc& bitangents, types::usize vertexCount);
         
         void ParseVertexData(
             const aiScene* scene,
@@ -117,7 +117,7 @@ namespace triton
             const SMemAlloc& rigidVertexData,
             const SMemAlloc& skinnedVertexData,
             const SMemAlloc& bitangents,
-            usize vertexCount
+            types::usize vertexCount
         );
         
         void ParseIndexData(
@@ -140,8 +140,8 @@ namespace triton
         
         void CreateBones(
             const aiScene* scene,
-            usize vertexCount,
-            std::unordered_map<std::string, usize>& boneIndices,
+            types::usize vertexCount,
+            std::unordered_map<std::string, types::usize>& boneIndices,
             std::vector<SSkeletonBone>& bones,
             std::vector<std::vector<SBoneWeight>>& vertexWeights
         );
@@ -178,7 +178,7 @@ namespace triton
         void CreateAnimations(
             cContext* context,
             const aiScene* scene,
-            const std::unordered_map<std::string, usize>& boneIndices,
+            const std::unordered_map<std::string, types::usize>& boneIndices,
             std::vector<XAnimation*>& modelAnimations
         );
         

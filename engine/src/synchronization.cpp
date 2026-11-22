@@ -8,10 +8,11 @@
 using namespace types;
 
 triton::XSynchronization::XSynchronization(
+	const SMemAlloc& mem_alloc,
 	cContext* context,
 	XRenderCommandRecorder* cmdRecorder,
 	usize resultBufferByteSize
-) : _context(context), _cmdRecorder(cmdRecorder)
+) : iObject(mem_alloc, context), _cmdRecorder(cmdRecorder)
 {
 	_resultBuffer.data = CMemoryAllocator::Allocate(resultBufferByteSize);
 }
