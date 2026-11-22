@@ -29,6 +29,7 @@ namespace triton
 		XRenderGroup* CreateRenderGroup(
 			ERenderInstanceMotionType motionType,
 			const SGeometryView& shared_geometry,
+			XMaterial* shared_material,
 			types::usize max_instance_count
 		);
 

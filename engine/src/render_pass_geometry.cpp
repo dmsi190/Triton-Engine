@@ -53,7 +53,7 @@ triton::XRenderPassGeometry::XRenderPassGeometry(
     );
 
     std::vector<SRenderBindingGroupBinding>* bufferBindingGroupBindings =
-        CCreator::Create<std::vector<SRenderBindingGroupBinding>>();
+        new std::vector<SRenderBindingGroupBinding>();
 
     bufferBindingGroupBindings->push_back({ 0, ERenderBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
     bufferBindingGroupBindings->push_back({ 1, ERenderBindingGroupBindingType::StorageBuffer, EShaderStageBit::Vertex, nullptr });
@@ -63,10 +63,10 @@ triton::XRenderPassGeometry::XRenderPassGeometry(
 
     _gpuBindingGroupLayouts.push_back(CRenderCommandProxy::CreateBindingGroupLayout(*bufferBindingGroupBindings));
 
-    CCreator::Destroy<std::vector<SRenderBindingGroupBinding>>(bufferBindingGroupBindings);
+    delete bufferBindingGroupBindings;
 
     std::vector<SRenderBindingGroupBinding>* textureBindingGroupBindings =
-        CCreator::Create<std::vector<SRenderBindingGroupBinding>>();
+        new std::vector<SRenderBindingGroupBinding>();
 
     textureBindingGroupBindings->push_back({ 0, ERenderBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
     textureBindingGroupBindings->push_back({ 1, ERenderBindingGroupBindingType::TextureSampler, EShaderStageBit::Pixel, nullptr });
@@ -75,12 +75,12 @@ triton::XRenderPassGeometry::XRenderPassGeometry(
 
     _gpuBindingGroupLayouts.push_back(CRenderCommandProxy::CreateBindingGroupLayout(*textureBindingGroupBindings));
 
-    CCreator::Destroy<std::vector<SRenderBindingGroupBinding>>(textureBindingGroupBindings);
+    delete textureBindingGroupBindings;
 
     std::vector<SRenderBindingGroupBinding>* bufferBindingGroupBufferBindings =
-        CCreator::Create<std::vector<SRenderBindingGroupBinding>>();
+        new std::vector<SRenderBindingGroupBinding>();
     std::vector<SRenderBindingGroupBinding>* bufferBindingGroupTextureBindings =
-        CCreator::Create<std::vector<SRenderBindingGroupBinding>>();
+        new std::vector<SRenderBindingGroupBinding>();
 
     const SGPUBufferResource& instanceStaticBuffer = CGraphicsBuffers::GetStaticInstanceBuffer()->GetGPUResource();
     const SGPUBufferResource& instanceDynamicBuffer = CGraphicsBuffers::GetDynamicInstanceBuffer()->GetGPUResource();
@@ -107,8 +107,8 @@ triton::XRenderPassGeometry::XRenderPassGeometry(
         _gpuBindingGroupBuffersArrays[0][0]
     );
 
-    CCreator::Destroy<std::vector<SRenderBindingGroupBinding>>(bufferBindingGroupTextureBindings);
-    CCreator::Destroy<std::vector<SRenderBindingGroupBinding>>(bufferBindingGroupBufferBindings);
+    delete bufferBindingGroupTextureBindings;
+    delete bufferBindingGroupBufferBindings);
 
     _gpuPipeline = CRenderCommandProxy::CreatePipeline(
         _shader->GetGPUResource(),

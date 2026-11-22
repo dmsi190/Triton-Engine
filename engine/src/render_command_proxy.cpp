@@ -276,6 +276,8 @@ triton::SGPUTextureResource triton::CRenderCommandProxy::CreateTexture(
         WaitForRenderCommandResult<SGPUTextureResource>();
 
     delete size_ptr;
+
+    return result;
 }
 
 void triton::CRenderCommandProxy::WriteTexture(const SGPUTextureResource& texture, const void* data)

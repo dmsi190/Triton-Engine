@@ -8,7 +8,7 @@ triton::XWorldObject::XWorldObject(
 	const SMemAlloc& mem_alloc,
 	cContext* context,
 	XRenderGroup* render_group,
-	const cVector3& world_position = cVector3(0.0f)
+	const cVector3& world_position
 ) : iObject(mem_alloc, context),
 	_render_group(render_group)
 {

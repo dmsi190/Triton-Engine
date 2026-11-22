@@ -8,6 +8,7 @@ using namespace types;
 triton::XRenderGroup* triton::XRenderDomain::CreateRenderGroup(
 	ERenderInstanceMotionType motionType,
 	const SGeometryView& shared_geometry,
+	XMaterial* shared_material,
 	usize max_instance_count
 )
 {
@@ -16,6 +17,7 @@ triton::XRenderGroup* triton::XRenderDomain::CreateRenderGroup(
 		motionType,
 		this,
 		shared_geometry,
+		shared_material,
 		max_instance_count
 	);
 
