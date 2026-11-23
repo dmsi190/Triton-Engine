@@ -59,6 +59,8 @@ void triton::CMemoryAllocator::Initialize(usize bin_count, usize bin_capacity, u
 		const usize occupancy_byte_size = _bin_capacity;
 		_bins[i].occupancy = (u8*)std::malloc(occupancy_byte_size);
 		std::memset(_bins[i].occupancy, 0, occupancy_byte_size);
+
+		std::cout << i << " " << blocks_byte_size << "\n";
 	}
 }
 

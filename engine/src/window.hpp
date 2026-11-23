@@ -16,7 +16,6 @@ namespace triton
     {
         TRITON_OBJECT(XWindow)
 
-        cContext* _context = nullptr;
         SWindowResource _window;
 
     public:

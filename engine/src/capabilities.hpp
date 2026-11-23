@@ -65,8 +65,8 @@ namespace triton
         types::usize camera_count = 256;
         types::usize render_group_count = 1024;
         types::usize staging_buffer_reserve_capacity = 1024;
-        types::usize memory_allocator_bin_count = 512;
-        types::usize memory_allocator_bin_capacity = 16384;
-        types::usize memory_allocator_bin_mem_step = 32;
+        types::usize memory_allocator_bin_count = 32;
+        types::usize memory_allocator_bin_capacity = 8192;
+        types::usize memory_allocator_bin_mem_step = 128;
     };
 }
